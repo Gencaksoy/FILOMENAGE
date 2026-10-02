@@ -29,6 +29,9 @@ import {
   RefreshCw,
   FolderLock,
   Layers,
+  Archive,
+  Database,
+  Eye,
 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { formatDate } from '@/lib/formatters';
@@ -44,7 +47,14 @@ export default function SuperAdminPage() {
   // Search & Filter
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [activeTab, setActiveTab] = useState<'fleets' | 'users'>('fleets');
+  const [activeTab, setActiveTab] = useState<'fleets' | 'users' | 'archives'>('fleets');
+
+  // Archive States
+  const [archives, setArchives] = useState<any[]>([]);
+  const [archivesLoading, setArchivesLoading] = useState(false);
+  const [selectedArchiveTable, setSelectedArchiveTable] = useState('ALL');
+  const [archiveSearch, setArchiveSearch] = useState('');
+  const [viewingArchiveData, setViewingArchiveData] = useState<any | null>(null);
 
   // Modal: New Fleet
   const [showNewFleetModal, setShowNewFleetModal] = useState(false);
@@ -65,6 +75,36 @@ export default function SuperAdminPage() {
   const [editingFleet, setEditingFleet] = useState<any | null>(null);
   const [extendMonths, setExtendMonths] = useState('12');
 
+  const fetchArchives = async (tbl: string = selectedArchiveTable, q: string = archiveSearch) => {
+    try {
+      setArchivesLoading(true);
+      const res = await fetch(`/api/archives?table=${encodeURIComponent(tbl)}&search=${encodeURIComponent(q)}`);
+      if (res.ok) {
+        setArchives(await res.json());
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setArchivesLoading(false);
+    }
+  };
+
+  const handleDeleteArchiveItem = async (id: string) => {
+    if (!confirm('Bu arşiv kaydını veritabanından kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz!')) {
+      return;
+    }
+    try {
+      const res = await fetch(`/api/archives?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (res.ok) {
+        setArchives((prev) => prev.filter((a) => a.id !== id));
+      } else {
+        alert('Kayıt silinemedi');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const loadData = async () => {
     try {
       setLoading(true);
@@ -75,7 +115,13 @@ export default function SuperAdminPage() {
 
       if (meRes.ok) {
         const u = await meRes.json();
-        if (!u.user || (u.user.role !== 'SUPER_ADMIN' && u.user.email !== 'akif@filoyonetim.com')) {
+        const isSuper =
+          u.user &&
+          (u.user.role === 'SUPER_ADMIN' ||
+            u.user.email === 'akif@filoyonetim.com' ||
+            u.user.email === 'gencaksoy@outlook.com');
+
+        if (!isSuper) {
           router.push('/');
           return;
         }
@@ -88,6 +134,7 @@ export default function SuperAdminPage() {
       if (fleetsRes.ok) {
         setFleets(await fleetsRes.json());
       }
+      await fetchArchives();
     } catch (e) {
       console.error(e);
     } finally {
@@ -367,6 +414,20 @@ export default function SuperAdminPage() {
             >
               <Users className="w-4 h-4" />
               <span>Tüm Sistem Hesapları ({totalUsersCount})</span>
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('archives');
+                fetchArchives(selectedArchiveTable, archiveSearch);
+              }}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'archives'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200'
+              }`}
+            >
+              <Archive className="w-4 h-4" />
+              <span>Silinen Veriler & Arşiv ({archives.length})</span>
             </button>
           </div>
 
@@ -655,7 +716,213 @@ export default function SuperAdminPage() {
             </div>
           </div>
         )}
+
+        {/* TAB 3: ARCHIVES (SİLİNEN VERİLER & ARŞİV) */}
+        {activeTab === 'archives' && (
+          <div className="space-y-4">
+            {/* Filter & Search Bar */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={archiveSearch}
+                  onChange={(e) => {
+                    setArchiveSearch(e.target.value);
+                    fetchArchives(selectedArchiveTable, e.target.value);
+                  }}
+                  placeholder="Arşivde ara (Başlık, silen kişi veya neden...)"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 shadow-xs focus:border-amber-500 focus:outline-hidden"
+                />
+              </div>
+
+              <select
+                value={selectedArchiveTable}
+                onChange={(e) => {
+                  setSelectedArchiveTable(e.target.value);
+                  fetchArchives(e.target.value, archiveSearch);
+                }}
+                className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 shadow-xs focus:border-amber-500 focus:outline-hidden"
+              >
+                <option value="ALL">Tüm Veri Türleri (Tümü)</option>
+                <option value="Fleet">🏢 Silinen Filolar</option>
+                <option value="Vehicle">🚗 Silinen Araçlar</option>
+                <option value="Customer">👤 Silinen Müşteriler</option>
+                <option value="User">🔑 Silinen Kullanıcılar</option>
+              </select>
+            </div>
+
+            {/* Info Notice */}
+            <div className="p-3.5 bg-slate-900 text-white rounded-2xl flex items-start gap-3 text-xs">
+              <Database className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <strong className="font-bold text-amber-400">Özel Güvenlikli Veri Arşivi:</strong> Bu tablodaki veriler ana aktif tablolardan tamamen izole edilmiştir. Normal kullanıcılar veya çalışanlar bu verilere asla erişemez. Yalnızca siz (SaaS Yöneticisi) ve doğrudan Supabase SQL konsolu üzerinden görüntülenebilir.
+              </div>
+            </div>
+
+            {archivesLoading ? (
+              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-xs">
+                <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                <p className="text-xs text-slate-500 font-medium">Arşiv verileri yükleniyor...</p>
+              </div>
+            ) : archives.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-xs">
+                <Archive className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <h3 className="text-sm font-bold text-slate-800">Arşivde Silinmiş Kayıt Bulunmuyor</h3>
+                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                  Sistemden silinen filo, araç, müşteri veya kullanıcılar bu güvenli alanda JSON yedeğiyle otomatik arşivlenir.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                      <tr>
+                        <th className="py-3 px-4">Tür</th>
+                        <th className="py-3 px-4">Kayıt Başlığı</th>
+                        <th className="py-3 px-4">Silen Kişi</th>
+                        <th className="py-3 px-4">Silinme Tarihi</th>
+                        <th className="py-3 px-4">Silinme Nedeni</th>
+                        <th className="py-3 px-4 text-center">İşlemler</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium">
+                      {archives.map((item) => {
+                        let typeBadge = (
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700">
+                            {item.tableName}
+                          </span>
+                        );
+                        if (item.tableName === 'Fleet') {
+                          typeBadge = (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                              🏢 Filo
+                            </span>
+                          );
+                        } else if (item.tableName === 'Vehicle') {
+                          typeBadge = (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                              🚗 Araç
+                            </span>
+                          );
+                        } else if (item.tableName === 'Customer') {
+                          typeBadge = (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              👤 Müşteri
+                            </span>
+                          );
+                        } else if (item.tableName === 'User') {
+                          typeBadge = (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                              🔑 Kullanıcı
+                            </span>
+                          );
+                        }
+
+                        return (
+                          <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
+                            <td className="py-3.5 px-4">{typeBadge}</td>
+                            <td className="py-3.5 px-4 font-bold text-slate-900">{item.title}</td>
+                            <td className="py-3.5 px-4 text-slate-600 font-medium">{item.deletedBy || 'Bilinmiyor'}</td>
+                            <td className="py-3.5 px-4 text-slate-500">{formatDate(item.deletedAt)}</td>
+                            <td className="py-3.5 px-4 text-slate-500 max-w-xs truncate" title={item.reason}>
+                              {item.reason || '-'}
+                            </td>
+                            <td className="py-3.5 px-4 text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  onClick={() => setViewingArchiveData(item)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[10px] font-bold transition-colors cursor-pointer"
+                                  title="Tüm JSON Yedeğini Gör"
+                                >
+                                  <Eye className="w-3 h-3" />
+                                  <span>JSON İncele</span>
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteArchiveItem(item.id)}
+                                  className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                                  title="Veritabanından Kalıcı Olarak Sil"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </main>
+
+      {/* MODAL: VIEW ARCHIVED JSON */}
+      <Modal
+        isOpen={Boolean(viewingArchiveData)}
+        onClose={() => setViewingArchiveData(null)}
+        title={viewingArchiveData ? `Arşiv Detayı: ${viewingArchiveData.title}` : 'Arşiv Detayı'}
+        subtitle="Veritabanından silinen kaydın tüm alt ilişkileriyle kaydedilmiş orijinal anlık görüntüsü"
+        maxWidth="2xl"
+      >
+        {viewingArchiveData && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs bg-slate-50 p-3 rounded-xl border border-slate-200">
+              <div>
+                <span className="text-slate-400 block text-[10px] uppercase font-bold">Kayıt Türü</span>
+                <strong className="text-slate-900">{viewingArchiveData.tableName}</strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px] uppercase font-bold">Silen Kişi</span>
+                <strong className="text-slate-900">{viewingArchiveData.deletedBy || '-'}</strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px] uppercase font-bold">Silinme Tarihi</span>
+                <strong className="text-slate-900">{formatDate(viewingArchiveData.deletedAt)}</strong>
+              </div>
+              <div>
+                <span className="text-slate-400 block text-[10px] uppercase font-bold">Orijinal ID</span>
+                <strong className="text-slate-900 font-mono text-[11px] truncate block" title={viewingArchiveData.recordId}>
+                  {viewingArchiveData.recordId}
+                </strong>
+              </div>
+            </div>
+
+            {viewingArchiveData.reason && (
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900">
+                <strong>Silinme Nedeni:</strong> {viewingArchiveData.reason}
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                JSON Ham Veri Yedeği
+              </label>
+              <pre className="bg-slate-950 text-emerald-400 p-4 rounded-xl text-xs overflow-auto max-h-96 font-mono leading-relaxed border border-slate-800">
+                {(() => {
+                  try {
+                    return JSON.stringify(JSON.parse(viewingArchiveData.data), null, 2);
+                  } catch {
+                    return viewingArchiveData.data;
+                  }
+                })()}
+              </pre>
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-slate-100">
+              <button
+                onClick={() => setViewingArchiveData(null)}
+                className="px-4 py-2 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 cursor-pointer"
+              >
+                Kapat
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* MODAL: NEW FLEET & GENERATE CODE */}
       <Modal

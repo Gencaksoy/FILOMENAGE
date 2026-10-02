@@ -39,6 +39,20 @@ export async function DELETE(
       return NextResponse.json({ error: 'Bu kullanıcıyı silme yetkiniz yok.' }, { status: 403 });
     }
 
+    // 1. Kullanıcıyı ArchivedRecord tablosuna aktar
+    await prisma.archivedRecord.create({
+      data: {
+        tableName: 'User',
+        recordId: userToDelete.id,
+        title: `${userToDelete.name} (${userToDelete.email})`,
+        data: JSON.stringify(userToDelete),
+        fleetId: userToDelete.fleetId,
+        deletedBy: currentUser.name,
+        reason: 'Kullanıcı silindi ve arşive aktarıldı.',
+      },
+    });
+
+    // 2. Ana tablodan sil
     await prisma.user.delete({ where: { id } });
 
     await prisma.auditLog.create({
@@ -47,11 +61,11 @@ export async function DELETE(
         userRole: currentUser.role,
         action: 'DELETE_USER',
         target: userToDelete.name,
-        description: `Kullanıcı silindi: ${userToDelete.name} (${userToDelete.email})`,
+        description: `Kullanıcı silindi ve arşive aktarıldı: ${userToDelete.name} (${userToDelete.email})`,
       },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: 'Kullanıcı başarıyla arşive aktarılarak silindi.' });
   } catch (error) {
     console.error('User DELETE error:', error);
     return NextResponse.json({ error: 'Kullanıcı silinemedi.' }, { status: 500 });

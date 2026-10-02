@@ -6,7 +6,12 @@ import bcrypt from 'bcryptjs';
 export async function GET() {
   try {
     const currentUser = await getCurrentUser();
-    if (!currentUser || (currentUser.role !== 'SUPER_ADMIN' && currentUser.email !== 'akif@filoyonetim.com')) {
+    const isSuper =
+      currentUser &&
+      (currentUser.role === 'SUPER_ADMIN' ||
+        currentUser.email === 'akif@filoyonetim.com' ||
+        currentUser.email === 'gencaksoy@outlook.com');
+    if (!isSuper) {
       return NextResponse.json({ error: 'Yetkisiz erişim. Bu panel sadece Süper Yöneticiye aittir.' }, { status: 403 });
     }
 
@@ -43,7 +48,12 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const currentUser = await getCurrentUser();
-    if (!currentUser || (currentUser.role !== 'SUPER_ADMIN' && currentUser.email !== 'akif@filoyonetim.com')) {
+    const isSuper =
+      currentUser &&
+      (currentUser.role === 'SUPER_ADMIN' ||
+        currentUser.email === 'akif@filoyonetim.com' ||
+        currentUser.email === 'gencaksoy@outlook.com');
+    if (!isSuper) {
       return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 403 });
     }
 

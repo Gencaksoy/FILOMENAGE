@@ -39,7 +39,7 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  fleet        Fleet?   @relation(fields: [fleetId], references: [id], onDelete: SetNull)
+  fleet        Fleet?   @relation(fields: [fleetId], references: [id], onDelete: Cascade)
 }
 
 model ServiceShop {
@@ -283,3 +283,20 @@ model SystemSetting {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+model ArchivedRecord {
+  id        String   @id @default(cuid())
+  tableName String   // "Fleet", "Vehicle", "Customer", "User", "Rental", "MaintenanceRecord"
+  recordId  String   // Silinen kaydın orijinal ID'si
+  title     String   // Tanımlayıcı başlık (örn: "BG 123-AA - Renault Megane" veya "Atilla Kılıç (atilla@...)")
+  data      String   @db.Text // JSON formatında tüm veri yedeği (ilişkili alt kayıtlar dahil)
+  fleetId   String?  // Hangi filoya aitti
+  deletedBy String?  // Silen kullanıcının adı/e-postası
+  reason    String?  // Silme nedeni / açıklama
+  deletedAt DateTime @default(now())
+
+  @@index([tableName])
+  @@index([fleetId])
+  @@index([deletedAt])
+}
+

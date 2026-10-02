@@ -77,31 +77,53 @@ export async function DELETE(
       );
     }
 
-    const activeRentals = await prisma.rental.count({
-      where: { customerId: params.id, status: 'ACTIVE' },
+    const fullCustomer = await prisma.customer.findUnique({
+      where: { id: params.id },
+      include: {
+        documents: true,
+        rentals: true,
+      },
     });
 
-    if (activeRentals > 0) {
+    if (!fullCustomer) {
+      return NextResponse.json({ error: 'Müşteri bulunamadı.' }, { status: 404 });
+    }
+
+    const hasActiveRentals = fullCustomer.rentals.some((r) => r.status === 'ACTIVE');
+    if (hasActiveRentals) {
       return NextResponse.json(
         { error: 'Bu müşterinin üzerinde aktif araç bulunmaktadır! Önce aracı teslim alınız.' },
         { status: 400 }
       );
     }
 
-    const customer = await prisma.customer.update({
+    // 1. Arşiv tablosuna aktar
+    await prisma.archivedRecord.create({
+      data: {
+        tableName: 'Customer',
+        recordId: fullCustomer.id,
+        title: `${fullCustomer.name} (${fullCustomer.phone})`,
+        data: JSON.stringify(fullCustomer),
+        fleetId: fullCustomer.fleetId,
+        deletedBy: currentUser?.name || 'Yönetici',
+        reason: 'Müşteri silindi ve arşiv tablosuna aktarıldı.',
+      },
+    });
+
+    // 2. Ana tablodan sil
+    await prisma.customer.delete({
       where: { id: params.id },
-      data: { isDeleted: true },
     });
 
     await logAudit({
       userName: currentUser?.name || 'Yönetici',
       userRole: currentUser?.role || 'ADMIN',
       action: 'DELETE_CUSTOMER',
-      target: customer.name,
-      description: `Müşteri silindi: ${customer.name}`,
+      target: fullCustomer.name,
+      description: `Müşteri arşivlendi ve silindi: ${fullCustomer.name}`,
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: 'Müşteri başarıyla arşive aktarılarak silindi.' });
   } catch (error: any) {
     console.error('Customer DELETE error:', error);
     return NextResponse.json({ error: error.message || 'Müşteri silinemedi.' }, { status: 500 });

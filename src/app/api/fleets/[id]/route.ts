@@ -2,13 +2,22 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 
+function checkIsSuper(user: any) {
+  return (
+    user &&
+    (user.role === 'SUPER_ADMIN' ||
+      user.email === 'akif@filoyonetim.com' ||
+      user.email === 'gencaksoy@outlook.com')
+  );
+}
+
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }
 ) {
   try {
     const currentUser = await getCurrentUser();
-    if (!currentUser || (currentUser.role !== 'SUPER_ADMIN' && currentUser.email !== 'akif@filoyonetim.com')) {
+    if (!checkIsSuper(currentUser)) {
       return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 403 });
     }
 
@@ -47,7 +56,7 @@ export async function PUT(
 ) {
   try {
     const currentUser = await getCurrentUser();
-    if (!currentUser || (currentUser.role !== 'SUPER_ADMIN' && currentUser.email !== 'akif@filoyonetim.com')) {
+    if (!checkIsSuper(currentUser)) {
       return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 403 });
     }
 
@@ -85,7 +94,7 @@ export async function PUT(
 
     await prisma.auditLog.create({
       data: {
-        userName: currentUser.name,
+        userName: currentUser?.name || 'SaaS Yönetici',
         userRole: 'SUPER_ADMIN',
         action: 'UPDATE_FLEET',
         target: updated.name,
@@ -106,28 +115,93 @@ export async function DELETE(
 ) {
   try {
     const currentUser = await getCurrentUser();
-    if (!currentUser || (currentUser.role !== 'SUPER_ADMIN' && currentUser.email !== 'akif@filoyonetim.com')) {
+    if (!checkIsSuper(currentUser)) {
       return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 403 });
     }
 
-    const fleet = await prisma.fleet.findUnique({ where: { id: params.id } });
+    const fleet = await prisma.fleet.findUnique({
+      where: { id: params.id },
+      include: {
+        users: true,
+        vehicles: {
+          include: {
+            rentals: true,
+            maintenances: true,
+            oilChanges: true,
+            inspections: true,
+            faults: true,
+          },
+        },
+        customers: {
+          include: {
+            documents: true,
+            rentals: true,
+          },
+        },
+      },
+    });
+
     if (!fleet) {
       return NextResponse.json({ error: 'Filo bulunamadı.' }, { status: 404 });
     }
 
+    // 1. Silinen filo ve tüm ilişkili verilerini ArchivedRecord tablosuna arşivle
+    await prisma.archivedRecord.create({
+      data: {
+        tableName: 'Fleet',
+        recordId: fleet.id,
+        title: `${fleet.name} (${fleet.code})`,
+        data: JSON.stringify(fleet),
+        fleetId: fleet.id,
+        deletedBy: currentUser?.name || currentUser?.email || 'SaaS Yöneticisi',
+        reason: 'Süper Yönetici tarafından filo ve tüm ilişkili alt verileri arşivlendi ve silindi.',
+      },
+    });
+
+    // 2. Filonun tüm kullanıcılarını tek tek de arşivle
+    for (const u of fleet.users) {
+      await prisma.archivedRecord.create({
+        data: {
+          tableName: 'User',
+          recordId: u.id,
+          title: `${u.name} (${u.email})`,
+          data: JSON.stringify(u),
+          fleetId: fleet.id,
+          deletedBy: currentUser?.name || currentUser?.email || 'SaaS Yöneticisi',
+          reason: `Bağlı olduğu filo (${fleet.name}) silindiği için kullanıcı arşivlendi.`,
+        },
+      });
+    }
+
+    // 3. Filonun tüm araçlarını tek tek de arşivle
+    for (const v of fleet.vehicles) {
+      await prisma.archivedRecord.create({
+        data: {
+          tableName: 'Vehicle',
+          recordId: v.id,
+          title: `${v.plate} - ${v.brand} ${v.model}`,
+          data: JSON.stringify(v),
+          fleetId: fleet.id,
+          deletedBy: currentUser?.name || currentUser?.email || 'SaaS Yöneticisi',
+          reason: `Bağlı olduğu filo (${fleet.name}) silindiği için araç arşivlendi.`,
+        },
+      });
+    }
+
+    // 4. Filoyu sil (Cascade sayesinde users, vehicles, customers aktif tablolardan tamamen temizlenir)
     await prisma.fleet.delete({ where: { id: params.id } });
 
     await prisma.auditLog.create({
       data: {
-        userName: currentUser.name,
+        userName: currentUser?.name || 'SaaS Yönetici',
         userRole: 'SUPER_ADMIN',
         action: 'DELETE_FLEET',
         target: fleet.name,
-        description: `Filo ve tüm verileri silindi: ${fleet.name} (${fleet.code})`,
+        description: `Filo ve tüm verileri silinip arşive aktarıldı: ${fleet.name} (${fleet.code})`,
       },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: 'Filo ve bağlı tüm veriler başarıyla arşive aktarılarak silindi.' });
   } catch (error) {
     console.error('Fleet DELETE error:', error);
     return NextResponse.json({ error: 'Filo silinemedi.' }, { status: 500 });

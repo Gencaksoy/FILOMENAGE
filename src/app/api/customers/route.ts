@@ -1,15 +1,26 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logAudit } from '@/lib/audit';
+import { getSessionUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
+    const currentUser = await getSessionUser();
+    const isSuper =
+      currentUser &&
+      (currentUser.role === 'SUPER_ADMIN' ||
+        currentUser.email === 'akif@filoyonetim.com' ||
+        currentUser.email === 'gencaksoy@outlook.com');
+
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search')?.trim() || '';
 
     const where: any = { isDeleted: false };
+    if (!isSuper && currentUser?.fleetId) {
+      where.fleetId = currentUser.fleetId;
+    }
     if (search) {
       where.OR = [
         { name: { contains: search } },
@@ -92,6 +103,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    const currentUser = await getSessionUser();
     const body = await req.json();
     const name = body.name?.trim();
     const phone = body.phone?.trim();
@@ -135,6 +147,7 @@ export async function POST(req: Request) {
         address: body.address?.trim() || null,
         notes: body.notes?.trim() || null,
         documents: documentsData.length > 0 ? { create: documentsData } : undefined,
+        fleetId: currentUser?.fleetId || body.fleetId || null,
       },
       include: {
         documents: true,

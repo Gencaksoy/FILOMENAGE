@@ -1,11 +1,19 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logAudit } from '@/lib/audit';
+import { getSessionUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
+    const currentUser = await getSessionUser();
+    const isSuper =
+      currentUser &&
+      (currentUser.role === 'SUPER_ADMIN' ||
+        currentUser.email === 'akif@filoyonetim.com' ||
+        currentUser.email === 'gencaksoy@outlook.com');
+
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search')?.trim() || '';
     const status = searchParams.get('status') || '';
@@ -13,6 +21,10 @@ export async function GET(req: Request) {
 
     const now = new Date();
     const where: any = { isDeleted: false };
+
+    if (!isSuper && currentUser?.fleetId) {
+      where.fleetId = currentUser.fleetId;
+    }
 
     if (search) {
       where.OR = [
@@ -220,6 +232,7 @@ function diffDaysText(diffDays: number): string {
 
 export async function POST(req: Request) {
   try {
+    const currentUser = await getSessionUser();
     const body = await req.json();
     const plate = body.plate?.trim().toUpperCase();
 
@@ -264,6 +277,7 @@ export async function POST(req: Request) {
         engineNo: body.engineNo?.trim() || null,
         chronicIssues: body.chronicIssues?.trim() || null,
         notes: body.notes?.trim() || null,
+        fleetId: currentUser?.fleetId || body.fleetId || null,
       },
     });
 

@@ -36,7 +36,28 @@ export async function POST(req: Request) {
       );
     }
 
-    const isSuper = user.role === 'SUPER_ADMIN' || user.email === 'akif@filoyonetim.com';
+    const isSuper =
+      user.role === 'SUPER_ADMIN' ||
+      user.email === 'akif@filoyonetim.com' ||
+      user.email === 'gencaksoy@outlook.com';
+
+    // Filosu silinmiş veya askıya alınmış kullanıcıların girişini kesin olarak engelle:
+    if (!isSuper) {
+      if (!user.fleetId || !user.fleet) {
+        return NextResponse.json(
+          { error: 'Bağlı olduğunuz filo bulunamadı veya sistemden silinmiş. Lütfen SaaS yöneticisi ile iletişime geçiniz.' },
+          { status: 403 }
+        );
+      }
+      if (user.fleet.status !== 'ACTIVE') {
+        const statusMsg = user.fleet.status === 'SUSPENDED' ? 'askıya alınmış' : 'lisans süresi dolmuş';
+        return NextResponse.json(
+          { error: `Bağlı olduğunuz filonun erişimi ${statusMsg}.` },
+          { status: 403 }
+        );
+      }
+    }
+
     const effectiveRole = isSuper ? 'SUPER_ADMIN' : user.role;
 
     const authUser = {

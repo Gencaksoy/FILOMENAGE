@@ -9,14 +9,30 @@ export async function GET(req: Request) {
   try {
     const currentUser = await getSessionUser();
     const isStaff = currentUser?.role === 'STAFF';
+    const isSuper =
+      currentUser &&
+      (currentUser.role === 'SUPER_ADMIN' ||
+        currentUser.email === 'akif@filoyonetim.com' ||
+        currentUser.email === 'gencaksoy@outlook.com');
 
     const { searchParams } = new URL(req.url);
     const ownerFilter = searchParams.get('owner') || 'ALL';
 
     const now = new Date();
     const where: any = { isDeleted: false };
+
+    // Filo İzolasyonu (Multi-tenancy):
+    if (!isSuper && currentUser?.fleetId) {
+      where.fleetId = currentUser.fleetId;
+    }
+
     if (ownerFilter !== 'ALL') {
       where.owner = ownerFilter;
+    }
+
+    const ownersWhere: any = { isDeleted: false };
+    if (!isSuper && currentUser?.fleetId) {
+      ownersWhere.fleetId = currentUser.fleetId;
     }
 
     const [vehicles, allOwners, companySetting] = await Promise.all([
@@ -33,17 +49,18 @@ export async function GET(req: Request) {
           },
           oilChanges: {
             orderBy: { changeDate: 'desc' },
-            take: 1,
           },
           inspections: {
             orderBy: { inspectionDate: 'desc' },
-            take: 1,
+          },
+          faults: {
+            orderBy: { createdAt: 'desc' },
           },
         },
         orderBy: { plate: 'asc' },
       }),
       prisma.vehicle.findMany({
-        where: { isDeleted: false },
+        where: ownersWhere,
         select: { owner: true },
         distinct: ['owner'],
       }),
@@ -53,7 +70,6 @@ export async function GET(req: Request) {
     ]);
 
     const companyName = companySetting?.value || 'Filo & Rent a Car';
-
     const ownersList = Array.from(new Set(allOwners.map((o) => o.owner))).filter(Boolean);
 
     const totalVehicles = vehicles.length;
@@ -61,12 +77,13 @@ export async function GET(req: Request) {
     const availableVehicles = vehicles.filter((v) => v.status === 'AVAILABLE').length;
     const maintenanceVehicles = vehicles.filter((v) => v.status === 'MAINTENANCE').length;
     const postRentalCheckVehicles = vehicles.filter((v) => v.status === 'POST_RENTAL_CHECK').length;
+    const occupancyRate = totalVehicles > 0 ? Math.round((rentedVehicles / totalVehicles) * 100) : 0;
 
-    // 1. Yaklaşan Araç Geri Alımları & Forecast Zaman Dağılımı (1 hafta sonra elime geçecek araba sayısı vb.)
+    // 1. Yaklaşan Araç Geri Alımları & Forecast Zaman Dağılımı
     let returnsOverdueCount = 0;
     let returnsTodayCount = 0;
     let returnsNext3DaysCount = 0;
-    let returnsNext7DaysCount = 0; // 1 hafta içinde boşa çıkacak
+    let returnsNext7DaysCount = 0;
     let returnsNext14DaysCount = 0;
     let returnsLaterCount = 0;
 
@@ -131,7 +148,7 @@ export async function GET(req: Request) {
           endDate: activeRental.endDate,
           dailyRate: activeRental.dailyRate,
           monthlyRate: activeRental.monthlyRate,
-          totalAmount: isStaff ? null : activeRental.totalAmount, // Çalışandan gizle
+          totalAmount: isStaff ? null : activeRental.totalAmount,
           isPaid: activeRental.isPaid,
           photos: {
             front: activeRental.photoFront,
@@ -151,7 +168,7 @@ export async function GET(req: Request) {
 
     upcomingReturns.sort((a, b) => a.diffDays - b.diffDays);
 
-    // 2. Zorunlu Registracija (Register / Tescil) Uyarıları
+    // 2. Zorunlu Registracija Uyarıları
     const registrationAlerts: any[] = [];
     vehicles.forEach((v) => {
       if (v.registrationExpiry) {
@@ -174,12 +191,75 @@ export async function GET(req: Request) {
     });
     registrationAlerts.sort((a, b) => a.diffDays - b.diffDays);
 
-    // 3. Ortak Bazlı İstatistikler & Finansal Amortisman (STAFF için finansallar gizlenir)
+    // 3. Ortak Bazlı İstatistikler & Finansal Amortisman & Araç Başı Analizler
     let totalFleetInvestment = 0;
     let totalFleetRevenue = 0;
-    let totalFleetExpenses = 0;
+    let totalFleetMaintCost = 0;
+    let totalFleetOilCost = 0;
+    let totalFleetInspCost = 0;
 
     const partnerStats: Record<string, any> = {};
+    const vehicleAnalyticsList: any[] = [];
+
+    vehicles.forEach((v) => {
+      const vInvestment = (v.purchasePrice || 0) + (v.initialExpenses || 0);
+      const vRevenue = v.rentals.reduce((sum, r) => sum + (r.totalAmount || 0), 0);
+      const vMaintCost = v.maintenances.reduce((acc, m) => acc + (m.totalCost || 0), 0);
+      const vOilCost = v.oilChanges.reduce((acc, o) => acc + (o.cost || 0), 0);
+      const vInspCost = v.inspections.reduce((acc, i) => acc + (i.cost || 0), 0);
+      const vTotalExpense = vMaintCost + vOilCost + vInspCost;
+      const vNetProfit = vRevenue - vTotalExpense;
+      const vExpenseRatio = vRevenue > 0 ? Math.round((vTotalExpense / vRevenue) * 100) : (vTotalExpense > 0 ? 100 : 0);
+      const vFaultCount = v.faults?.length || 0;
+      const vActiveFaultCount = v.faults?.filter((f) => f.status === 'OPEN' || f.status === 'IN_PROGRESS').length || 0;
+      const vServiceCount = v.maintenances.length + v.oilChanges.length + v.inspections.length;
+      const hasChronic = Boolean(v.chronicIssues && v.chronicIssues.trim().length > 0);
+
+      totalFleetInvestment += vInvestment;
+      totalFleetRevenue += vRevenue;
+      totalFleetMaintCost += vMaintCost;
+      totalFleetOilCost += vOilCost;
+      totalFleetInspCost += vInspCost;
+
+      vehicleAnalyticsList.push({
+        id: v.id,
+        plate: v.plate,
+        brand: v.brand,
+        model: v.model,
+        modelYear: v.modelYear,
+        owner: v.owner || 'Atilla',
+        status: v.status,
+        investment: isStaff ? null : vInvestment,
+        revenue: isStaff ? null : vRevenue,
+        maintCost: isStaff ? null : vMaintCost,
+        oilCost: isStaff ? null : vOilCost,
+        inspCost: isStaff ? null : vInspCost,
+        totalExpense: isStaff ? null : vTotalExpense,
+        netProfit: isStaff ? null : vNetProfit,
+        expenseRatio: isStaff ? null : vExpenseRatio,
+        serviceCount: vServiceCount,
+        maintCount: v.maintenances.length,
+        oilCount: v.oilChanges.length,
+        inspCount: v.inspections.length,
+        faultCount: vFaultCount,
+        activeFaultCount: vActiveFaultCount,
+        hasChronic,
+        chronicIssues: v.chronicIssues || null,
+        latestFault: v.faults?.[0]?.title || null,
+      });
+    });
+
+    const totalFleetExpenses = totalFleetMaintCost + totalFleetOilCost + totalFleetInspCost;
+    const fleetNetProfit = totalFleetRevenue - totalFleetExpenses;
+    const fleetRemainingAmortization = Math.max(0, totalFleetInvestment - fleetNetProfit);
+    const fleetAmortizationPercent = totalFleetInvestment > 0
+      ? Math.min(100, Math.round((fleetNetProfit / totalFleetInvestment) * 100))
+      : 0;
+
+    const avgExpensePerVehicle = totalVehicles > 0 ? Math.round(totalFleetExpenses / totalVehicles) : 0;
+    const avgRevenuePerVehicle = totalVehicles > 0 ? Math.round(totalFleetRevenue / totalVehicles) : 0;
+
+    // Ortak bazlı gruplama
     ownersList.forEach((partner) => {
       const partnerVehicles = vehicles.filter((v) => v.owner === partner);
       const pTotal = partnerVehicles.length;
@@ -194,16 +274,11 @@ export async function GET(req: Request) {
       partnerVehicles.forEach((v) => {
         pInvestment += (v.purchasePrice || 0) + (v.initialExpenses || 0);
         pRevenue += v.rentals.reduce((sum, r) => sum + (r.totalAmount || 0), 0);
-
         const maintCost = v.maintenances.reduce((acc, m) => acc + (m.totalCost || 0), 0);
         const oilCost = v.oilChanges.reduce((acc, o) => acc + (o.cost || 0), 0);
         const inspCost = v.inspections.reduce((acc, i) => acc + (i.cost || 0), 0);
         pExpense += maintCost + oilCost + inspCost;
       });
-
-      totalFleetInvestment += pInvestment;
-      totalFleetRevenue += pRevenue;
-      totalFleetExpenses += pExpense;
 
       const pNetProfit = pRevenue - pExpense;
       const pRemainingAmortization = Math.max(0, pInvestment - pNetProfit);
@@ -217,7 +292,6 @@ export async function GET(req: Request) {
         rentedVehicles: pRented,
         availableVehicles: pAvailable,
         postRentalCheckVehicles: pPostCheck,
-        // Staff ise finansal verileri gizle:
         totalInvestment: isStaff ? null : pInvestment,
         totalRevenue: isStaff ? null : pRevenue,
         totalExpenses: isStaff ? null : pExpense,
@@ -227,13 +301,23 @@ export async function GET(req: Request) {
       };
     });
 
-    const fleetNetProfit = totalFleetRevenue - totalFleetExpenses;
-    const fleetRemainingAmortization = Math.max(0, totalFleetInvestment - fleetNetProfit);
-    const fleetAmortizationPercent = totalFleetInvestment > 0
-      ? Math.min(100, Math.round((fleetNetProfit / totalFleetInvestment) * 100))
-      : 0;
+    // 4. En Çok Masraf Çıkaran Araçlar (Top Expense Vehicles)
+    const topExpenseVehicles = [...vehicleAnalyticsList]
+      .filter((v) => !isStaff && v.totalExpense > 0)
+      .sort((a, b) => (b.totalExpense || 0) - (a.totalExpense || 0))
+      .slice(0, 5);
 
-    // 4. Yıllık Muayene Hatırlatmaları (1 yıl periyot)
+    // 5. En Çok Arıza Yapan / Kronik Sorunlu Araçlar (Top Defect / Fault Vehicles)
+    const topFaultVehicles = [...vehicleAnalyticsList]
+      .filter((v) => v.faultCount > 0 || v.hasChronic || v.serviceCount > 0)
+      .sort((a, b) => {
+        const scoreB = (b.activeFaultCount * 3) + (b.faultCount * 2) + (b.hasChronic ? 5 : 0) + (b.serviceCount * 0.5);
+        const scoreA = (a.activeFaultCount * 3) + (a.faultCount * 2) + (a.hasChronic ? 5 : 0) + (a.serviceCount * 0.5);
+        return scoreB - scoreA;
+      })
+      .slice(0, 5);
+
+    // 6. Yıllık Muayene Hatırlatmaları
     const upcomingInspections: any[] = [];
     vehicles.forEach((v) => {
       const lastInsp = v.inspections[0];
@@ -258,10 +342,13 @@ export async function GET(req: Request) {
 
     upcomingInspections.sort((a, b) => a.diffDays - b.diffDays);
 
-    // 5. Aktif Araç Arızaları (Açık ve Tamirde olanlar)
+    // 7. Aktif Araç Arızaları
     const activeFaultsWhere: any = { status: { in: ['OPEN', 'IN_PROGRESS'] } };
+    if (!isSuper && currentUser?.fleetId) {
+      activeFaultsWhere.vehicle = { fleetId: currentUser.fleetId };
+    }
     if (ownerFilter !== 'ALL') {
-      activeFaultsWhere.vehicle = { owner: ownerFilter };
+      activeFaultsWhere.vehicle = { ...activeFaultsWhere.vehicle, owner: ownerFilter };
     }
 
     const activeFaults = await prisma.vehicleFault.findMany({
@@ -282,17 +369,17 @@ export async function GET(req: Request) {
         availableVehicles,
         maintenanceVehicles,
         postRentalCheckVehicles,
+        occupancyRate,
         activeFaultsVehicles: activeFaults.length,
       },
       forecast: {
         returnsOverdueCount,
         returnsTodayCount,
         returnsNext3DaysCount,
-        returnsNext7DaysCount, // 1 hafta içinde boşa çıkacak araba sayısı
+        returnsNext7DaysCount,
         returnsNext14DaysCount,
         returnsLaterCount,
       },
-      // Amortisman & Finansal (Sadece ADMIN görür)
       fleetFinancials: isStaff ? null : {
         totalFleetInvestment,
         totalFleetRevenue,
@@ -300,7 +387,18 @@ export async function GET(req: Request) {
         fleetNetProfit,
         fleetRemainingAmortization,
         fleetAmortizationPercent,
+        avgExpensePerVehicle,
+        avgRevenuePerVehicle,
+        occupancyRate,
+        breakdown: {
+          maintenance: totalFleetMaintCost,
+          oil: totalFleetOilCost,
+          inspection: totalFleetInspCost,
+        },
       },
+      topExpenseVehicles,
+      topFaultVehicles,
+      vehicleAnalytics: vehicleAnalyticsList,
       ownersList,
       partnerStats,
       upcomingReturns,

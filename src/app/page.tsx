@@ -24,9 +24,12 @@ import {
   CheckSquare,
   Sparkles,
   ExternalLink,
-  Plus,
   RefreshCw,
   ZoomIn,
+  BarChart3,
+  Flame,
+  ArrowUpDown,
+  Search,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
@@ -111,6 +114,11 @@ export default function DashboardPage() {
   const [oilNotes, setOilNotes] = useState('');
   const [oilPaidBy, setOilPaidBy] = useState('Atilla');
   const [isSubmittingOil, setIsSubmittingOil] = useState(false);
+
+  // Analytics table filters & sorting
+  const [analyticsSearch, setAnalyticsSearch] = useState('');
+  const [analyticsPartnerFilter, setAnalyticsPartnerFilter] = useState('ALL');
+  const [analyticsSortBy, setAnalyticsSortBy] = useState<'totalExpense' | 'revenue' | 'netProfit' | 'serviceCount' | 'faultCount'>('totalExpense');
 
   const fetchData = async (owner: string = selectedOwner) => {
     try {
@@ -444,6 +452,30 @@ export default function DashboardPage() {
   const ownersList = data?.ownersList || [];
   const partnerStats = data?.partnerStats || {};
   const fleetFinancials = data?.fleetFinancials;
+  const topExpenseVehicles = data?.topExpenseVehicles || [];
+  const topFaultVehicles = data?.topFaultVehicles || [];
+  const vehicleAnalytics = data?.vehicleAnalytics || [];
+
+  const filteredVehicleAnalytics = (vehicleAnalytics || [])
+    .filter((item: any) => {
+      if (analyticsPartnerFilter !== 'ALL' && item.owner !== analyticsPartnerFilter) return false;
+      if (!analyticsSearch) return true;
+      const s = analyticsSearch.toLowerCase();
+      return (
+        item.plate.toLowerCase().includes(s) ||
+        item.brand.toLowerCase().includes(s) ||
+        item.model.toLowerCase().includes(s) ||
+        (item.chronicIssues && item.chronicIssues.toLowerCase().includes(s))
+      );
+    })
+    .sort((a: any, b: any) => {
+      if (analyticsSortBy === 'totalExpense') return (b.totalExpense || 0) - (a.totalExpense || 0);
+      if (analyticsSortBy === 'revenue') return (b.revenue || 0) - (a.revenue || 0);
+      if (analyticsSortBy === 'netProfit') return (b.netProfit || 0) - (a.netProfit || 0);
+      if (analyticsSortBy === 'serviceCount') return (b.serviceCount || 0) - (a.serviceCount || 0);
+      if (analyticsSortBy === 'faultCount') return (b.faultCount || 0) - (a.faultCount || 0);
+      return 0;
+    });
 
   // Final calculated monthly rent in form
   const formBasePrice = parseFloat(String(rentMonthlyRate)) || 350;
@@ -735,62 +767,451 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* AMORTİSMAN & FİNANSAL İSTATİSTİKLER (YALNIZCA ADMIN / ORTAKLAR GÖRÜR, ÇALIŞAN GÖREMEZ) */}
+      {/* FİLO İSTATİSTİKLERİ, ARAÇ BAŞINA MASRAF & ARIZA ANALİTİĞİ (YALNIZCA ADMIN / ORTAKLAR GÖRÜR) */}
       {!isStaff && fleetFinancials && (
-        <div className="mb-5 bg-white rounded-3xl border border-slate-200/90 p-5 shadow-xs">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-100">
+        <div className="mb-6 bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-6">
+          {/* 1. Üst Başlık & Özet Barı */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
             <div>
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wide flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-emerald-600" />
-                Filo Amortisman & Finansal Geri Dönüş Durumu
+              <h2 className="text-base sm:text-lg font-black text-slate-900 uppercase tracking-wide flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-amber-500" />
+                Filo Bütünü & İstatistik Paneli
               </h2>
-              <p className="text-xs text-slate-500">
-                Satın alma maliyeti + ilk masraflar vs elde edilen net kira kazancı (Yalnızca Ortaklar)
+              <p className="text-xs text-slate-500 mt-0.5">
+                Filo bütünü, araç başına masraf ve ciro analizi, en çok masraf çıkaran ve arıza yapan araçlar
               </p>
             </div>
-            <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200">
-              %{fleetFinancials.fleetAmortizationPercent} Amorti Edildi
-            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+                %{fleetFinancials.fleetAmortizationPercent} Amorti Edildi
+              </span>
+              <span className="px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                Doluluk: %{fleetFinancials.occupancyRate}
+              </span>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-              <div className="text-xs font-bold uppercase text-slate-400">Toplam Yatırım (Satın Alma + İlk Masraf)</div>
-              <div className="text-lg font-black text-slate-900 mt-0.5">
-                {formatCurrency(fleetFinancials.totalFleetInvestment, 'EUR')}
-              </div>
-            </div>
-            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-              <div className="text-xs font-bold uppercase text-slate-400">Toplam Kira Geliri</div>
-              <div className="text-lg font-black text-emerald-600 mt-0.5">
+          {/* 2. Filo Bütünü - 6 Temel Metrik Kartı */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="p-3.5 bg-emerald-50/50 rounded-2xl border border-emerald-100 flex flex-col justify-between">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">Toplam Ciro (Kira)</div>
+              <div className="text-lg sm:text-xl font-black text-emerald-700 mt-1">
                 {formatCurrency(fleetFinancials.totalFleetRevenue, 'EUR')}
               </div>
-            </div>
-            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-              <div className="text-xs font-bold uppercase text-slate-400">Toplam Bakım & Masraf</div>
-              <div className="text-lg font-black text-rose-600 mt-0.5">
-                {formatCurrency(fleetFinancials.totalFleetExpenses, 'EUR')}
+              <div className="text-[10px] text-emerald-600 mt-0.5 font-medium">
+                Ort. {formatCurrency(fleetFinancials.avgRevenuePerVehicle, 'EUR')} / araç
               </div>
             </div>
-            <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100">
-              <div className="text-xs font-bold uppercase text-slate-400">Amorti İçin Kalan Tutar</div>
-              <div className="text-lg font-black text-amber-700 mt-0.5">
+
+            <div className="p-3.5 bg-rose-50/50 rounded-2xl border border-rose-100 flex flex-col justify-between">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-rose-800">Toplam Masraflar</div>
+              <div className="text-lg sm:text-xl font-black text-rose-700 mt-1">
+                {formatCurrency(fleetFinancials.totalFleetExpenses, 'EUR')}
+              </div>
+              <div className="text-[10px] text-rose-600 mt-0.5 font-medium truncate" title="Bakım + Yağ + Muayene">
+                Bakım: {formatCurrency(fleetFinancials.breakdown?.maintenance || 0, 'EUR')}
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col justify-between">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Net Kâr / Bakiye</div>
+              <div className={`text-lg sm:text-xl font-black mt-1 ${fleetFinancials.fleetNetProfit >= 0 ? 'text-slate-900' : 'text-rose-600'}`}>
+                {formatCurrency(fleetFinancials.fleetNetProfit, 'EUR')}
+              </div>
+              <div className="text-[10px] text-slate-500 mt-0.5 font-medium">
+                {fleetFinancials.fleetNetProfit >= 0 ? 'Pozitif Nakit Akışı' : 'Zararda'}
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-amber-50/50 rounded-2xl border border-amber-100 flex flex-col justify-between">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-amber-800">Araç Başı Masraf</div>
+              <div className="text-lg sm:text-xl font-black text-amber-900 mt-1">
+                {formatCurrency(fleetFinancials.avgExpensePerVehicle, 'EUR')}
+              </div>
+              <div className="text-[10px] text-amber-700 mt-0.5 font-medium">
+                Ortalama maliyet
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-blue-50/50 rounded-2xl border border-blue-100 flex flex-col justify-between">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-blue-800">Filo Doluluk</div>
+              <div className="text-lg sm:text-xl font-black text-blue-700 mt-1">
+                %{fleetFinancials.occupancyRate}
+              </div>
+              <div className="text-[10px] text-blue-600 mt-0.5 font-medium">
+                {kpi.rentedVehicles} / {kpi.totalVehicles} araç kirada
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-purple-50/50 rounded-2xl border border-purple-100 flex flex-col justify-between">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-purple-800">Amorti Kalan</div>
+              <div className="text-lg sm:text-xl font-black text-purple-900 mt-1">
                 {formatCurrency(fleetFinancials.fleetRemainingAmortization, 'EUR')}
+              </div>
+              <div className="text-[10px] text-purple-600 mt-0.5 font-medium">
+                Yatırım: {formatCurrency(fleetFinancials.totalFleetInvestment, 'EUR')}
               </div>
             </div>
           </div>
 
-          {/* Progress bar */}
-          <div>
-            <div className="flex justify-between text-xs font-bold text-slate-700 mb-1">
-              <span>Yatırımın Kendini Çıkarma Oranı</span>
-              <span>%{fleetFinancials.fleetAmortizationPercent}</span>
+          {/* Kompakt Amortisman İlerleme Çubuğu */}
+          <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+            <div className="flex justify-between items-center text-xs font-bold text-slate-700 mb-1.5">
+              <span className="flex items-center gap-1.5">
+                <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                Yatırımın Kendini Çıkarma İlerlemesi (Satın Alma + İlk Masraflar vs Net Kira Geliri)
+              </span>
+              <span className="text-emerald-700 font-extrabold">%{fleetFinancials.fleetAmortizationPercent}</span>
             </div>
-            <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden border border-slate-200">
+            <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
               <div
                 className="bg-emerald-500 h-full rounded-full transition-all duration-500"
                 style={{ width: `${fleetFinancials.fleetAmortizationPercent}%` }}
               />
+            </div>
+          </div>
+
+          {/* 3. İKİ SÜTUNLU HIZLI ANALİZ: EN ÇOK MASRAF ÇIKARANLAR & EN ÇOK ARIZA YAPANLAR */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* SOL KART: EN ÇOK MASRAF ÇIKARAN ARAÇLAR */}
+            <div className="bg-gradient-to-br from-rose-50/40 via-white to-slate-50/50 rounded-2xl border border-rose-200/80 p-4 shadow-2xs">
+              <div className="flex items-center justify-between pb-3 mb-3 border-b border-rose-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-rose-100 flex items-center justify-center text-rose-700">
+                    <Flame className="w-4 h-4 text-rose-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 tracking-tight">En Çok Masraf Çıkaran Araçlar</h3>
+                    <p className="text-[11px] text-slate-500">Bakım, parça, yağ ve muayene dahil en maliyetli araçlar</p>
+                  </div>
+                </div>
+                <span className="text-xs font-black text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded-md">
+                  TOP {topExpenseVehicles.length}
+                </span>
+              </div>
+
+              {topExpenseVehicles.length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-400">
+                  Henüz masraf kaydı bulunan araç bulunmuyor.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {topExpenseVehicles.map((v: any, idx: number) => {
+                    const maxVal = topExpenseVehicles[0]?.totalExpense || 1;
+                    const percent = Math.min(100, Math.round((v.totalExpense / maxVal) * 100));
+
+                    return (
+                      <div key={v.id} className="p-3 bg-white rounded-xl border border-slate-200/80 shadow-2xs hover:border-rose-300 transition-all">
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-[10px] font-black flex items-center justify-center shrink-0">
+                              #{idx + 1}
+                            </span>
+                            <span className="font-mono text-xs font-black text-slate-900 truncate">
+                              {v.plate}
+                            </span>
+                            <span className="text-xs text-slate-600 truncate hidden sm:inline">
+                              {v.brand} {v.model}
+                            </span>
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-slate-100 text-slate-600 shrink-0">
+                              {v.owner}
+                            </span>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <span className="text-sm font-black text-rose-600">
+                              {formatCurrency(v.totalExpense, 'EUR')}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Alt Kırılım Hapları */}
+                        <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 mb-2">
+                          <span className="px-1.5 py-0.5 rounded-sm bg-slate-100">
+                            🔧 Bakım: <strong className="text-slate-800">{formatCurrency(v.maintCost, 'EUR')}</strong>
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded-sm bg-slate-100">
+                            🛢️ Yağ: <strong className="text-slate-800">{formatCurrency(v.oilCost, 'EUR')}</strong>
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded-sm bg-slate-100">
+                            📋 Tescil: <strong className="text-slate-800">{formatCurrency(v.inspCost, 'EUR')}</strong>
+                          </span>
+                          <Link
+                            href={`/vehicles/${v.id}`}
+                            className="ml-auto text-amber-600 hover:text-amber-700 font-bold hover:underline"
+                          >
+                            İncele →
+                          </Link>
+                        </div>
+
+                        {/* Harcama Oran Çubuğu */}
+                        <div className="w-full bg-rose-50 h-1.5 rounded-full overflow-hidden">
+                          <div
+                            className="bg-rose-500 h-full rounded-full transition-all duration-300"
+                            style={{ width: `${percent}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* SAĞ KART: EN ÇOK ARIZA YAPAN & KRONİK SORUNLU ARAÇLAR */}
+            <div className="bg-gradient-to-br from-amber-50/40 via-white to-slate-50/50 rounded-2xl border border-amber-200/80 p-4 shadow-2xs">
+              <div className="flex items-center justify-between pb-3 mb-3 border-b border-amber-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-700">
+                    <AlertTriangle className="w-4 h-4 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-slate-900 tracking-tight">En Çok Arıza & Kronik Sorunlu Araçlar</h3>
+                    <p className="text-[11px] text-slate-500">Arıza sıklığı, devam eden sorunlar ve kronik arızalar</p>
+                  </div>
+                </div>
+                <span className="text-xs font-black text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded-md">
+                  TOP {topFaultVehicles.length}
+                </span>
+              </div>
+
+              {topFaultVehicles.length === 0 ? (
+                <div className="py-8 text-center text-xs text-slate-400">
+                  Filoda açık arızası veya kronik problemi olan araç bulunmuyor.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {topFaultVehicles.map((v: any, idx: number) => {
+                    return (
+                      <div key={v.id} className="p-3 bg-white rounded-xl border border-slate-200/80 shadow-2xs hover:border-amber-300 transition-all">
+                        <div className="flex items-center justify-between gap-2 mb-1.5">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-[10px] font-black flex items-center justify-center shrink-0">
+                              #{idx + 1}
+                            </span>
+                            <span className="font-mono text-xs font-black text-slate-900 truncate">
+                              {v.plate}
+                            </span>
+                            <span className="text-xs text-slate-600 truncate hidden sm:inline">
+                              {v.brand} {v.model}
+                            </span>
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-slate-100 text-slate-600 shrink-0">
+                              {v.owner}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {v.activeFaultCount > 0 ? (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200">
+                                🔴 {v.activeFaultCount} Devam Eden
+                              </span>
+                            ) : v.faultCount > 0 ? (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                ⚠️ {v.faultCount} Arıza
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
+                                🛠️ {v.serviceCount} Servis
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Kronik Arıza Varsa Belirgin Uyarı */}
+                        {v.hasChronic && (
+                          <div className="mt-1.5 p-2 bg-amber-50/80 rounded-lg border border-amber-200/70 text-[11px] text-amber-900 flex items-start gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" />
+                            <div>
+                              <strong className="font-bold">Kronik Sorun:</strong> {v.chronicIssues}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Alt Bilgi & Detay Linki */}
+                        <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-slate-100 text-[10px] text-slate-500">
+                          <span>
+                            Toplam <strong>{v.serviceCount}</strong> kez servise/bakıma girdi
+                          </span>
+                          <Link
+                            href={`/vehicles/${v.id}`}
+                            className="text-amber-600 hover:text-amber-700 font-bold hover:underline"
+                          >
+                            Aracı İncele →
+                          </Link>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 4. ARAÇ BAŞINA DETAYLI MASRAF, GELİR & KÂR/ZARAR TABLOSU */}
+          <div className="pt-4 border-t border-slate-100">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 mb-4">
+              <div>
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wide flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-slate-700" />
+                  Araç Başına Detaylı Masraf, Gelir & Performans Tablosu
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Her aracın kazandırdığı kira cirosu, yapılan toplam masrafı ve net kârlılığı ({filteredVehicleAnalytics.length} araç)
+                </p>
+              </div>
+
+              {/* Filtre ve Arama Barı */}
+              <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                <div className="relative flex-1 md:w-56">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={analyticsSearch}
+                    onChange={(e) => setAnalyticsSearch(e.target.value)}
+                    placeholder="Plaka, marka, model ara..."
+                    className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-amber-500"
+                  />
+                </div>
+
+                <select
+                  value={analyticsPartnerFilter}
+                  onChange={(e) => setAnalyticsPartnerFilter(e.target.value)}
+                  className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-hidden focus:border-amber-500"
+                >
+                  <option value="ALL">Tüm Ortaklar</option>
+                  {(ownersList || []).map((o: string) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={analyticsSortBy}
+                  onChange={(e) => setAnalyticsSortBy(e.target.value as any)}
+                  className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-hidden focus:border-amber-500"
+                >
+                  <option value="totalExpense">En Çok Masraf Çıkaran</option>
+                  <option value="revenue">En Yüksek Ciro</option>
+                  <option value="netProfit">En Yüksek Net Kâr</option>
+                  <option value="serviceCount">En Çok Servise Giren</option>
+                  <option value="faultCount">En Çok Arıza Yapan</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Tablo */}
+            <div className="overflow-x-auto rounded-2xl border border-slate-200/90 shadow-2xs">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
+                  <tr>
+                    <th className="py-3 px-3.5">Araç</th>
+                    <th className="py-3 px-3">Sahip</th>
+                    <th className="py-3 px-3">Durum</th>
+                    <th className="py-3 px-3 text-right">Kira Geliri</th>
+                    <th className="py-3 px-3 text-right">Bakım</th>
+                    <th className="py-3 px-3 text-right">Yağ</th>
+                    <th className="py-3 px-3 text-right">Tescil/Muayene</th>
+                    <th className="py-3 px-3 text-right font-black text-slate-900">Toplam Masraf</th>
+                    <th className="py-3 px-3 text-right font-black text-slate-900">Net Katkı</th>
+                    <th className="py-3 px-3 text-center">Masraf/Ciro</th>
+                    <th className="py-3 px-3 text-center">Arıza & Servis</th>
+                    <th className="py-3 px-3 text-center">İşlem</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white font-medium">
+                  {filteredVehicleAnalytics.length === 0 ? (
+                    <tr>
+                      <td colSpan={12} className="py-8 text-center text-xs text-slate-400">
+                        Kriterlere uygun araç bulunamadı.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredVehicleAnalytics.map((v: any) => {
+                      const isProfitPositive = (v.netProfit || 0) >= 0;
+
+                      return (
+                        <tr key={v.id} className="hover:bg-slate-50/70 transition-colors">
+                          <td className="py-3 px-3.5">
+                            <div className="font-mono font-black text-slate-900">{v.plate}</div>
+                            <div className="text-[11px] text-slate-500">
+                              {v.brand} {v.model} ({v.modelYear})
+                            </div>
+                            {v.hasChronic && (
+                              <div className="text-[10px] text-amber-700 font-semibold truncate max-w-xs mt-0.5" title={v.chronicIssues}>
+                                ⚠️ {v.chronicIssues}
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-3 px-3">
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                              {v.owner}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3">
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                v.status === 'RENTED'
+                                  ? 'bg-blue-50 text-blue-700 border border-blue-200'
+                                  : v.status === 'AVAILABLE'
+                                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                  : v.status === 'MAINTENANCE'
+                                  ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                                  : 'bg-amber-50 text-amber-700 border border-amber-200'
+                              }`}
+                            >
+                              {VEHICLE_STATUS_MAP[v.status]?.label || v.status}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-right font-bold text-emerald-600">
+                            {formatCurrency(v.revenue || 0, 'EUR')}
+                          </td>
+                          <td className="py-3 px-3 text-right text-slate-600">
+                            {formatCurrency(v.maintCost || 0, 'EUR')}
+                          </td>
+                          <td className="py-3 px-3 text-right text-slate-600">
+                            {formatCurrency(v.oilCost || 0, 'EUR')}
+                          </td>
+                          <td className="py-3 px-3 text-right text-slate-600">
+                            {formatCurrency(v.inspCost || 0, 'EUR')}
+                          </td>
+                          <td className="py-3 px-3 text-right font-black text-rose-600">
+                            {formatCurrency(v.totalExpense || 0, 'EUR')}
+                          </td>
+                          <td className={`py-3 px-3 text-right font-black ${isProfitPositive ? 'text-emerald-700' : 'text-rose-700'}`}>
+                            {formatCurrency(v.netProfit || 0, 'EUR')}
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold ${
+                              (v.expenseRatio || 0) > 50 ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-700'
+                            }`}>
+                              %{v.expenseRatio || 0}
+                            </span>
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <div className="flex items-center justify-center gap-1">
+                              {v.activeFaultCount > 0 ? (
+                                <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-rose-100 text-rose-700">
+                                  🔴 {v.activeFaultCount}
+                                </span>
+                              ) : null}
+                              <span className="text-[11px] text-slate-600">
+                                {v.serviceCount} Servis
+                              </span>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3 text-center">
+                            <Link
+                              href={`/vehicles/${v.id}`}
+                              className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[10px] font-bold transition-colors inline-block"
+                            >
+                              Detay →
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

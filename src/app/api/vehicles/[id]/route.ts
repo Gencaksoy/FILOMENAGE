@@ -211,36 +211,60 @@ export async function DELETE(
       );
     }
 
-    const vehicle = await prisma.vehicle.findUnique({
+    const fullVehicle = await prisma.vehicle.findUnique({
       where: { id: params.id },
-      include: { rentals: { where: { status: 'ACTIVE' } } },
+      include: {
+        rentals: {
+          include: { customer: true },
+        },
+        maintenances: {
+          include: { parts: true },
+        },
+        oilChanges: true,
+        inspections: true,
+        faults: true,
+      },
     });
 
-    if (!vehicle) {
+    if (!fullVehicle) {
       return NextResponse.json({ error: 'Araç bulunamadı.' }, { status: 404 });
     }
 
-    if (vehicle.rentals.length > 0) {
+    const hasActiveRental = fullVehicle.rentals.some((r) => r.status === 'ACTIVE');
+    if (hasActiveRental) {
       return NextResponse.json(
         { error: 'Bu araç şu anda müşteride kiradadır! Önce aracı teslim alınız.' },
         { status: 400 }
       );
     }
 
-    await prisma.vehicle.update({
+    // 1. Veriyi ayrı ArchivedRecord tablosuna aktar (Sadece Supabase ve SaaS yöneticisi görebilir)
+    await prisma.archivedRecord.create({
+      data: {
+        tableName: 'Vehicle',
+        recordId: fullVehicle.id,
+        title: `${fullVehicle.plate} - ${fullVehicle.brand} ${fullVehicle.model} (${fullVehicle.owner})`,
+        data: JSON.stringify(fullVehicle),
+        fleetId: fullVehicle.fleetId,
+        deletedBy: currentUser?.name || 'Yönetici',
+        reason: 'Araç kullanıcı tarafından silindi ve arşiv tablosuna taşındı.',
+      },
+    });
+
+    // 2. Ana tablodan tamamen sil (Cascade alt kayıtları da temizler)
+    await prisma.vehicle.delete({
       where: { id: params.id },
-      data: { isDeleted: true },
     });
 
     await logAudit({
       userName: currentUser?.name || 'Yönetici',
       userRole: currentUser?.role || 'ADMIN',
       action: 'DELETE_VEHICLE',
-      target: vehicle.plate,
-      description: `${vehicle.plate} aracı sistemden silindi.`,
+      target: fullVehicle.plate,
+      description: `${fullVehicle.plate} aracı arşivlenerek sistemden tamamen silindi.`,
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: 'Araç başarıyla arşive aktarılarak silindi.' });
   } catch (error: any) {
     console.error('Vehicle DELETE error:', error);
     return NextResponse.json({ error: error.message || 'Araç silinemedi.' }, { status: 500 });
