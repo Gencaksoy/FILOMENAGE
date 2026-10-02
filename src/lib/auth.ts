@@ -10,6 +10,8 @@ export interface AuthUser {
   fleetId?: string | null;
   fleetName?: string | null;
   fleetCode?: string | null;
+  fleetStatus?: string | null;
+  fleetExpiresAt?: string | null;
 }
 
 const COOKIE_NAME = 'filo_auth_session';
@@ -40,7 +42,23 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     // Askıya alınan veya silinen kullanıcıların anında erişimini kes
     const dbUser = await prisma.user.findUnique({
       where: { id: user.id },
-      select: { id: true, name: true, email: true, role: true, isActive: true, fleetId: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isActive: true,
+        fleetId: true,
+        fleet: {
+          select: {
+            id: true,
+            name: true,
+            code: true,
+            status: true,
+            expiresAt: true,
+          },
+        },
+      },
     });
 
     if (!dbUser || !dbUser.isActive) {
@@ -53,6 +71,10 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       email: dbUser.email,
       role: dbUser.role,
       fleetId: dbUser.fleetId,
+      fleetName: dbUser.fleet?.name || user.fleetName || null,
+      fleetCode: dbUser.fleet?.code || user.fleetCode || null,
+      fleetStatus: dbUser.fleet?.status || null,
+      fleetExpiresAt: dbUser.fleet?.expiresAt ? dbUser.fleet.expiresAt.toISOString() : null,
     };
   } catch {
     return null;

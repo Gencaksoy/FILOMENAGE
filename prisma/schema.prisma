@@ -25,6 +25,8 @@ model Fleet {
   users       User[]
   vehicles    Vehicle[]
   customers   Customer[]
+  notifications Notification[]
+  auditLogs   AuditLog[]
 }
 
 model User {
@@ -248,7 +250,12 @@ model AuditLog {
   action      String
   target      String?
   description String
+  fleetId     String?
   createdAt   DateTime @default(now())
+
+  fleet       Fleet?   @relation(fields: [fleetId], references: [id], onDelete: Cascade)
+
+  @@index([fleetId])
 }
 
 model Notification {
@@ -259,7 +266,12 @@ model Notification {
   targetPlate String?
   link        String?
   isRead      Boolean  @default(false)
+  fleetId     String?
   createdAt   DateTime @default(now())
+
+  fleet       Fleet?   @relation(fields: [fleetId], references: [id], onDelete: Cascade)
+
+  @@index([fleetId])
 }
 
 model VehicleFault {

@@ -6,6 +6,7 @@ interface LogAuditParams {
   action: string;
   target?: string | null; // e.g. "BG 890-CD", "Nikola Petrović"
   description: string;
+  fleetId?: string | null;
   userId?: string | null;
   entityType?: string;
   entityId?: string | null;
@@ -23,6 +24,7 @@ export async function logAudit(params: LogAuditParams) {
         action: params.action,
         target: params.target || null,
         description: params.description,
+        fleetId: params.fleetId || null,
       },
     });
   } catch (err) {

@@ -23,10 +23,7 @@ export async function GET(req: Request) {
     if (!isSuper && currentUser?.fleetId) {
       conditions.push({
         vehicle: {
-          OR: [
-            { fleetId: currentUser.fleetId },
-            { fleetId: null },
-          ],
+          fleetId: currentUser.fleetId,
         },
       });
     }
@@ -169,6 +166,7 @@ export async function POST(req: Request) {
       userRole: currentUser?.role || 'ADMIN',
       action: 'MAINTENANCE',
       target: vehicle.plate,
+      fleetId: vehicle.fleetId || currentUser?.fleetId,
       description: `${vehicle.plate} aracına ${totalCostEur} € tutarında bakım yapıldı (Ödeyen: ${record.paidBy}, Sahibi: ${vehicle.owner}, İşçilik: ${laborEur} €, Parça: ${partsTotalEur} €). Servis: ${serviceName || 'Genel'}.`,
     });
 

@@ -27,9 +27,7 @@ export async function GET(req: Request) {
       conditions.push({
         OR: [
           { vehicle: { fleetId: currentUser.fleetId } },
-          { vehicle: { fleetId: null } },
           { fleetId: currentUser.fleetId },
-          { fleetId: null },
         ],
       });
     }

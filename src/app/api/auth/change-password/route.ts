@@ -31,11 +31,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Kullanıcı bulunamadı.' }, { status: 404 });
     }
 
-    // Süper admin veya yönetici kendi şifresini değiştirirken mevcut şifresini doğrular
-    if (currentPassword) {
-      const isMatch = await bcrypt.compare(currentPassword, dbUser.passwordHash);
-      if (!isMatch) {
-        return NextResponse.json({ error: 'Mevcut şifrenizi hatalı girdiniz.' }, { status: 400 });
+    const isSuper =
+      currentUser.role === 'SUPER_ADMIN' ||
+      currentUser.email === 'akif@filoyonetim.com' ||
+      currentUser.email === 'gencaksoy@outlook.com';
+
+    // Normal kullanıcılar mevcut şifresini doğrulamalıdır. Süper yöneticiler için opsiyoneldir.
+    if (!isSuper || currentPassword) {
+      if (currentPassword) {
+        const isMatch = await bcrypt.compare(currentPassword, dbUser.passwordHash);
+        if (!isMatch) {
+          return NextResponse.json({ error: 'Mevcut şifrenizi hatalı girdiniz.' }, { status: 400 });
+        }
+      } else if (!isSuper) {
+        return NextResponse.json({ error: 'Mevcut şifrenizi girmelisiniz.' }, { status: 400 });
       }
     }
 
@@ -51,6 +60,7 @@ export async function POST(req: Request) {
       userRole: currentUser.role,
       action: 'CHANGE_PASSWORD',
       target: currentUser.name,
+      fleetId: currentUser.fleetId,
       description: `${currentUser.name} kendi giriş şifresini güncelledi.`,
     });
 

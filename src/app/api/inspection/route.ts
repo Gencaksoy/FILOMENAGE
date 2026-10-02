@@ -18,10 +18,7 @@ export async function GET(req: Request) {
     const where: any = {};
     if (!isSuper && currentUser?.fleetId) {
       where.vehicle = {
-        OR: [
-          { fleetId: currentUser.fleetId },
-          { fleetId: null },
-        ],
+        fleetId: currentUser.fleetId,
       };
     }
 
@@ -83,6 +80,7 @@ export async function POST(req: Request) {
       userRole: currentUser?.role || 'ADMIN',
       action: 'CREATE_INSPECTION',
       target: vehicle.plate,
+      fleetId: vehicle.fleetId || currentUser?.fleetId,
       description: `${vehicle.plate} muayene kaydı oluşturuldu (${costEur} €, Ödeyen: ${insp.paidBy}, Sahibi: ${vehicle.owner}, İstasyon: ${insp.station}).`,
     });
 

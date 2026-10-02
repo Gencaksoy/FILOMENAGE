@@ -73,6 +73,7 @@ export async function PATCH(
         userRole: currentUser.role,
         action: 'UPDATE_PARKING_TICKET_STATUS',
         target: ticket.plate || ticket.ticketNumber,
+        fleetId: ticket.fleetId || currentUser.fleetId,
         description: `${ticket.plate} plakalı araca ait ${ticket.ticketNumber} numaralı ceza durumu '${status}' olarak güncellendi.`,
       });
     }

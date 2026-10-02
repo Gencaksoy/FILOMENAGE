@@ -23,12 +23,7 @@ export async function GET(req: Request) {
 
     // Filo İzolasyonu (Multi-tenancy):
     if (!isSuper && currentUser?.fleetId) {
-      conditions.push({
-        OR: [
-          { fleetId: currentUser.fleetId },
-          { fleetId: null },
-        ],
-      });
+      conditions.push({ fleetId: currentUser.fleetId });
     }
 
     if (ownerFilter !== 'ALL') {
@@ -39,12 +34,7 @@ export async function GET(req: Request) {
 
     const ownersConditions: any[] = [{ isDeleted: false }];
     if (!isSuper && currentUser?.fleetId) {
-      ownersConditions.push({
-        OR: [
-          { fleetId: currentUser.fleetId },
-          { fleetId: null },
-        ],
-      });
+      ownersConditions.push({ fleetId: currentUser.fleetId });
     }
     const ownersWhere = { AND: ownersConditions };
 

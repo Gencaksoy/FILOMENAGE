@@ -20,10 +20,7 @@ export async function GET(req: Request) {
     const conditions: any[] = [{ isDeleted: false }];
     if (!isSuper && currentUser?.fleetId) {
       conditions.push({
-        OR: [
-          { fleetId: currentUser.fleetId },
-          { fleetId: null },
-        ],
+        fleetId: currentUser.fleetId,
       });
     }
     if (search) {
@@ -112,6 +109,13 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const currentUser = await getSessionUser();
+    if (currentUser?.fleetStatus && currentUser.fleetStatus !== 'ACTIVE' && currentUser.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { error: 'Filonuz askıya alınmıştır. Müşteri eklemek için lütfen lisans / abonelik ödemenizi yenileyiniz.' },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const name = body.name?.trim();
     const phone = body.phone?.trim();
@@ -172,9 +176,11 @@ export async function POST(req: Request) {
     });
 
     await logAudit({
-      userName: 'Yönetici',
+      userName: currentUser?.name || 'Yönetici',
+      userRole: currentUser?.role || 'ADMIN',
       action: 'CREATE_CUSTOMER',
       target: customer.name,
+      fleetId: assignedFleetId,
       description: `Yeni müşteri kaydedildi: ${customer.name} (${customer.phone}). Belgeler: ${customer.documents.length} adet.`,
     });
 

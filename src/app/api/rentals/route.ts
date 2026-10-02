@@ -17,10 +17,7 @@ export async function GET(req: Request) {
     const where: any = {};
     if (!isSuper && currentUser?.fleetId) {
       where.vehicle = {
-        OR: [
-          { fleetId: currentUser.fleetId },
-          { fleetId: null },
-        ],
+        fleetId: currentUser.fleetId,
       };
     }
 
@@ -44,6 +41,13 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const currentUser = await getSessionUser();
+    if (currentUser?.fleetStatus && currentUser.fleetStatus !== 'ACTIVE' && currentUser.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { error: 'Filonuz askıya alınmıştır. Kiralama başlatmak için lütfen lisans / abonelik ödemenizi yenileyiniz.' },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const {
       vehicleId,
@@ -145,6 +149,7 @@ export async function POST(req: Request) {
       userRole: currentUser?.role || 'ADMIN',
       action: 'RENTAL_START',
       target: vehicle.plate,
+      fleetId: vehicle.fleetId || currentUser?.fleetId,
       description: `${vehicle.plate} aracı ${customer.name} müşterisine ${diffDays} günlüğüne kiralandı (${finalMonthly} €/aylık, İskonto: ${discount} €, Ödeme Teyit: ${rental.isPaid ? 'ÖDENDİ' : 'BEKLİYOR'}).`,
     });
 
@@ -221,6 +226,7 @@ export async function PUT(req: Request) {
       userRole: currentUser?.role || 'ADMIN',
       action: 'RENTAL_RETURN',
       target: rental.vehicle.plate,
+      fleetId: rental.vehicle?.fleetId || currentUser?.fleetId,
       description: `${rental.vehicle.plate} aracı ${rental.customer.name} müşterisinden teslim alındı (İade KM: ${finalKm}, Sonraki Durum: ${nextStatus === 'POST_RENTAL_CHECK' ? 'Kiradan Sonra Bakım/Temizlik' : 'Boşta/Hazır'}).`,
     });
 
@@ -254,6 +260,7 @@ export async function DELETE(req: Request) {
       userName: currentUser?.name || 'Yönetici',
       userRole: currentUser?.role || 'ADMIN',
       action: 'DELETE_RENTAL',
+      fleetId: currentUser?.fleetId,
       description: `Kiralama kaydı silindi (ID: ${rentalId}).`,
     });
 

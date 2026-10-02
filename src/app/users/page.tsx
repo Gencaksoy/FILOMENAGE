@@ -40,7 +40,7 @@ export default function UsersPage() {
   // Modal: Edit User & Reset Password
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [editName, setEditName] = useState('');
-  const [editRole, setEditRole] = useState<'ADMIN' | 'STAFF'>('STAFF');
+  const [editRole, setEditRole] = useState<'ADMIN' | 'STAFF' | 'SUPER_ADMIN'>('STAFF');
   const [editPassword, setEditPassword] = useState('');
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
@@ -48,7 +48,7 @@ export default function UsersPage() {
   const openEditModal = (u: any) => {
     setEditingUser(u);
     setEditName(u.name);
-    setEditRole(u.role === 'STAFF' ? 'STAFF' : 'ADMIN');
+    setEditRole(u.role as any);
     setEditPassword('');
     setEditError(null);
   };
@@ -308,12 +308,12 @@ export default function UsersPage() {
                     </div>
 
                     <div className="flex items-center gap-1">
-                      {!isSuperAdmin && (currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (
+                      {(isSelf || currentUser?.role === 'SUPER_ADMIN' || (!isSuperAdmin && currentUser?.role === 'ADMIN')) && (
                         <button
                           type="button"
                           onClick={() => openEditModal(u)}
                           className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-colors cursor-pointer"
-                          title="Kullanıcıyı Düzenle / Şifre Sıfırla"
+                          title={isSelf ? "Profilimi / Şifremi Güncelle" : "Kullanıcıyı Düzenle / Şifre Sıfırla"}
                         >
                           <Edit className="w-4 h-4" />
                         </button>
@@ -548,11 +548,15 @@ export default function UsersPage() {
               </label>
               <select
                 value={editRole}
+                disabled={editingUser.id === currentUser?.id && currentUser?.role !== 'SUPER_ADMIN'}
                 onChange={(e) => setEditRole(e.target.value as any)}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-amber-500 font-bold text-slate-800"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-amber-500 font-bold text-slate-800 disabled:bg-slate-100 disabled:text-slate-500"
               >
-                <option value="STAFF">Filo Çalışanı (Operasyonel Giriş - Silme Yetkisi Yok)</option>
+                {editingUser.role === 'SUPER_ADMIN' && (
+                  <option value="SUPER_ADMIN">Süper Yönetici (Tüm Sistemler / SaaS Sahibi)</option>
+                )}
                 <option value="ADMIN">Yönetici / Filo Sahibi (Tam Yetkili - Finansallar Açık)</option>
+                <option value="STAFF">Filo Çalışanı (Operasyonel Giriş - Silme Yetkisi Yok)</option>
               </select>
             </div>
 

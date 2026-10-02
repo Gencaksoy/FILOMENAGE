@@ -54,6 +54,7 @@ export async function PUT(
       userName: 'Yönetici',
       action: 'UPDATE_CUSTOMER',
       target: updated.name,
+      fleetId: updated.fleetId,
       description: `Müşteri bilgileri güncellendi: ${updated.name}`,
     });
 
@@ -120,6 +121,7 @@ export async function DELETE(
       userRole: currentUser?.role || 'ADMIN',
       action: 'DELETE_CUSTOMER',
       target: fullCustomer.name,
+      fleetId: fullCustomer.fleetId,
       description: `Müşteri arşivlendi ve silindi: ${fullCustomer.name}`,
     });
 

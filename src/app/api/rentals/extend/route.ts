@@ -59,6 +59,7 @@ export async function POST(req: Request) {
       userRole: currentUser?.role || 'ADMIN',
       action: 'RENTAL_EXTEND',
       target: rental.vehicle.plate,
+      fleetId: rental.vehicle?.fleetId || currentUser?.fleetId,
       description: `${rental.vehicle.plate} aracı ${rental.customer.name} için ${daysToAdd} gün uzatıldı (+${extraAmount} €, Yeni İade: ${newEndDate.toISOString().slice(0, 10)}).`,
     });
 

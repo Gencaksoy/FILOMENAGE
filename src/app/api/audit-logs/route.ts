@@ -11,33 +11,46 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 401 });
     }
 
+    const isSuper =
+      currentUser.role === 'SUPER_ADMIN' ||
+      currentUser.email === 'akif@filoyonetim.com' ||
+      currentUser.email === 'gencaksoy@outlook.com';
+
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search')?.trim() || '';
+    const fleetIdFilter = searchParams.get('fleetId')?.trim();
 
-    const where: any = {};
+    const conditions: any[] = [];
 
-    // Kullanıcılar Süper Admin'in (Akif Aksoy) yaptığı değişiklikleri ASLA göremez!
-    if (currentUser.role !== 'SUPER_ADMIN' && currentUser.email !== 'akif@filoyonetim.com') {
-      where.AND = [
-        { userName: { not: 'Akif Aksoy' } },
-        { userRole: { not: 'SUPER_ADMIN' } },
-      ];
+    // Filo İzolasyonu: Filo yöneticisi ve çalışanları SADECE kendi filosunun işlem geçmişini görebilir!
+    if (!isSuper) {
+      if (currentUser.fleetId) {
+        conditions.push({ fleetId: currentUser.fleetId });
+      } else {
+        // Filosu olmayan admin hiçbir filonun logunu görmez
+        conditions.push({ fleetId: '__none__' });
+      }
+      // Süper Admin'in gizli sistem hareketlerini filo kullanıcıları göremez
+      conditions.push({
+        userName: { not: 'Akif Aksoy' },
+        userRole: { not: 'SUPER_ADMIN' },
+      });
+    } else if (fleetIdFilter && fleetIdFilter !== 'ALL') {
+      conditions.push({ fleetId: fleetIdFilter });
     }
 
     if (search) {
-      const searchCondition = {
+      conditions.push({
         OR: [
-          { userName: { contains: search } },
-          { description: { contains: search } },
-          { action: { contains: search } },
+          { userName: { contains: search, mode: 'insensitive' } },
+          { description: { contains: search, mode: 'insensitive' } },
+          { action: { contains: search, mode: 'insensitive' } },
+          { target: { contains: search, mode: 'insensitive' } },
         ],
-      };
-      if (where.AND) {
-        where.AND.push(searchCondition);
-      } else {
-        where.OR = searchCondition.OR;
-      }
+      });
     }
+
+    const where = conditions.length > 0 ? { AND: conditions } : {};
 
     const logs = await prisma.auditLog.findMany({
       where,

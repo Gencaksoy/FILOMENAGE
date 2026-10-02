@@ -29,15 +29,5 @@ export async function GET() {
     );
   }
 
-  if (!isSuper) {
-    if (dbUser.fleet && dbUser.fleet.status !== 'ACTIVE') {
-      cookies().delete('filo_auth_session');
-      return NextResponse.json(
-        { user: null, error: 'Bağlı olduğunuz filonun lisansı askıya alınmıştır.' },
-        { status: 403 }
-      );
-    }
-  }
-
   return NextResponse.json({ user });
 }

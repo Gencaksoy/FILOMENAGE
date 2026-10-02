@@ -13,8 +13,13 @@ import {
   Users,
   Clock,
   ShieldCheck,
+  KeyRound,
+  Lock,
+  Check,
+  AlertCircle,
 } from 'lucide-react';
 import { AuthUser } from '@/lib/auth';
+import { Modal } from '@/components/ui/Modal';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -33,6 +38,53 @@ export function Header({ onToggleSidebar, currentUser, unreadCount = 0 }: Header
   const [isSearching, setIsSearching] = useState(false);
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwdLoading, setPwdLoading] = useState(false);
+  const [pwdError, setPwdError] = useState<string | null>(null);
+  const [pwdSuccess, setPwdSuccess] = useState<string | null>(null);
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwdError(null);
+    setPwdSuccess(null);
+
+    if (newPassword.length < 6) {
+      setPwdError('Yeni şifre en az 6 karakter olmalıdır.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPwdError('Yeni şifreler birbiriyle uyuşmuyor.');
+      return;
+    }
+
+    try {
+      setPwdLoading(true);
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Şifre güncellenemedi.');
+      }
+      setPwdSuccess('Giriş şifreniz başarıyla güncellendi!');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => {
+        setShowPasswordModal(false);
+        setPwdSuccess(null);
+      }, 1500);
+    } catch (err: any) {
+      setPwdError(err.message);
+    } finally {
+      setPwdLoading(false);
+    }
+  };
 
   useEffect(() => {
     const updateTime = () => {
@@ -269,6 +321,23 @@ export function Header({ onToggleSidebar, currentUser, unreadCount = 0 }: Header
                   </Link>
                 )}
 
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    setPwdError(null);
+                    setPwdSuccess(null);
+                    setCurrentPassword('');
+                    setNewPassword('');
+                    setConfirmPassword('');
+                    setShowPasswordModal(true);
+                  }}
+                  className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-amber-700 hover:bg-amber-50 transition-colors text-left"
+                >
+                  <KeyRound className="w-4 h-4 text-amber-600" />
+                  Şifremi Değiştir
+                </button>
+
                 <Link
                   href="/settings"
                   onClick={() => setShowUserMenu(false)}
@@ -290,6 +359,103 @@ export function Header({ onToggleSidebar, currentUser, unreadCount = 0 }: Header
           </div>
         </div>
       </div>
+
+      {/* ŞİFRE DEĞİŞTİRME MODAL */}
+      <Modal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        title="Giriş Şifremi Değiştir"
+        subtitle={`${currentUser?.name || 'Kullanıcı'} (${currentUser?.email || ''}) hesabınızın giriş şifresini güncelleyin`}
+        maxWidth="sm"
+      >
+        {pwdSuccess && (
+          <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+            <Check className="w-4 h-4 text-emerald-600" />
+            <span>{pwdSuccess}</span>
+          </div>
+        )}
+
+        {pwdError && (
+          <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{pwdError}</span>
+          </div>
+        )}
+
+        <form onSubmit={handlePasswordSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Mevcut Şifre
+            </label>
+            <div className="relative">
+              <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Mevcut şifreniz"
+                className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-amber-500 font-mono"
+              />
+            </div>
+            <span className="text-[10px] text-slate-400 mt-1 block">
+              Süper adminler için mevcut şifre isteğe bağlıdır.
+            </span>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Yeni Şifre *
+            </label>
+            <div className="relative">
+              <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="En az 6 karakter"
+                className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-amber-500 font-mono"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Yeni Şifre (Tekrar) *
+            </label>
+            <div className="relative">
+              <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Yeni şifreyi onaylayın"
+                className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-amber-500 font-mono"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setShowPasswordModal(false)}
+              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+            >
+              İptal
+            </button>
+            <button
+              type="submit"
+              disabled={pwdLoading}
+              className="px-5 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+            >
+              {pwdLoading ? 'Kaydediliyor...' : 'Şifreyi Değiştir'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </header>
   );
 }

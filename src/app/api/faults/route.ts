@@ -8,6 +8,13 @@ export const dynamic = 'force-dynamic';
 // GET /api/faults - List faults
 export async function GET(req: Request) {
   try {
+    const currentUser = await getSessionUser();
+    const isSuper =
+      currentUser &&
+      (currentUser.role === 'SUPER_ADMIN' ||
+        currentUser.email === 'akif@filoyonetim.com' ||
+        currentUser.email === 'gencaksoy@outlook.com');
+
     const { searchParams } = new URL(req.url);
     const vehicleId = searchParams.get('vehicleId');
     const status = searchParams.get('status');
@@ -15,6 +22,9 @@ export async function GET(req: Request) {
     const where: any = {};
     if (vehicleId) where.vehicleId = vehicleId;
     if (status && status !== 'ALL') where.status = status;
+    if (!isSuper && currentUser?.fleetId) {
+      where.vehicle = { fleetId: currentUser.fleetId };
+    }
 
     const faults = await prisma.vehicleFault.findMany({
       where,
@@ -96,6 +106,7 @@ export async function POST(req: Request) {
         message: `${vehicle.plate} (${vehicle.brand} ${vehicle.model}) için arıza kaydı: "${fault.title}" (${fault.severity})`,
         type: 'WARNING',
         targetPlate: vehicle.plate,
+        fleetId: vehicle.fleetId,
         link: `/vehicles/${vehicle.id}`,
       },
     });
@@ -105,6 +116,7 @@ export async function POST(req: Request) {
       userRole: currentUser?.role || 'ADMIN',
       action: 'REPORT_FAULT',
       target: vehicle.plate,
+      fleetId: vehicle.fleetId,
       description: `${vehicle.plate} için yeni arıza bildirildi: "${fault.title}" (${fault.severity}).`,
     });
 

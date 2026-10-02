@@ -41,18 +41,11 @@ export async function POST(req: Request) {
       user.email === 'akif@filoyonetim.com' ||
       user.email === 'gencaksoy@outlook.com';
 
-    // Filosu silinmiş veya askıya alınmış kullanıcıların girişini kesin olarak engelle:
+    // Filosu silinmiş kullanıcıların girişini engelle (Askıya alınmış filolar giriş yapabilir ve uyarı ekranı görür)
     if (!isSuper) {
       if (!user.fleetId || !user.fleet) {
         return NextResponse.json(
           { error: 'Bağlı olduğunuz filo bulunamadı veya sistemden silinmiş. Lütfen SaaS yöneticisi ile iletişime geçiniz.' },
-          { status: 403 }
-        );
-      }
-      if (user.fleet.status !== 'ACTIVE') {
-        const statusMsg = user.fleet.status === 'SUSPENDED' ? 'askıya alınmış' : 'lisans süresi dolmuş';
-        return NextResponse.json(
-          { error: `Bağlı olduğunuz filonun erişimi ${statusMsg}.` },
           { status: 403 }
         );
       }
@@ -69,6 +62,8 @@ export async function POST(req: Request) {
       fleetId: user.fleetId,
       fleetName: user.fleet?.name || null,
       fleetCode: user.fleet?.code || null,
+      fleetStatus: user.fleet?.status || null,
+      fleetExpiresAt: user.fleet?.expiresAt ? user.fleet.expiresAt.toISOString() : null,
     };
 
     const cookieValue = createSessionCookie(authUser);

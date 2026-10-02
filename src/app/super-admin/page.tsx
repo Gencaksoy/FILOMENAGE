@@ -782,11 +782,11 @@ export default function SuperAdminPage() {
                   <tr className="bg-amber-50/40">
                     <td className="py-3.5 px-4 font-bold text-slate-900 flex items-center gap-2">
                       <div className="w-7 h-7 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xs">
-                        A
+                        {currentUser?.name?.charAt(0) || 'A'}
                       </div>
-                      <span>Akif Aksoy</span>
+                      <span>{currentUser?.name || 'SaaS Yöneticisi'}</span>
                     </td>
-                    <td className="py-3.5 px-4 font-mono text-slate-700">akif@filoyonetim.com</td>
+                    <td className="py-3.5 px-4 font-mono text-slate-700">{currentUser?.email || 'admin@filoyonetim.com'}</td>
                     <td className="py-3.5 px-4 text-amber-900 font-bold">Tüm Sistem (SaaS Sahibi)</td>
                     <td className="py-3.5 px-4">
                       <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
@@ -797,7 +797,20 @@ export default function SuperAdminPage() {
                     <td className="py-3.5 px-4">
                       <span className="text-emerald-700 font-bold">Aktif</span>
                     </td>
-                    <td className="py-3.5 px-4 text-right text-xs text-slate-400 font-mono">Sistem Sahibi</td>
+                    <td className="py-3.5 px-4 text-right">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUserForPasswordReset(currentUser);
+                          setNewPasswordForUser('');
+                        }}
+                        className="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 border border-amber-500/30 rounded-lg text-xs font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                        title="Süper Admin Şifresini Değiştir"
+                      >
+                        <KeyRound className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Şifremi Değiştir</span>
+                      </button>
+                    </td>
                   </tr>
 
                   {/* Fleet Users */}

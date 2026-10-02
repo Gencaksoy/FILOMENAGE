@@ -198,6 +198,7 @@ export async function PUT(
       userRole: body.userRole || 'ADMIN',
       action: 'UPDATE_VEHICLE',
       target: updated.plate,
+      fleetId: updated.fleetId,
       description: `${updated.plate} araç bilgileri güncellendi (Sahip: ${updated.owner}, Durum: ${updated.status}).`,
     });
 
@@ -272,6 +273,7 @@ export async function DELETE(
       userRole: currentUser?.role || 'ADMIN',
       action: 'DELETE_VEHICLE',
       target: fullVehicle.plate,
+      fleetId: fullVehicle.fleetId,
       description: `${fullVehicle.plate} aracı arşivlenerek sistemden tamamen silindi.`,
     });
 

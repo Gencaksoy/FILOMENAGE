@@ -24,10 +24,7 @@ export async function GET(req: Request) {
 
     if (!isSuper && currentUser?.fleetId) {
       conditions.push({
-        OR: [
-          { fleetId: currentUser.fleetId },
-          { fleetId: null },
-        ],
+        fleetId: currentUser.fleetId,
       });
     }
 
@@ -242,6 +239,13 @@ function diffDaysText(diffDays: number): string {
 export async function POST(req: Request) {
   try {
     const currentUser = await getSessionUser();
+    if (currentUser?.fleetStatus && currentUser.fleetStatus !== 'ACTIVE' && currentUser.role !== 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { error: 'Filonuz askıya alınmıştır. Yeni araç eklemek için lütfen lisans / abonelik ödemenizi yenileyiniz.' },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const plate = body.plate?.trim().toUpperCase();
 
@@ -304,6 +308,7 @@ export async function POST(req: Request) {
       userRole: body.userRole || 'ADMIN',
       action: 'CREATE_VEHICLE',
       target: plate,
+      fleetId: assignedFleetId,
       description: `${plate} plakalı ${vehicle.brand} ${vehicle.model} sisteme eklendi (Sahibi: ${vehicle.owner}, Satın Alma: ${vehicle.purchasePrice} €, İlk Masraf: ${vehicle.initialExpenses} €).`,
     });
 
