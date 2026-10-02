@@ -22,6 +22,7 @@ export function AppLayout({ children, currentUser, unreadCount = 0 }: AppLayoutP
         onClose={() => setSidebarOpen(false)}
         unreadCount={unreadCount}
         userRole={currentUser?.role}
+        currentUser={currentUser}
       />
 
       {/* Main Content Area */}
@@ -31,7 +32,7 @@ export function AppLayout({ children, currentUser, unreadCount = 0 }: AppLayoutP
           currentUser={currentUser}
           unreadCount={unreadCount}
         />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-[calc(2rem+env(safe-area-inset-bottom,0px))]">
           {children}
         </main>
       </div>

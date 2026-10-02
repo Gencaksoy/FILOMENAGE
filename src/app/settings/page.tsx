@@ -12,7 +12,7 @@ export default function SettingsPage() {
   const [settings, setSettings] = useState({
     company_name: 'Filo Yönetim Paneli',
     company_phone: '+381 11 123 4567',
-    company_email: 'akif@filoyonetim.com',
+    company_email: 'operasyon@belgradfilo.com',
     default_currency: 'EUR',
     warn_days_yellow: '7',
     warn_days_orange: '3',

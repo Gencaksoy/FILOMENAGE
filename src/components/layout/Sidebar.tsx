@@ -18,15 +18,20 @@ import {
   FolderLock,
 } from 'lucide-react';
 
+import { AuthUser } from '@/lib/auth';
+
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   unreadCount?: number;
   userRole?: string;
+  currentUser?: AuthUser | null;
 }
 
-export function Sidebar({ isOpen, onClose, unreadCount = 0, userRole = 'ADMIN' }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, unreadCount = 0, userRole = 'ADMIN', currentUser }: SidebarProps) {
   const pathname = usePathname();
+
+  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN' || currentUser?.email === 'akif@filoyonetim.com' || userRole === 'SUPER_ADMIN';
 
   const navigation = [
     {
@@ -64,7 +69,7 @@ export function Sidebar({ isOpen, onClose, unreadCount = 0, userRole = 'ADMIN' }
 
       {/* Sidebar container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 w-64 bg-slate-900 text-slate-300 flex flex-col transition-transform duration-200 ease-in-out border-r border-slate-800 ${
+        className={`fixed top-0 bottom-0 left-0 z-40 w-64 bg-slate-900 text-slate-300 flex flex-col transition-transform duration-200 ease-in-out border-r border-slate-800 pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
       >
@@ -97,8 +102,8 @@ export function Sidebar({ isOpen, onClose, unreadCount = 0, userRole = 'ADMIN' }
             Ana Menü
           </div>
           {navigation.map((item: any) => {
-            if (item.adminOnly && userRole !== 'ADMIN' && userRole !== 'SUPER_ADMIN') return null;
-            if (item.superAdminOnly && userRole !== 'SUPER_ADMIN') return null;
+            if (item.superAdminOnly && !isSuperAdmin) return null;
+            if (item.adminOnly && userRole !== 'ADMIN' && !isSuperAdmin) return null;
 
             const isActive =
               item.href === '/'

@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     const where: any = {};
 
     // Kullanıcılar Süper Admin'in (Akif Aksoy) yaptığı değişiklikleri ASLA göremez!
-    if (currentUser.role !== 'SUPER_ADMIN') {
+    if (currentUser.role !== 'SUPER_ADMIN' && currentUser.email !== 'akif@filoyonetim.com') {
       where.AND = [
         { userName: { not: 'Akif Aksoy' } },
         { userRole: { not: 'SUPER_ADMIN' } },

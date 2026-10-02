@@ -5,7 +5,28 @@ import bcrypt from 'bcryptjs';
 
 export async function GET() {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Oturum açmanız gerekmektedir.' }, { status: 401 });
+    }
+
+    const isSuper = currentUser.role === 'SUPER_ADMIN' || currentUser.email === 'akif@filoyonetim.com';
+
+    const where: any = {};
+    if (!isSuper) {
+      // Filo sahipleri ve normal çalışanlar SaaS yöneticisini (Akif Aksoy) ASLA göremez!
+      where.role = { not: 'SUPER_ADMIN' };
+      where.email = { not: 'akif@filoyonetim.com' };
+      where.name = { not: 'Akif Aksoy' };
+
+      // Filo yöneticisi ise sadece kendi filosuna ait personelleri görsün
+      if (currentUser.fleetId) {
+        where.fleetId = currentUser.fleetId;
+      }
+    }
+
     const users = await prisma.user.findMany({
+      where,
       select: {
         id: true,
         name: true,
@@ -14,6 +35,7 @@ export async function GET() {
         avatar: true,
         isActive: true,
         createdAt: true,
+        fleetId: true,
       },
       orderBy: { createdAt: 'asc' },
     });
@@ -27,9 +49,11 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const currentUser = await getCurrentUser();
-    if (!currentUser || currentUser.role !== 'ADMIN') {
+    if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'SUPER_ADMIN')) {
       return NextResponse.json({ error: 'Bu işlem için yönetici yetkisi gereklidir.' }, { status: 403 });
     }
+
+    const isSuper = currentUser.role === 'SUPER_ADMIN' || currentUser.email === 'akif@filoyonetim.com';
 
     const body = await req.json();
     const { name, email, password, role } = body;
@@ -49,7 +73,11 @@ export async function POST(req: Request) {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
-    const userRole = role === 'STAFF' ? 'STAFF' : 'ADMIN';
+    // Yalnızca süper admin SUPER_ADMIN rolü verebilir
+    let userRole = role === 'STAFF' ? 'STAFF' : 'ADMIN';
+    if (role === 'SUPER_ADMIN' && !isSuper) {
+      userRole = 'ADMIN';
+    }
 
     const newUser = await prisma.user.create({
       data: {
@@ -57,6 +85,7 @@ export async function POST(req: Request) {
         email: cleanEmail,
         passwordHash,
         role: userRole,
+        fleetId: currentUser.fleetId || null,
       },
       select: {
         id: true,
@@ -66,6 +95,7 @@ export async function POST(req: Request) {
         avatar: true,
         isActive: true,
         createdAt: true,
+        fleetId: true,
       },
     });
 
