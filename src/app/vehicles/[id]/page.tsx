@@ -95,7 +95,7 @@ export default function VehicleDetailPage() {
   const [parts, setParts] = useState<PartItem[]>([
     { partName: '', partCode: '', changeDate: new Date().toISOString().split('T')[0], cost: '' },
   ]);
-  const [maintPaidBy, setMaintPaidBy] = useState('Atilla');
+  const [maintPaidBy, setMaintPaidBy] = useState('Şirket Kasası');
   const [isSubmittingMaint, setIsSubmittingMaint] = useState(false);
 
   // Modal: Oil Change (Motor Yağı Değişimi)
@@ -108,7 +108,7 @@ export default function VehicleDetailPage() {
   const [filterChanged, setFilterChanged] = useState(true);
   const [oilCost, setOilCost] = useState<number | string>(75);
   const [oilNotes, setOilNotes] = useState('');
-  const [oilPaidBy, setOilPaidBy] = useState('Atilla');
+  const [oilPaidBy, setOilPaidBy] = useState('Şirket Kasası');
   const [isSubmittingOil, setIsSubmittingOil] = useState(false);
 
   // Modal: Extend Rental (Süre Uzatma)
@@ -191,7 +191,7 @@ export default function VehicleDetailPage() {
   const [editInitialExpenses, setEditInitialExpenses] = useState<number>(350);
   const [editMonthlyPrice, setEditMonthlyPrice] = useState<number>(350);
   const [editDailyPrice, setEditDailyPrice] = useState<number>(25);
-  const [editOwner, setEditOwner] = useState('Atilla');
+  const [editOwner, setEditOwner] = useState('');
   const [editStatus, setEditStatus] = useState('AVAILABLE');
   const [editAccessories, setEditAccessories] = useState<string[]>(DEFAULT_ACCESSORIES);
   const [editNotes, setEditNotes] = useState('');
@@ -271,7 +271,7 @@ export default function VehicleDetailPage() {
           setEditInitialExpenses(v.initialExpenses || 0);
           setEditMonthlyPrice(v.monthlyPrice || 350);
           setEditDailyPrice(v.dailyPrice || 25);
-          setEditOwner(v.owner || 'Atilla');
+          setEditOwner(v.owner || '');
           setEditStatus(v.status);
           setEditNotes(v.notes || '');
           setEditVin(v.vin || '');
@@ -944,7 +944,7 @@ export default function VehicleDetailPage() {
           </Link>
           <span className="text-slate-300">/</span>
           <span className="font-bold text-slate-900 font-mono text-sm">{vehicle.plate}</span>
-          <span className="text-slate-400">({vehicle.owner || 'Atilla'})</span>
+          <span className="text-slate-400">({vehicle.owner || (currentUser?.isPartnership ? 'Belirtilmedi' : (currentUser?.fleetName || 'Filo'))})</span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -1164,15 +1164,10 @@ export default function VehicleDetailPage() {
                     ? 'Kira Sonrası Kontrol / Temizlik'
                     : 'Bakımda'}
                 </span>
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                    vehicle.owner === 'Atilla'
-                      ? 'bg-blue-50 text-blue-700 border-blue-200'
-                      : 'bg-purple-50 text-purple-700 border-purple-200'
-                  }`}
-                >
+                <span className="px-3 py-1 rounded-full text-xs font-bold border bg-purple-50 text-purple-700 border-purple-200">
                   <UserCheck className="w-3 h-3 inline mr-1" />
-                  Ortak: {vehicle.owner || 'Atilla'}
+                  {currentUser?.isPartnership ? 'Ortak: ' : 'Sahip: '}
+                  {vehicle.owner || (currentUser?.isPartnership ? 'Belirtilmedi' : (currentUser?.fleetName || 'Filo'))}
                 </span>
               </div>
               <h1 className="text-2xl font-black text-slate-900 mt-2">
@@ -1810,7 +1805,7 @@ export default function VehicleDetailPage() {
                                 : 'bg-slate-100 text-slate-700 border-slate-200'
                             }`}
                           >
-                            Ödeyen: <b>{m.paidBy || vehicle.owner || 'Atilla'}</b>
+                            Ödeyen: <b>{m.paidBy || vehicle.owner || 'Şirket Kasası'}</b>
                             {m.paidBy && vehicle.owner && m.paidBy !== vehicle.owner && (
                               <span className="ml-1 text-[11px] text-amber-800 font-semibold">(Araç: {vehicle.owner})</span>
                             )}
@@ -1905,7 +1900,7 @@ export default function VehicleDetailPage() {
                                   : 'bg-slate-100 text-slate-700 border-slate-200'
                               }`}
                             >
-                              {o.paidBy || vehicle.owner || 'Atilla'}
+                              {o.paidBy || vehicle.owner || 'Şirket Kasası'}
                               {o.paidBy && vehicle.owner && o.paidBy !== vehicle.owner && (
                                 <span className="ml-1 text-[11px] text-amber-800">🤝</span>
                               )}
@@ -3163,8 +3158,11 @@ export default function VehicleDetailPage() {
             <label className="block text-xs font-bold text-amber-950 mb-1.5">
               Ödemeyi Yapan (Masrafı Karşılayan Ortak) *
             </label>
-            <div className="grid grid-cols-3 gap-2 mb-1.5">
-              {['Atilla', 'Onur', 'Ortak Kasa'].map((person) => (
+            <div className="flex flex-wrap gap-2 mb-1.5">
+              {(currentUser?.isPartnership && (currentUser?.partners || []).length > 0
+                ? [...(currentUser?.partners || []), 'Şirket Kasası']
+                : ['Şirket Kasası', 'Nakit', 'Kredi Kartı', 'Banka Havalesi']
+              ).map((person) => (
                 <button
                   key={person}
                   type="button"
@@ -3330,8 +3328,11 @@ export default function VehicleDetailPage() {
             <label className="block text-xs font-bold text-amber-950 mb-1.5">
               Ödemeyi Yapan (Masrafı Karşılayan Ortak) *
             </label>
-            <div className="grid grid-cols-3 gap-2 mb-1.5">
-              {['Atilla', 'Onur', 'Ortak Kasa'].map((person) => (
+            <div className="flex flex-wrap gap-2 mb-1.5">
+              {(currentUser?.isPartnership && (currentUser?.partners || []).length > 0
+                ? [...(currentUser?.partners || []), 'Şirket Kasası']
+                : ['Şirket Kasası', 'Nakit', 'Kredi Kartı', 'Banka Havalesi']
+              ).map((person) => (
                 <button
                   key={person}
                   type="button"
@@ -3529,15 +3530,30 @@ export default function VehicleDetailPage() {
         <form onSubmit={handleEditSubmit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Ortak *</label>
-              <select
-                value={editOwner}
-                onChange={(e) => setEditOwner(e.target.value)}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-bold"
-              >
-                <option value="Atilla">Atilla</option>
-                <option value="Onur">Onur</option>
-              </select>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                {currentUser?.isPartnership ? 'Ortak *' : 'Sahip / Şirket'}
+              </label>
+              {currentUser?.isPartnership && (currentUser?.partners || []).length > 0 ? (
+                <select
+                  value={editOwner}
+                  onChange={(e) => setEditOwner(e.target.value)}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-bold"
+                >
+                  {(currentUser.partners || []).map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={editOwner}
+                  onChange={(e) => setEditOwner(e.target.value)}
+                  placeholder={currentUser?.fleetName || 'Şirket Adı'}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-medium"
+                />
+              )}
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">Marka *</label>

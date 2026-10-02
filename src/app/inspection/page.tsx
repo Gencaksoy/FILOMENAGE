@@ -182,18 +182,23 @@ export default function InspectionPage() {
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <UserCheck className="w-4 h-4 text-slate-400 shrink-0" />
-          <select
-            value={ownerFilter}
-            onChange={(e) => setOwnerFilter(e.target.value)}
-            className="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700"
-          >
-            <option value="ALL">Tüm Ortaklar</option>
-            <option value="Atilla">Atilla'nın Araçları</option>
-            <option value="Onur">Onur'un Araçları</option>
-          </select>
-        </div>
+        {currentUser?.isPartnership && (
+          <div className="flex items-center gap-2">
+            <UserCheck className="w-4 h-4 text-slate-400 shrink-0" />
+            <select
+              value={ownerFilter}
+              onChange={(e) => setOwnerFilter(e.target.value)}
+              className="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700"
+            >
+              <option value="ALL">Tüm Ortaklar</option>
+              {(currentUser?.partners || []).map((p) => (
+                <option key={p} value={p}>
+                  {p}&apos;nın Araçları
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Table */}
@@ -215,7 +220,7 @@ export default function InspectionPage() {
               <thead className="bg-slate-50/90 border-b border-slate-200 text-slate-500 font-bold uppercase text-xs tracking-wider">
                 <tr>
                   <th className="py-3 px-4">Araç & Plaka</th>
-                  <th className="py-3 px-4">Ortak</th>
+                  <th className="py-3 px-4">{currentUser?.isPartnership ? 'Ortak' : 'Sahip / Şirket'}</th>
                   <th className="py-3 px-4">İstasyon (Belgrad)</th>
                   <th className="py-3 px-4">Son Muayene Tarihi</th>
                   <th className="py-3 px-4">Gelecek Muayene (1 Yıl)</th>
@@ -239,7 +244,7 @@ export default function InspectionPage() {
                       </div>
                     </td>
                     <td className="py-3.5 px-4">
-                      <span className="font-bold text-slate-700">{i.vehicle.owner || 'Atilla'}</span>
+                      <span className="font-bold text-slate-700">{i.vehicle.owner || (currentUser?.isPartnership ? '-' : (currentUser?.fleetName || 'Filo'))}</span>
                     </td>
                     <td className="py-3.5 px-4 font-semibold text-slate-800">
                       {i.station}

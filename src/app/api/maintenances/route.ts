@@ -141,7 +141,7 @@ export async function POST(req: Request) {
         exchangeRate: EUR_TO_RSD_RATE,
         description: description.trim(),
         serviceName: serviceName?.trim() || null,
-        paidBy: body.paidBy?.trim() || vehicle.owner || 'Atilla',
+        paidBy: body.paidBy?.trim() || vehicle.owner || 'Şirket Kasası',
         notes: notes?.trim() || null,
         parts: {
           create: partsData,

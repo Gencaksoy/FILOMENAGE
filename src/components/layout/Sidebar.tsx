@@ -43,18 +43,18 @@ export function Sidebar({ isOpen, onClose, unreadCount = 0, userRole = 'ADMIN', 
       highlight: true,
     },
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-    { name: 'Araçlar', href: '/vehicles', icon: Car },
-    { name: 'Müşteriler & Belgeler', href: '/customers', icon: Users },
-    { name: 'Bakım & Yağ Takibi', href: '/maintenances', icon: Wrench },
-    { name: 'Yıllık Muayene & Registracija', href: '/inspection', icon: FileCheck2 },
-    { name: 'Park Cezaları (eDPK)', href: '/parking-tickets', icon: AlertTriangle },
+    { name: 'Araçlar', href: '/vehicles', icon: Car, featureKey: 'vehicles' },
+    { name: 'Müşteriler & Belgeler', href: '/customers', icon: Users, featureKey: 'customers' },
+    { name: 'Bakım & Yağ Takibi', href: '/maintenances', icon: Wrench, featureKey: 'maintenance' },
+    { name: 'Yıllık Muayene & Registracija', href: '/inspection', icon: FileCheck2, featureKey: 'inspection' },
+    { name: 'Park Cezaları (eDPK)', href: '/parking-tickets', icon: AlertTriangle, featureKey: 'parkingTickets' },
     {
       name: 'Bildirimler',
       href: '/notifications',
       icon: Bell,
       badge: unreadCount > 0 ? unreadCount : undefined,
     },
-    { name: 'İşlem Geçmişi (Audit)', href: '/audit-logs', icon: History, adminOnly: true },
+    { name: 'İşlem Geçmişi (Audit)', href: '/audit-logs', icon: History, adminOnly: true, featureKey: 'auditLogs' },
     { name: 'Kullanıcılar', href: '/users', icon: UserCog, adminOnly: true },
     { name: 'Sistem Ayarları', href: '/settings', icon: Settings, adminOnly: true },
   ];
@@ -110,6 +110,9 @@ export function Sidebar({ isOpen, onClose, unreadCount = 0, userRole = 'ADMIN', 
           {navigation.map((item: any) => {
             if (item.superAdminOnly && !isSuperAdmin) return null;
             if (item.adminOnly && userRole !== 'ADMIN' && !isSuperAdmin) return null;
+            if (!isSuperAdmin && item.featureKey && currentUser?.features) {
+              if (currentUser.features[item.featureKey] === false) return null;
+            }
 
             const isActive =
               item.href === '/'

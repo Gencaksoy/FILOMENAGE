@@ -33,10 +33,28 @@ import {
   Database,
   Eye,
   UserPlus,
+  Droplet,
+  Wrench,
+  FileCheck2,
+  BarChart3,
+  History,
 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { formatDate } from '@/lib/formatters';
 import { AuthUser } from '@/lib/auth';
+
+const AVAILABLE_MODULES = [
+  { key: 'vehicles', label: 'Araç Yönetimi & Envanter', icon: Car, desc: 'Araç listesi, envanter ve plaka kayıtları' },
+  { key: 'rentals', label: 'Kiralama & Teslimat Takibi', icon: Calendar, desc: 'Aktif kiralamalar, rezervasyon ve teslim formları' },
+  { key: 'customers', label: 'Müşteri & Belge Yönetimi', icon: Users, desc: 'Müşteri profilleri, ehliyet ve pasaport belgeleri' },
+  { key: 'maintenance', label: 'Periyodik Bakım & Onarım', icon: Wrench, desc: 'Bakım kayıtları, servis ve masraf dökümleri' },
+  { key: 'oilChange', label: 'Motor Yağı Takibi', icon: Droplet, desc: 'Yağ değişim periyotları ve kilometre takibi' },
+  { key: 'inspection', label: 'Yıllık Muayene & Registracija', icon: FileCheck2, desc: 'Muayene ve yıllık tescil bitiş bildirimleri' },
+  { key: 'parkingTickets', label: 'Park Cezaları (eDPK)', icon: AlertTriangle, desc: 'Elektronik park cezaları ve borç sorguları' },
+  { key: 'faults', label: 'Hasar & Arıza Takibi', icon: AlertTriangle, desc: 'Araç hasarları, kaza ve arıza kayıtları' },
+  { key: 'finance', label: 'Finansal Analiz & Kasa', icon: BarChart3, desc: 'Gelir/gider raporları ve ortak hakediş kasaları' },
+  { key: 'auditLogs', label: 'İşlem Geçmişi (Audit)', icon: History, desc: 'Kullanıcı hareketleri ve sistem denetim izi' },
+];
 
 export default function SuperAdminPage() {
   const router = useRouter();
@@ -69,12 +87,48 @@ export default function SuperAdminPage() {
   const [newMaxVehicles, setNewMaxVehicles] = useState(20);
   const [newExpiresMonths, setNewExpiresMonths] = useState(12);
   const [newNotes, setNewNotes] = useState('');
+  const [newIsPartnership, setNewIsPartnership] = useState(false);
+  const [newPartnersInput, setNewPartnersInput] = useState('');
+  const [newFeatures, setNewFeatures] = useState<Record<string, boolean>>({
+    vehicles: true,
+    rentals: true,
+    customers: true,
+    maintenance: true,
+    oilChange: true,
+    inspection: true,
+    parkingTickets: true,
+    faults: true,
+    finance: true,
+    auditLogs: true,
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  // Modal: Extend License / Edit
+  // Modal: Full Fleet Edit & Module Access & Extend License
   const [editingFleet, setEditingFleet] = useState<any | null>(null);
-  const [extendMonths, setExtendMonths] = useState('12');
+  const [editFleetName, setEditFleetName] = useState('');
+  const [editOwnerName, setEditOwnerName] = useState('');
+  const [editOwnerEmail, setEditOwnerEmail] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editCity, setEditCity] = useState('Belgrad');
+  const [editMaxVehicles, setEditMaxVehicles] = useState(20);
+  const [editIsPartnership, setEditIsPartnership] = useState(false);
+  const [editPartnersInput, setEditPartnersInput] = useState('');
+  const [editFeatures, setEditFeatures] = useState<Record<string, boolean>>({
+    vehicles: true,
+    rentals: true,
+    customers: true,
+    maintenance: true,
+    oilChange: true,
+    inspection: true,
+    parkingTickets: true,
+    faults: true,
+    finance: true,
+    auditLogs: true,
+  });
+  const [extendMonths, setExtendMonths] = useState('0');
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   // Modal: Add User to Fleet
   const [fleetForNewUser, setFleetForNewUser] = useState<any | null>(null);
@@ -270,6 +324,10 @@ export default function SuperAdminPage() {
     setFormError(null);
 
     try {
+      const partnersArray = newIsPartnership
+        ? newPartnersInput.split(',').map((p) => p.trim()).filter(Boolean)
+        : [];
+
       const res = await fetch('/api/fleets', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -284,6 +342,9 @@ export default function SuperAdminPage() {
           maxVehicles: newMaxVehicles,
           expiresMonths: newExpiresMonths,
           notes: newNotes,
+          isPartnership: newIsPartnership,
+          partners: partnersArray,
+          features: newFeatures,
         }),
       });
 
@@ -296,7 +357,23 @@ export default function SuperAdminPage() {
       setNewOwnerName('');
       setNewOwnerEmail('');
       setNewPhone('');
+      setNewNotes('');
+      setNewIsPartnership(false);
+      setNewPartnersInput('');
+      setNewFeatures({
+        vehicles: true,
+        rentals: true,
+        customers: true,
+        maintenance: true,
+        oilChange: true,
+        inspection: true,
+        parkingTickets: true,
+        faults: true,
+        finance: true,
+        auditLogs: true,
+      });
       await loadData();
+      alert('Yeni filo ve yönetici hesabı başarıyla tanımlandı.');
     } catch (err: any) {
       setFormError(err.message);
     } finally {
@@ -318,22 +395,93 @@ export default function SuperAdminPage() {
     }
   };
 
-  const handleExtendLicense = async (e: React.FormEvent) => {
+  const openEditFleetModal = (fleet: any) => {
+    setEditingFleet(fleet);
+    setEditFleetName(fleet.name || '');
+    setEditOwnerName(fleet.ownerName || '');
+    setEditOwnerEmail(fleet.ownerEmail || '');
+    setEditPhone(fleet.phone || '');
+    setEditCity(fleet.city || 'Belgrad');
+    setEditMaxVehicles(fleet.maxVehicles || 20);
+    setEditIsPartnership(fleet.isPartnership ?? false);
+
+    let pStr = '';
+    if (fleet.partners) {
+      try {
+        const parsed = JSON.parse(fleet.partners);
+        pStr = Array.isArray(parsed) ? parsed.join(', ') : fleet.partners;
+      } catch {
+        pStr = fleet.partners;
+      }
+    }
+    setEditPartnersInput(pStr);
+
+    const defaultFeat = {
+      vehicles: true,
+      rentals: true,
+      customers: true,
+      maintenance: true,
+      oilChange: true,
+      inspection: true,
+      parkingTickets: true,
+      faults: true,
+      finance: true,
+      auditLogs: true,
+    };
+    let fObj = { ...defaultFeat };
+    if (fleet.features) {
+      try {
+        fObj = { ...defaultFeat, ...JSON.parse(fleet.features) };
+      } catch {}
+    }
+    setEditFeatures(fObj);
+    setExtendMonths('0');
+    setEditError(null);
+  };
+
+  const handleSaveFleetEdit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingFleet) return;
+    setIsSubmittingEdit(true);
+    setEditError(null);
 
     try {
+      const partnersArray = editIsPartnership
+        ? editPartnersInput.split(',').map((p) => p.trim()).filter(Boolean)
+        : [];
+
+      const payload: any = {
+        name: editFleetName,
+        ownerName: editOwnerName,
+        ownerEmail: editOwnerEmail,
+        phone: editPhone,
+        city: editCity,
+        maxVehicles: editMaxVehicles,
+        isPartnership: editIsPartnership,
+        partners: partnersArray,
+        features: editFeatures,
+      };
+
+      if (parseInt(extendMonths) > 0) {
+        payload.extendMonths = extendMonths;
+      }
+
       const res = await fetch(`/api/fleets/${editingFleet.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ extendMonths }),
+        body: JSON.stringify(payload),
       });
-      if (res.ok) {
-        setEditingFleet(null);
-        await loadData();
-      }
-    } catch (e) {
-      console.error(e);
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Filo güncellenemedi.');
+
+      setEditingFleet(null);
+      await loadData();
+      alert('Filo bilgileri, ortaklık yapısı ve modül erişimleri başarıyla güncellendi.');
+    } catch (err: any) {
+      setEditError(err.message);
+    } finally {
+      setIsSubmittingEdit(false);
     }
   };
 
@@ -658,6 +806,42 @@ export default function SuperAdminPage() {
                           )}
                         </div>
 
+                        {/* Partnership & Features Info */}
+                        <div className="flex flex-wrap gap-2 items-center mb-3">
+                          {fleet.isPartnership ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                              <Users className="w-3.5 h-3.5 text-purple-600" />
+                              Ortaklı Filo: {(() => {
+                                try {
+                                  const p = JSON.parse(fleet.partners || '[]');
+                                  return p.length > 0 ? p.join(', ') : 'Ortak atanmadı';
+                                } catch {
+                                  return fleet.partners || 'Ortaklı';
+                                }
+                              })()}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                              <ShieldCheck className="w-3.5 h-3.5 text-slate-500" />
+                              Standart / Tek Sahip
+                            </span>
+                          )}
+
+                          {fleet.features && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              {(() => {
+                                try {
+                                  const f = JSON.parse(fleet.features);
+                                  const activeCount = Object.values(f).filter(Boolean).length;
+                                  return `${activeCount} Modül Aktif`;
+                                } catch {
+                                  return 'Modüller Aktif';
+                                }
+                              })()}
+                            </span>
+                          )}
+                        </div>
+
                         {/* Stats Bar */}
                         <div className="grid grid-cols-3 gap-2.5 text-center text-xs mb-4">
                           <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
@@ -720,11 +904,12 @@ export default function SuperAdminPage() {
 
                           <button
                             type="button"
-                            onClick={() => setEditingFleet(fleet)}
+                            onClick={() => openEditFleetModal(fleet)}
                             className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                            title="Filo Ayarları, Ortaklar ve Modül İzinlerini Yönet"
                           >
-                            <Clock className="w-3.5 h-3.5 text-amber-700" />
-                            <span>Lisans Uzat</span>
+                            <Edit className="w-3.5 h-3.5 text-amber-700" />
+                            <span>Yönet & Yetkiler</span>
                           </button>
 
                           <button
@@ -1248,6 +1433,109 @@ export default function SuperAdminPage() {
             </div>
           </div>
 
+          {/* Partnership Model */}
+          <div className="bg-purple-50/60 p-3.5 rounded-2xl border border-purple-200 space-y-3">
+            <span className="text-xs font-bold text-purple-950 block">
+              Filo Ortaklık Modeli
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setNewIsPartnership(false)}
+                className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-left flex items-center gap-2 cursor-pointer ${
+                  !newIsPartnership
+                    ? 'bg-purple-700 text-white border-purple-700 shadow-xs'
+                    : 'bg-white text-slate-700 border-purple-200 hover:bg-purple-100/50'
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4 shrink-0" />
+                <div>
+                  <div>Standart / Tek Sahip</div>
+                  <div className="text-[10px] font-normal opacity-80">Tek şirket/şahıs kasası</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setNewIsPartnership(true)}
+                className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-left flex items-center gap-2 cursor-pointer ${
+                  newIsPartnership
+                    ? 'bg-purple-700 text-white border-purple-700 shadow-xs'
+                    : 'bg-white text-slate-700 border-purple-200 hover:bg-purple-100/50'
+                }`}
+              >
+                <Users className="w-4 h-4 shrink-0" />
+                <div>
+                  <div>Ortaklı Filo</div>
+                  <div className="text-[10px] font-normal opacity-80">Ayrı araç sahipleri & ortak kasalar</div>
+                </div>
+              </button>
+            </div>
+
+            {newIsPartnership && (
+              <div>
+                <label className="block text-xs font-semibold text-purple-900 mb-1">
+                  Ortak İsimleri (Virgülle ayırarak giriniz) *
+                </label>
+                <input
+                  type="text"
+                  required={newIsPartnership}
+                  value={newPartnersInput}
+                  onChange={(e) => setNewPartnersInput(e.target.value)}
+                  placeholder="Örn: Atilla, Onur"
+                  className="w-full px-3 py-2 text-xs border border-purple-200 rounded-xl bg-white font-bold text-purple-950 focus:border-purple-500"
+                />
+                <span className="text-[11px] text-purple-700 mt-1 block">
+                  Bu ortaklar, araç eklerken araç sahibi ve masraf öderken ödeyen listesinde listelenir. Diğer filolar bunları göremez!
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Module & Feature Access Toggles */}
+          <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-900">
+                Yetkilendirilen Modüller (SaaS Özellik Kontrolü)
+              </span>
+              <span className="text-[11px] text-slate-500">
+                Seçili olmayan modüller filonun menüsünde gizlenir
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {AVAILABLE_MODULES.map((mod) => {
+                const Icon = mod.icon;
+                const isChecked = newFeatures[mod.key] !== false;
+                return (
+                  <label
+                    key={mod.key}
+                    className={`flex items-start gap-2.5 p-2 rounded-xl border text-xs cursor-pointer transition-all ${
+                      isChecked
+                        ? 'bg-white border-amber-300 text-slate-900 shadow-xs'
+                        : 'bg-slate-100/70 border-slate-200 text-slate-400 opacity-60'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) =>
+                        setNewFeatures({ ...newFeatures, [mod.key]: e.target.checked })
+                      }
+                      className="rounded text-amber-500 focus:ring-amber-400 mt-0.5"
+                    />
+                    <div>
+                      <div className="font-bold flex items-center gap-1.5">
+                        <Icon className="w-3.5 h-3.5 text-amber-600" />
+                        <span>{mod.label}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-500">{mod.desc}</div>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               Özel Notlar (İsteğe Bağlı)
@@ -1280,29 +1568,221 @@ export default function SuperAdminPage() {
         </form>
       </Modal>
 
-      {/* MODAL: EXTEND LICENSE */}
+      {/* MODAL: FULL FLEET EDIT, PARTNERSHIP & MODULE ACCESS */}
       <Modal
         isOpen={!!editingFleet}
         onClose={() => setEditingFleet(null)}
-        title="Filo Lisansını Uzat"
+        title="Filo Yönetimi & Modül Yetkileri"
         subtitle={`${editingFleet?.name} (${editingFleet?.code})`}
-        maxWidth="sm"
+        maxWidth="2xl"
       >
-        <form onSubmit={handleExtendLicense} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Uzatılacak Süre
-            </label>
-            <select
-              value={extendMonths}
-              onChange={(e) => setExtendMonths(e.target.value)}
-              className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-bold text-slate-800"
-            >
-              <option value="1">+1 Ay Uzat</option>
-              <option value="3">+3 Ay Uzat</option>
-              <option value="6">+6 Ay Uzat</option>
-              <option value="12">+12 Ay (1 Yıl) Uzat</option>
-            </select>
+        {editError && (
+          <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>{editError}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSaveFleetEdit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Filo / Şirket Adı *
+              </label>
+              <input
+                type="text"
+                required
+                value={editFleetName}
+                onChange={(e) => setEditFleetName(e.target.value)}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-bold"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Şehir / Lokasyon
+              </label>
+              <input
+                type="text"
+                value={editCity}
+                onChange={(e) => setEditCity(e.target.value)}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Yetkili Ad Soyad
+              </label>
+              <input
+                type="text"
+                value={editOwnerName}
+                onChange={(e) => setEditOwnerName(e.target.value)}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Yetkili E-posta
+              </label>
+              <input
+                type="email"
+                value={editOwnerEmail}
+                onChange={(e) => setEditOwnerEmail(e.target.value)}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Telefon Numarası
+              </label>
+              <input
+                type="text"
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Araç Kotası (Maksimum Araç Limiti)
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={editMaxVehicles}
+                onChange={(e) => setEditMaxVehicles(parseInt(e.target.value) || 20)}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-bold"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Lisans Süresi Ekle (Uzatma)
+              </label>
+              <select
+                value={extendMonths}
+                onChange={(e) => setExtendMonths(e.target.value)}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-bold text-slate-800"
+              >
+                <option value="0">Süreyi Değiştirme (Aynı Bırak)</option>
+                <option value="1">+1 Ay Uzat</option>
+                <option value="3">+3 Ay Uzat</option>
+                <option value="6">+6 Ay Uzat</option>
+                <option value="12">+12 Ay (1 Yıl) Uzat</option>
+                <option value="24">+24 Ay (2 Yıl) Uzat</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Edit Partnership Model */}
+          <div className="bg-purple-50/60 p-3.5 rounded-2xl border border-purple-200 space-y-3">
+            <span className="text-xs font-bold text-purple-950 block">
+              Filo Ortaklık Modeli Yapılandırması
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setEditIsPartnership(false)}
+                className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-left flex items-center gap-2 cursor-pointer ${
+                  !editIsPartnership
+                    ? 'bg-purple-700 text-white border-purple-700 shadow-xs'
+                    : 'bg-white text-slate-700 border-purple-200 hover:bg-purple-100/50'
+                }`}
+              >
+                <ShieldCheck className="w-4 h-4 shrink-0" />
+                <div>
+                  <div>Standart / Tek Sahip</div>
+                  <div className="text-[10px] font-normal opacity-80">Ortaksız şahıs/şirket</div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setEditIsPartnership(true)}
+                className={`p-2.5 rounded-xl border text-xs font-bold transition-all text-left flex items-center gap-2 cursor-pointer ${
+                  editIsPartnership
+                    ? 'bg-purple-700 text-white border-purple-700 shadow-xs'
+                    : 'bg-white text-slate-700 border-purple-200 hover:bg-purple-100/50'
+                }`}
+              >
+                <Users className="w-4 h-4 shrink-0" />
+                <div>
+                  <div>Ortaklı Filo</div>
+                  <div className="text-[10px] font-normal opacity-80">Ayrı araç sahipleri & ortak kasalar</div>
+                </div>
+              </button>
+            </div>
+
+            {editIsPartnership && (
+              <div>
+                <label className="block text-xs font-semibold text-purple-900 mb-1">
+                  Ortak İsimleri (Virgülle ayırarak giriniz) *
+                </label>
+                <input
+                  type="text"
+                  required={editIsPartnership}
+                  value={editPartnersInput}
+                  onChange={(e) => setEditPartnersInput(e.target.value)}
+                  placeholder="Örn: Atilla, Onur"
+                  className="w-full px-3 py-2 text-xs border border-purple-200 rounded-xl bg-white font-bold text-purple-950 focus:border-purple-500"
+                />
+                <span className="text-[11px] text-purple-700 mt-1 block">
+                  Bu filo araç eklerken yalnızca burada belirlediğiniz ortakları görebilir.
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Edit Module & Feature Access Toggles */}
+          <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-900">
+                Erişilebilir Modüller (SaaS Özellik İzinleri)
+              </span>
+              <span className="text-[11px] text-slate-500">
+                Bu filo için açmak/kapatmak istediğiniz özellikleri seçin
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {AVAILABLE_MODULES.map((mod) => {
+                const Icon = mod.icon;
+                const isChecked = editFeatures[mod.key] !== false;
+                return (
+                  <label
+                    key={mod.key}
+                    className={`flex items-start gap-2.5 p-2 rounded-xl border text-xs cursor-pointer transition-all ${
+                      isChecked
+                        ? 'bg-white border-amber-300 text-slate-900 shadow-xs'
+                        : 'bg-slate-100/70 border-slate-200 text-slate-400 opacity-60'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={(e) =>
+                        setEditFeatures({ ...editFeatures, [mod.key]: e.target.checked })
+                      }
+                      className="rounded text-amber-500 focus:ring-amber-400 mt-0.5"
+                    />
+                    <div>
+                      <div className="font-bold flex items-center gap-1.5">
+                        <Icon className="w-3.5 h-3.5 text-amber-600" />
+                        <span>{mod.label}</span>
+                      </div>
+                      <div className="text-[10px] text-slate-500">{mod.desc}</div>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
@@ -1315,9 +1795,10 @@ export default function SuperAdminPage() {
             </button>
             <button
               type="submit"
-              className="px-5 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl shadow-xs cursor-pointer"
+              disabled={isSubmittingEdit}
+              className="px-5 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl shadow-xs cursor-pointer disabled:opacity-50"
             >
-              Süreyi Uzat
+              {isSubmittingEdit ? 'Kaydediliyor...' : 'Değişiklikleri Kaydet'}
             </button>
           </div>
         </form>

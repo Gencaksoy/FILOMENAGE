@@ -112,7 +112,7 @@ export default function DashboardPage() {
   const [oilCost, setOilCost] = useState('75');
   const [oilService, setOilService] = useState('');
   const [oilNotes, setOilNotes] = useState('');
-  const [oilPaidBy, setOilPaidBy] = useState('Atilla');
+  const [oilPaidBy, setOilPaidBy] = useState('Şirket Kasası');
   const [isSubmittingOil, setIsSubmittingOil] = useState(false);
 
   // Analytics table filters & sorting
@@ -528,31 +528,37 @@ export default function DashboardPage() {
 
         {/* Partner Filter Tabs */}
         <div className="mt-5 pt-4 border-t border-slate-700/50 flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-1.5 bg-slate-800/70 p-1 rounded-xl border border-slate-700/50 flex-wrap">
-            <button
-              onClick={() => setSelectedOwner('ALL')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                selectedOwner === 'ALL'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Tüm Filo ({kpi.totalVehicles})
-            </button>
-            {(ownersList || []).map((ownerName: string) => (
+          {user?.isPartnership && (ownersList || []).length > 0 ? (
+            <div className="flex items-center gap-1.5 bg-slate-800/70 p-1 rounded-xl border border-slate-700/50 flex-wrap">
               <button
-                key={ownerName}
-                onClick={() => setSelectedOwner(ownerName)}
+                onClick={() => setSelectedOwner('ALL')}
                 className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  selectedOwner === ownerName
+                  selectedOwner === 'ALL'
                     ? 'bg-white text-slate-900 shadow-xs'
                     : 'text-slate-400 hover:text-white'
                 }`}
               >
-                {ownerName} ({partnerStats[ownerName]?.totalVehicles || 0})
+                Tüm Filo ({kpi.totalVehicles})
               </button>
-            ))}
-          </div>
+              {(ownersList || []).map((ownerName: string) => (
+                <button
+                  key={ownerName}
+                  onClick={() => setSelectedOwner(ownerName)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    selectedOwner === ownerName
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {ownerName} ({partnerStats[ownerName]?.totalVehicles || 0})
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="text-xs font-bold text-slate-400">
+              Filo Envanteri: <span className="text-white font-mono">{kpi.totalVehicles} Araç Kayıtlı</span>
+            </div>
+          )}
 
           <button
             onClick={() => fetchData(selectedOwner)}
@@ -2243,8 +2249,11 @@ export default function DashboardPage() {
                 <label className="block text-xs font-bold text-amber-950 mb-1.5">
                   Ödemeyi Yapan (Masrafı Karşılayan) *
                 </label>
-                <div className="grid grid-cols-3 gap-2 mb-1.5">
-                  {['Atilla', 'Onur', 'Ortak Kasa'].map((person) => (
+                <div className="flex flex-wrap gap-2 mb-1.5">
+                  {(user?.isPartnership && (user?.partners || []).length > 0
+                    ? [...(user?.partners || []), 'Şirket Kasası']
+                    : ['Şirket Kasası', 'Nakit', 'Kredi Kartı', 'Banka Havalesi']
+                  ).map((person) => (
                     <button
                       key={person}
                       type="button"

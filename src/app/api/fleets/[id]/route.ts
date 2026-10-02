@@ -61,7 +61,20 @@ export async function PUT(
     }
 
     const body = await req.json();
-    const { name, ownerName, ownerEmail, phone, city, maxVehicles, status, notes, extendMonths } = body;
+    const {
+      name,
+      ownerName,
+      ownerEmail,
+      phone,
+      city,
+      maxVehicles,
+      status,
+      notes,
+      extendMonths,
+      isPartnership,
+      partners,
+      features,
+    } = body;
 
     const currentFleet = await prisma.fleet.findUnique({ where: { id: params.id } });
     if (!currentFleet) {
@@ -77,6 +90,25 @@ export async function PUT(
       updatedExpiresAt = baseDate;
     }
 
+    let formattedPartners: string | undefined = undefined;
+    if (partners !== undefined) {
+      if (Array.isArray(partners)) {
+        formattedPartners = JSON.stringify(partners.map((p: any) => String(p).trim()).filter(Boolean));
+      } else if (typeof partners === 'string') {
+        try {
+          const parsed = JSON.parse(partners);
+          formattedPartners = Array.isArray(parsed) ? JSON.stringify(parsed) : '[]';
+        } catch {
+          formattedPartners = JSON.stringify(partners.split(',').map((p) => p.trim()).filter(Boolean));
+        }
+      }
+    }
+
+    let formattedFeatures: string | undefined = undefined;
+    if (features !== undefined) {
+      formattedFeatures = typeof features === 'string' ? features : JSON.stringify(features);
+    }
+
     const updated = await prisma.fleet.update({
       where: { id: params.id },
       data: {
@@ -87,6 +119,9 @@ export async function PUT(
         ...(city !== undefined ? { city: city?.trim() || 'Belgrad' } : {}),
         ...(maxVehicles ? { maxVehicles: parseInt(maxVehicles) } : {}),
         ...(status ? { status } : {}),
+        ...(isPartnership !== undefined ? { isPartnership: Boolean(isPartnership) } : {}),
+        ...(formattedPartners !== undefined ? { partners: formattedPartners } : {}),
+        ...(formattedFeatures !== undefined ? { features: formattedFeatures } : {}),
         ...(notes !== undefined ? { notes: notes?.trim() || null } : {}),
         ...(extendMonths ? { expiresAt: updatedExpiresAt } : {}),
       },

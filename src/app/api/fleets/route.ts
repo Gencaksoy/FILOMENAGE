@@ -69,6 +69,9 @@ export async function POST(req: Request) {
       maxVehicles = 20,
       expiresMonths = 12,
       notes,
+      isPartnership = false,
+      partners = [],
+      features = {},
     } = body;
 
     if (!name || !name.trim()) {
@@ -93,6 +96,35 @@ export async function POST(req: Request) {
     const expiresAt = new Date();
     expiresAt.setMonth(expiresAt.getMonth() + (parseInt(expiresMonths) || 12));
 
+    const finalIsPartnership = Boolean(isPartnership);
+    let finalPartners = '[]';
+    if (Array.isArray(partners)) {
+      finalPartners = JSON.stringify(partners.map((p: any) => String(p).trim()).filter(Boolean));
+    } else if (typeof partners === 'string') {
+      try {
+        const parsed = JSON.parse(partners);
+        finalPartners = Array.isArray(parsed) ? JSON.stringify(parsed) : '[]';
+      } catch {
+        finalPartners = JSON.stringify(partners.split(',').map((p) => p.trim()).filter(Boolean));
+      }
+    }
+
+    const defaultFeatures = {
+      vehicles: true,
+      rentals: true,
+      customers: true,
+      maintenance: true,
+      oilChange: true,
+      inspection: true,
+      parkingTickets: true,
+      faults: true,
+      finance: true,
+      auditLogs: true,
+    };
+    const finalFeatures = typeof features === 'string'
+      ? features
+      : JSON.stringify({ ...defaultFeatures, ...features });
+
     // Filo oluşturuluyor
     const newFleet = await prisma.fleet.create({
       data: {
@@ -104,6 +136,9 @@ export async function POST(req: Request) {
         city: city?.trim() || 'Belgrad',
         maxVehicles: parseInt(maxVehicles) || 20,
         status: 'ACTIVE',
+        isPartnership: finalIsPartnership,
+        partners: finalPartners,
+        features: finalFeatures,
         expiresAt,
         notes: notes?.trim() || null,
       },

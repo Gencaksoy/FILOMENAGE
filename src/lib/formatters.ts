@@ -50,11 +50,9 @@ export function eurToRsd(eur: number): number {
 }
 
 export function getCompanyNameForOwner(owner?: string | null, fallback: string = 'Filo Yönetim'): string {
+  if (fallback && fallback !== 'Filo Yönetim') return fallback;
   if (!owner) return fallback;
-  const o = owner.trim().toLowerCase();
-  if (o.includes('onur')) return 'Buy2Cars';
-  if (o.includes('atilla')) return 'Autentra';
-  return fallback;
+  return owner;
 }
 
 export function generateWhatsAppReminderUrl(

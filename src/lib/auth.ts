@@ -12,7 +12,23 @@ export interface AuthUser {
   fleetCode?: string | null;
   fleetStatus?: string | null;
   fleetExpiresAt?: string | null;
+  isPartnership?: boolean;
+  partners?: string[];
+  features?: Record<string, boolean>;
 }
+
+const DEFAULT_FEATURES: Record<string, boolean> = {
+  vehicles: true,
+  rentals: true,
+  customers: true,
+  maintenance: true,
+  oilChange: true,
+  inspection: true,
+  parkingTickets: true,
+  faults: true,
+  finance: true,
+  auditLogs: true,
+};
 
 const COOKIE_NAME = 'filo_auth_session';
 
@@ -56,6 +72,9 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
             code: true,
             status: true,
             expiresAt: true,
+            isPartnership: true,
+            partners: true,
+            features: true,
           },
         },
       },
@@ -63,6 +82,24 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
     if (!dbUser || !dbUser.isActive) {
       return null;
+    }
+
+    let parsedPartners: string[] = [];
+    if (dbUser.fleet?.partners) {
+      try {
+        parsedPartners = JSON.parse(dbUser.fleet.partners);
+      } catch {
+        parsedPartners = [];
+      }
+    }
+
+    let parsedFeatures: Record<string, boolean> = { ...DEFAULT_FEATURES };
+    if (dbUser.fleet?.features) {
+      try {
+        parsedFeatures = { ...DEFAULT_FEATURES, ...JSON.parse(dbUser.fleet.features) };
+      } catch {
+        parsedFeatures = { ...DEFAULT_FEATURES };
+      }
     }
 
     return {
@@ -75,6 +112,9 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       fleetCode: dbUser.fleet?.code || user.fleetCode || null,
       fleetStatus: dbUser.fleet?.status || null,
       fleetExpiresAt: dbUser.fleet?.expiresAt ? dbUser.fleet.expiresAt.toISOString() : null,
+      isPartnership: dbUser.fleet?.isPartnership ?? false,
+      partners: parsedPartners,
+      features: parsedFeatures,
     };
   } catch {
     return null;

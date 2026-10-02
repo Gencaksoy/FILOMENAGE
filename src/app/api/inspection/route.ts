@@ -69,7 +69,7 @@ export async function POST(req: Request) {
         originalCost: inputCost,
         currency,
         station: station?.trim() || 'Auto Centar Beograd',
-        paidBy: body.paidBy?.trim() || vehicle.owner || 'Atilla',
+        paidBy: body.paidBy?.trim() || vehicle.owner || 'Şirket Kasası',
         notes: notes?.trim() || null,
       },
       include: { vehicle: true },

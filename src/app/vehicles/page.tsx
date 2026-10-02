@@ -71,7 +71,7 @@ function VehiclesContent() {
     dailyPrice: 25,
     monthlyPrice: 350,
     status: 'AVAILABLE',
-    owner: 'Atilla',
+    owner: '',
     accessories: ['Telefon Tutucu', 'Çakmaklık Şarj Aleti', 'İlk Yardım Çantası', 'Reflektör & Yangın Tüpü', 'Paspas Seti'],
     vin: '',
     engineNo: '',
@@ -211,7 +211,13 @@ function VehiclesContent() {
 
         <button
           onClick={() => {
-            setFormData(initialForm);
+            const isPartnership = currentUser?.isPartnership ?? false;
+            const partners = currentUser?.partners || [];
+            const defaultOwner = isPartnership ? (partners[0] || '') : (currentUser?.fleetName || '');
+            setFormData({
+              ...initialForm,
+              owner: defaultOwner,
+            });
             setFormError(null);
             setIsNewModalOpen(true);
           }}
@@ -235,22 +241,27 @@ function VehiclesContent() {
           />
         </div>
 
-        {/* Partner Filter */}
-        <div className="flex items-center gap-2">
-          <UserCheck className="w-4 h-4 text-slate-400 shrink-0" />
-          <select
-            value={ownerFilter}
-            onChange={(e) => setOwnerFilter(e.target.value)}
-            className="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden font-bold text-slate-700"
-          >
-            <option value="ALL">Tüm Filo Sahipleri</option>
-            {Array.from(new Set(vehicles.map((v) => v.owner).filter(Boolean))).map((owner) => (
-              <option key={owner} value={owner}>
-                {owner}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Partner Filter (Sadece ortaklı filolarda gösterilir) */}
+        {currentUser?.isPartnership && (
+          <div className="flex items-center gap-2">
+            <UserCheck className="w-4 h-4 text-slate-400 shrink-0" />
+            <select
+              value={ownerFilter}
+              onChange={(e) => setOwnerFilter(e.target.value)}
+              className="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-hidden font-bold text-slate-700"
+            >
+              <option value="ALL">Tüm Ortaklar</option>
+              {(currentUser?.partners && currentUser.partners.length > 0
+                ? currentUser.partners
+                : Array.from(new Set(vehicles.map((v) => v.owner).filter(Boolean)))
+              ).map((owner) => (
+                <option key={owner} value={owner}>
+                  {owner}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Status Filter */}
         <div className="flex items-center gap-2">
@@ -290,7 +301,7 @@ function VehiclesContent() {
                 <tr>
                   <th className="py-3 px-4">Plaka</th>
                   <th className="py-3 px-4">Marka & Model</th>
-                  <th className="py-3 px-4">Ortak</th>
+                  <th className="py-3 px-4">{currentUser?.isPartnership ? 'Ortak' : 'Sahip / Şirket'}</th>
                   <th className="py-3 px-4">Yakıt & 100km</th>
                   <th className="py-3 px-4">Registracija (Tescil)</th>
                   <th className="py-3 px-4">Durum</th>
@@ -359,15 +370,9 @@ function VehiclesContent() {
                       {/* Araç Sahibi (Ortak) */}
                       <td className="py-3.5 px-4">
                         <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold border ${
-                            v.owner === 'Atilla'
-                              ? 'bg-blue-50 text-blue-700 border-blue-200'
-                              : v.owner === 'Onur'
-                              ? 'bg-purple-50 text-purple-700 border-purple-200'
-                              : 'bg-slate-50 text-slate-700 border-slate-200'
-                          }`}
+                          className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold border bg-slate-50 text-slate-700 border-slate-200"
                         >
-                          {v.owner || 'Atilla'}
+                          {v.owner || (currentUser?.isPartnership ? '-' : (currentUser?.fleetName || 'Filo'))}
                         </span>
                       </td>
 
@@ -570,16 +575,29 @@ function VehiclesContent() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Araç Sahibi (Ortak) *
+                {currentUser?.isPartnership ? 'Araç Sahibi (Ortak) *' : 'Araç Sahibi / Şirket'}
               </label>
-              <select
-                value={formData.owner}
-                onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-amber-500 font-bold text-slate-800"
-              >
-                <option value="Atilla">Atilla</option>
-                <option value="Onur">Onur</option>
-              </select>
+              {currentUser?.isPartnership && (currentUser?.partners || []).length > 0 ? (
+                <select
+                  value={formData.owner}
+                  onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-amber-500 font-bold text-slate-800"
+                >
+                  {(currentUser.partners || []).map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  value={formData.owner}
+                  onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
+                  placeholder={currentUser?.fleetName || 'Şirket / Filo Sahibi'}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-amber-500 font-medium text-slate-800"
+                />
+              )}
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">

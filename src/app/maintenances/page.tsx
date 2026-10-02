@@ -54,7 +54,7 @@ function MaintenancesContent() {
   const [maintParts, setMaintParts] = useState<PartItem[]>([
     { partName: '', partCode: '', changeDate: new Date().toISOString().slice(0, 10), cost: '' },
   ]);
-  const [maintPaidBy, setMaintPaidBy] = useState('Atilla');
+  const [maintPaidBy, setMaintPaidBy] = useState('Şirket Kasası');
   const [maintLoading, setMaintLoading] = useState(false);
   const [maintError, setMaintError] = useState<string | null>(null);
 
@@ -69,7 +69,7 @@ function MaintenancesContent() {
   const [oilFilter, setOilFilter] = useState(true);
   const [oilCost, setOilCost] = useState<number | string>(75);
   const [oilNotes, setOilNotes] = useState('');
-  const [oilPaidBy, setOilPaidBy] = useState('Atilla');
+  const [oilPaidBy, setOilPaidBy] = useState('Şirket Kasası');
   const [oilLoading, setOilLoading] = useState(false);
   const [oilError, setOilError] = useState<string | null>(null);
 
@@ -334,18 +334,23 @@ function MaintenancesContent() {
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <UserCheck className="w-4 h-4 text-slate-400 shrink-0" />
-          <select
-            value={ownerFilter}
-            onChange={(e) => setOwnerFilter(e.target.value)}
-            className="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700"
-          >
-            <option value="ALL">Tüm Ortaklar</option>
-            <option value="Atilla">Atilla'nın Araçları</option>
-            <option value="Onur">Onur'un Araçları</option>
-          </select>
-        </div>
+        {currentUser?.isPartnership && (
+          <div className="flex items-center gap-2">
+            <UserCheck className="w-4 h-4 text-slate-400 shrink-0" />
+            <select
+              value={ownerFilter}
+              onChange={(e) => setOwnerFilter(e.target.value)}
+              className="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700"
+            >
+              <option value="ALL">Tüm Ortaklar</option>
+              {(currentUser?.partners || []).map((p) => (
+                <option key={p} value={p}>
+                  {p}&apos;nın Araçları
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       {/* TABS: Bakımlar vs Yağ Değişimleri */}
@@ -415,7 +420,7 @@ function MaintenancesContent() {
                                   : 'bg-slate-100 text-slate-700 border-slate-200'
                               }`}
                             >
-                              Ödeyen: <b>{m.paidBy || m.vehicle.owner || 'Atilla'}</b>
+                              Ödeyen: <b>{m.paidBy || m.vehicle.owner || 'Şirket Kasası'}</b>
                               {m.paidBy && m.vehicle.owner && m.paidBy !== m.vehicle.owner && (
                                 <span className="ml-1 text-[11px] text-amber-800 font-semibold">(Ortak Masrafı)</span>
                               )}
@@ -555,7 +560,7 @@ function MaintenancesContent() {
                                 : 'bg-slate-100 text-slate-700 border-slate-200'
                             }`}
                           >
-                            {o.paidBy || o.vehicle.owner || 'Atilla'}
+                            {o.paidBy || o.vehicle.owner || 'Şirket Kasası'}
                             {o.paidBy && o.vehicle.owner && o.paidBy !== o.vehicle.owner && (
                               <span className="ml-1 text-[11px] text-amber-800">🤝</span>
                             )}
@@ -805,8 +810,11 @@ function MaintenancesContent() {
             <label className="block text-xs font-bold text-amber-950 mb-1.5">
               Ödemeyi Yapan (Masrafı Karşılayan Ortak) *
             </label>
-            <div className="grid grid-cols-3 gap-2 mb-1.5">
-              {['Atilla', 'Onur', 'Ortak Kasa'].map((person) => (
+            <div className="flex flex-wrap gap-2 mb-1.5">
+              {(currentUser?.isPartnership && (currentUser?.partners || []).length > 0
+                ? [...(currentUser?.partners || []), 'Şirket Kasası']
+                : ['Şirket Kasası', 'Nakit', 'Kredi Kartı', 'Banka Havalesi']
+              ).map((person) => (
                 <button
                   key={person}
                   type="button"
@@ -986,8 +994,11 @@ function MaintenancesContent() {
             <label className="block text-xs font-bold text-amber-950 mb-1.5">
               Ödemeyi Yapan (Masrafı Karşılayan Ortak) *
             </label>
-            <div className="grid grid-cols-3 gap-2 mb-1.5">
-              {['Atilla', 'Onur', 'Ortak Kasa'].map((person) => (
+            <div className="flex flex-wrap gap-2 mb-1.5">
+              {(currentUser?.isPartnership && (currentUser?.partners || []).length > 0
+                ? [...(currentUser?.partners || []), 'Şirket Kasası']
+                : ['Şirket Kasası', 'Nakit', 'Kredi Kartı', 'Banka Havalesi']
+              ).map((person) => (
                 <button
                   key={person}
                   type="button"

@@ -16,11 +16,14 @@ model Fleet {
   phone       String?   // Telefon
   city        String?   @default("Belgrad")
   maxVehicles Int       @default(20) // Lisanslı araç kotası
-  status      String    @default("ACTIVE") // ACTIVE, SUSPENDED, EXPIRED
-  expiresAt   DateTime? // Lisans bitiş tarihi
-  notes       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  status        String    @default("ACTIVE") // ACTIVE, SUSPENDED, EXPIRED
+  isPartnership Boolean   @default(false)
+  partners      String?   @default("[]") // JSON string list: ["Atilla", "Onur"]
+  features      String?   @default("{\"vehicles\":true,\"rentals\":true,\"customers\":true,\"maintenance\":true,\"oilChange\":true,\"inspection\":true,\"parkingTickets\":true,\"faults\":true,\"finance\":true,\"auditLogs\":true}")
+  expiresAt     DateTime? // Lisans bitiş tarihi
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   users       User[]
   vehicles    Vehicle[]
@@ -64,7 +67,8 @@ model Vehicle {
   dailyPrice          Float    @default(0) // EUR
   monthlyPrice        Float    @default(350) // Sabit Standart Aylık Kira (EUR)
   status              String   @default("AVAILABLE") // AVAILABLE (Boşta), RENTED (Kirada), MAINTENANCE (Serviste), POST_RENTAL_CHECK (Kiradan Sonra Bakım / Temizlik)
-  owner               String   @default("Akif Aksoy")
+  owner               String?  // Filo ortaklı ise masraf/mülkiyet ortağı (örn: Atilla, Onur), değilse filo adı/boş
+
   
   // Yakıt ve Tüketim (Dinar)
   fuelType            String   @default("Dizel") // "Dizel", "Benzin", "Benzin + LPG", "Benzin + Metan (CNG)"
@@ -182,7 +186,7 @@ model MaintenanceRecord {
   exchangeRate        Float    @default(117) // 1 EUR = 117 RSD
   description         String
   serviceName         String?
-  paidBy              String?  @default("Atilla") // Masrafı / Ödemeyi Yapan Ortak (Atilla, Onur, vb.)
+  paidBy              String?  // Masrafı / Ödemeyi Yapan (Ortak veya Şirket Kasası)
   notes               String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
@@ -218,7 +222,7 @@ model OilChangeRecord {
   currency      String   @default("EUR")
   exchangeRate  Float    @default(117)
   serviceName   String?
-  paidBy        String?  @default("Atilla") // Masrafı / Ödemeyi Yapan Ortak (Atilla, Onur, vb.)
+  paidBy        String?  // Masrafı / Ödemeyi Yapan (Ortak veya Şirket Kasası)
   notes         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -235,7 +239,7 @@ model InspectionRecord {
   originalCost       Float    @default(0)
   currency           String   @default("EUR")
   station            String   @default("Auto Centar Beograd")
-  paidBy             String?  @default("Atilla") // Masrafı / Ödemeyi Yapan Ortak (Atilla, Onur, vb.)
+  paidBy             String?  // Masrafı / Ödemeyi Yapan (Ortak veya Şirket Kasası)
   notes              String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt

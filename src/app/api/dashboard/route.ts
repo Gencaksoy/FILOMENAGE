@@ -38,7 +38,7 @@ export async function GET(req: Request) {
     }
     const ownersWhere = { AND: ownersConditions };
 
-    const [vehicles, allOwners, companySetting] = await Promise.all([
+    const [vehicles, allOwners, companySetting, currentFleet] = await Promise.all([
       prisma.vehicle.findMany({
         where,
         include: {
@@ -70,10 +70,34 @@ export async function GET(req: Request) {
       prisma.systemSetting.findUnique({
         where: { key: 'company_name' },
       }),
+      currentUser?.fleetId
+        ? prisma.fleet.findUnique({
+            where: { id: currentUser.fleetId },
+            select: { id: true, name: true, isPartnership: true, partners: true },
+          })
+        : Promise.resolve(null),
     ]);
 
-    const companyName = companySetting?.value || 'Filo & Rent a Car';
-    const ownersList = Array.from(new Set(allOwners.map((o) => o.owner))).filter(Boolean);
+    const companyName = currentFleet?.name || companySetting?.value || 'Filo & Rent a Car';
+    
+    let ownersList: string[] = [];
+    if (isSuper && !currentUser?.fleetId) {
+      ownersList = Array.from(new Set(allOwners.map((o) => o.owner))).filter(Boolean) as string[];
+    } else if (currentFleet?.isPartnership) {
+      if (currentFleet.partners) {
+        try {
+          ownersList = JSON.parse(currentFleet.partners);
+        } catch {
+          ownersList = [];
+        }
+      }
+      if (ownersList.length === 0) {
+        ownersList = Array.from(new Set(allOwners.map((o) => o.owner))).filter(Boolean) as string[];
+      }
+    } else {
+      // Tek kişilik / standart filolarda ortak sekmesi yoktur
+      ownersList = [];
+    }
 
     const totalVehicles = vehicles.length;
     const rentedVehicles = vehicles.filter((v) => v.status === 'RENTED').length;
@@ -230,7 +254,7 @@ export async function GET(req: Request) {
         brand: v.brand,
         model: v.model,
         modelYear: v.modelYear,
-        owner: v.owner || 'Atilla',
+        owner: v.owner || null,
         status: v.status,
         investment: isStaff ? null : vInvestment,
         revenue: isStaff ? null : vRevenue,
@@ -399,6 +423,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       isStaff,
+      isPartnership: isSuper ? true : (currentFleet?.isPartnership ?? false),
       parkingStats,
       kpi: {
         totalVehicles,

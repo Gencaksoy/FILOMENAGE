@@ -108,7 +108,7 @@ export async function POST(req: Request) {
           currency,
           exchangeRate: EUR_TO_RSD_RATE,
           serviceName: serviceName?.trim() || null,
-          paidBy: body.paidBy?.trim() || vehicle.owner || 'Atilla',
+          paidBy: body.paidBy?.trim() || vehicle.owner || 'Şirket Kasası',
           notes: notes?.trim() || null,
         },
         include: { vehicle: true },

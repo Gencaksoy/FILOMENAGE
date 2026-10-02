@@ -53,6 +53,33 @@ export async function POST(req: Request) {
 
     const effectiveRole = isSuper ? 'SUPER_ADMIN' : user.role;
 
+    let parsedPartners: string[] = [];
+    if (user.fleet?.partners) {
+      try {
+        parsedPartners = JSON.parse(user.fleet.partners);
+      } catch {
+        parsedPartners = [];
+      }
+    }
+
+    let parsedFeatures: Record<string, boolean> = {
+      vehicles: true,
+      rentals: true,
+      customers: true,
+      maintenance: true,
+      oilChange: true,
+      inspection: true,
+      parkingTickets: true,
+      faults: true,
+      finance: true,
+      auditLogs: true,
+    };
+    if (user.fleet?.features) {
+      try {
+        parsedFeatures = { ...parsedFeatures, ...JSON.parse(user.fleet.features) };
+      } catch {}
+    }
+
     const authUser = {
       id: user.id,
       name: user.name,
@@ -64,6 +91,9 @@ export async function POST(req: Request) {
       fleetCode: user.fleet?.code || null,
       fleetStatus: user.fleet?.status || null,
       fleetExpiresAt: user.fleet?.expiresAt ? user.fleet.expiresAt.toISOString() : null,
+      isPartnership: user.fleet?.isPartnership ?? false,
+      partners: parsedPartners,
+      features: parsedFeatures,
     };
 
     const cookieValue = createSessionCookie(authUser);
