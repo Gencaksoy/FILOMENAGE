@@ -34,7 +34,26 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     const cookieStore = cookies();
     const sessionCookie = cookieStore.get(COOKIE_NAME);
     if (!sessionCookie?.value) return null;
-    return parseSessionCookie(sessionCookie.value);
+    const user = parseSessionCookie(sessionCookie.value);
+    if (!user?.id) return null;
+
+    // Askıya alınan veya silinen kullanıcıların anında erişimini kes
+    const dbUser = await prisma.user.findUnique({
+      where: { id: user.id },
+      select: { id: true, name: true, email: true, role: true, isActive: true, fleetId: true },
+    });
+
+    if (!dbUser || !dbUser.isActive) {
+      return null;
+    }
+
+    return {
+      ...user,
+      name: dbUser.name,
+      email: dbUser.email,
+      role: dbUser.role,
+      fleetId: dbUser.fleetId,
+    };
   } catch {
     return null;
   }

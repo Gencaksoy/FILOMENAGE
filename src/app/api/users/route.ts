@@ -53,10 +53,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Bu işlem için yönetici yetkisi gereklidir.' }, { status: 403 });
     }
 
-    const isSuper = currentUser.role === 'SUPER_ADMIN' || currentUser.email === 'akif@filoyonetim.com';
+    const isSuper =
+      currentUser.role === 'SUPER_ADMIN' ||
+      currentUser.email === 'akif@filoyonetim.com' ||
+      currentUser.email === 'gencaksoy@outlook.com';
 
     const body = await req.json();
-    const { name, email, password, role } = body;
+    const { name, email, password, role, fleetId } = body;
 
     if (!name || !email || !password) {
       return NextResponse.json({ error: 'Ad Soyad, E-posta ve Şifre zorunludur.' }, { status: 400 });
@@ -79,13 +82,15 @@ export async function POST(req: Request) {
       userRole = 'ADMIN';
     }
 
+    const assignedFleetId = isSuper ? (fleetId || currentUser.fleetId || null) : (currentUser.fleetId || null);
+
     const newUser = await prisma.user.create({
       data: {
         name: name.trim(),
         email: cleanEmail,
         passwordHash,
         role: userRole,
-        fleetId: currentUser.fleetId || null,
+        fleetId: assignedFleetId,
       },
       select: {
         id: true,

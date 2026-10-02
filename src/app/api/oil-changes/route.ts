@@ -8,11 +8,30 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
+    const currentUser = await getSessionUser();
+    const isSuper =
+      currentUser &&
+      (currentUser.role === 'SUPER_ADMIN' ||
+        currentUser.email === 'akif@filoyonetim.com' ||
+        currentUser.email === 'gencaksoy@outlook.com');
+
     const { searchParams } = new URL(req.url);
     const vehicleId = searchParams.get('vehicleId');
 
-    const where: any = {};
-    if (vehicleId) where.vehicleId = vehicleId;
+    const conditions: any[] = [];
+    if (vehicleId) conditions.push({ vehicleId });
+    if (!isSuper && currentUser?.fleetId) {
+      conditions.push({
+        vehicle: {
+          OR: [
+            { fleetId: currentUser.fleetId },
+            { fleetId: null },
+          ],
+        },
+      });
+    }
+
+    const where = conditions.length > 0 ? { AND: conditions } : {};
 
     const records = await prisma.oilChangeRecord.findMany({
       where,

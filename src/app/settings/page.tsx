@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, Building, BellRing, Check, ShieldAlert } from 'lucide-react';
+import { Settings, Save, Building, BellRing, Check, ShieldAlert, Lock, KeyRound } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthUser } from '@/lib/auth';
 
@@ -21,6 +21,53 @@ export default function SettingsPage() {
   });
 
   const isStaff = currentUser?.role === 'STAFF';
+
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [pwdLoading, setPwdLoading] = useState(false);
+  const [pwdSuccess, setPwdSuccess] = useState<string | null>(null);
+  const [pwdError, setPwdError] = useState<string | null>(null);
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPwdSuccess(null);
+    setPwdError(null);
+
+    if (newPassword.length < 6) {
+      setPwdError('Yeni şifre en az 6 karakter olmalıdır.');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPwdError('Yeni şifreler birbiriyle uyuşmuyor.');
+      return;
+    }
+
+    try {
+      setPwdLoading(true);
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPwdSuccess('Giriş şifreniz başarıyla güncellendi!');
+        setCurrentPassword('');
+        setNewPassword('');
+        setConfirmPassword('');
+        setTimeout(() => setPwdSuccess(null), 4000);
+      } else {
+        setPwdError(data.error || 'Şifre değiştirilemedi.');
+      }
+    } catch (err: any) {
+      setPwdError(err.message || 'Bağlantı hatası.');
+    } finally {
+      setPwdLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -216,6 +263,82 @@ export default function SettingsPage() {
           </button>
         </div>
       </form>
+
+      {/* ŞİFRE DEĞİŞTİRME FORMU */}
+      <div className="mt-8 bg-white rounded-3xl border border-slate-200/80 p-5 sm:p-6 shadow-xs">
+        <div className="flex items-center gap-2 mb-2 pb-3 border-b border-slate-100">
+          <KeyRound className="w-5 h-5 text-amber-500" />
+          <h2 className="text-base font-black text-slate-900">Hesap Güvenliği & Şifre Değiştir</h2>
+        </div>
+        <p className="text-xs text-slate-500 mb-4">
+          Sisteme giriş yaparken kullandığınız şifrenizi buradan güncelleyebilirsiniz.
+        </p>
+
+        {pwdSuccess && (
+          <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2 animate-fadeIn">
+            <Check className="w-4 h-4 text-emerald-600" />
+            {pwdSuccess}
+          </div>
+        )}
+
+        {pwdError && (
+          <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold flex items-center gap-2 animate-fadeIn">
+            <ShieldAlert className="w-4 h-4 text-rose-600" />
+            {pwdError}
+          </div>
+        )}
+
+        <form onSubmit={handlePasswordChange} className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl">
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Mevcut Şifre</label>
+            <input
+              type="password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              placeholder="••••••••"
+              required
+              className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 bg-slate-50"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Yeni Şifre</label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="En az 6 karakter"
+              required
+              minLength={6}
+              className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 bg-slate-50"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-slate-700 mb-1">Yeni Şifre Tekrar</label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Şifreyi tekrar yazın"
+              required
+              minLength={6}
+              className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 bg-slate-50"
+            />
+          </div>
+
+          <div className="sm:col-span-3 flex justify-end">
+            <button
+              type="submit"
+              disabled={pwdLoading}
+              className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span>{pwdLoading ? 'Güncelleniyor...' : 'Şifreyi Güncelle'}</span>
+            </button>
+          </div>
+        </form>
+      </div>
     </AppLayout>
   );
 }

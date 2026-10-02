@@ -49,6 +49,14 @@ export function eurToRsd(eur: number): number {
   return Math.round(eur * EUR_TO_RSD_RATE);
 }
 
+export function getCompanyNameForOwner(owner?: string | null, fallback: string = 'Filo Yönetim'): string {
+  if (!owner) return fallback;
+  const o = owner.trim().toLowerCase();
+  if (o.includes('onur')) return 'Buy2Cars';
+  if (o.includes('atilla')) return 'Autentra';
+  return fallback;
+}
+
 export function generateWhatsAppReminderUrl(
   phone: string,
   customerName: string,
@@ -56,22 +64,24 @@ export function generateWhatsAppReminderUrl(
   startDate?: string | Date,
   endDate?: string | Date,
   daysLeft: number = 3,
-  companyName: string = 'Filo Yönetim'
+  companyName: string = 'Filo Yönetim',
+  owner?: string | null
 ): string {
   // Clean phone number: remove spaces, +, -, parentheses
   let cleanPhone = (phone || '').replace(/[^0-9]/g, '');
   if (!cleanPhone) return '#';
 
+  const effectiveCompany = owner ? getCompanyNameForOwner(owner, companyName) : companyName;
   const startStr = startDate ? formatDate(startDate) : '';
   const endStr = endDate ? formatDate(endDate) : '';
 
   let message = '';
   if (daysLeft < 0) {
-    message = `Sayın ${customerName}, ${plate} plakalı kiralık aracınızın teslim süresi ${Math.abs(daysLeft)} gün önce (${endStr}) dolmuştur. Lütfen aracı teslim etmek veya sözleşmeyi uzatmak için ivedilikle bizimle iletişime geçiniz. - ${companyName}`;
+    message = `Sayın ${customerName}, ${plate} plakalı kiralık aracınızın teslim süresi ${Math.abs(daysLeft)} gün önce (${endStr}) dolmuştur. Lütfen aracı teslim etmek veya sözleşmeyi uzatmak için ivedilikle bizimle iletişime geçiniz. - ${effectiveCompany}`;
   } else if (diffDaysMessage(daysLeft)) {
-    message = `Sayın ${customerName}, ${plate} plakalı kiralık aracımızın kira süresi BUGÜN (${endStr}) dolmaktadır. Teslimat için gün içerisinde ofisimize bekleriz. - ${companyName}`;
+    message = `Sayın ${customerName}, ${plate} plakalı kiralık aracımızın kira süresi BUGÜN (${endStr}) dolmaktadır. Teslimat için gün içerisinde ofisimize bekleriz. - ${effectiveCompany}`;
   } else {
-    message = `Sayın ${customerName}, ${startStr ? startStr + ' tarihinde teslim aldığınız ' : ''}${plate} plakalı aracımızın kira süresi ${daysLeft} gün sonra (${endStr}) dolacaktır. Hatırlatmak ister, iyi günler dileriz. - ${companyName}`;
+    message = `Sayın ${customerName}, ${startStr ? startStr + ' tarihinde teslim aldığınız ' : ''}${plate} plakalı aracımızın kira süresi ${daysLeft} gün sonra (${endStr}) dolacaktır. Hatırlatmak ister, iyi günler dileriz. - ${effectiveCompany}`;
   }
 
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
@@ -116,11 +126,15 @@ export function generateParkingFineWhatsAppUrl(
     amountEur?: number | null;
     issueDate: string | Date;
     referenceNumber?: string | null;
+    vehicle?: { owner?: string | null } | null;
   } | null,
-  companyName: string = 'Filo Yönetim'
+  companyName: string = 'Filo Yönetim',
+  owner?: string | null
 ): string {
   if (!customerPhone || !ticket) return '#';
 
+  const vehicleOwner = owner || ticket.vehicle?.owner;
+  const effectiveCompany = vehicleOwner ? getCompanyNameForOwner(vehicleOwner, companyName) : companyName;
   const cleanPhone = customerPhone.replace(/[^\d+]/g, '');
   const formattedDate = formatDate(ticket.issueDate);
   const location = [ticket.street, ticket.zone].filter(Boolean).join(' - ') || 'Belgrad';
@@ -129,7 +143,7 @@ export function generateParkingFineWhatsAppUrl(
 
   const message = `Merhaba Sayın ${name},
 
-${companyName} firmasından ulaşıyoruz.
+${effectiveCompany} firmasından ulaşıyoruz.
 
 Kullanımınızda bulunan ${ticket.plate} plakalı aracımız için aşağıdaki park cezası tespit edilmiştir:
 

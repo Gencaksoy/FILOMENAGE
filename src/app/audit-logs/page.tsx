@@ -17,6 +17,118 @@ import { formatDate, formatDateTime } from '@/lib/formatters';
 import { exportToExcel, exportToCSV } from '@/lib/exportExcel';
 import { AuthUser } from '@/lib/auth';
 
+function formatFriendlyAudit(log: any): { actionTitle: string; friendlyDesc: string; badgeStyle: string } {
+  const action = (log.action || '').toUpperCase();
+  const target = log.target || '';
+  const desc = log.description || '';
+
+  // 1. Rental start (araba verildi)
+  if (action.includes('RENTAL') && (action.includes('CREATE') || action.includes('START'))) {
+    return {
+      actionTitle: 'Araba Verildi',
+      friendlyDesc: target ? `${target} aracı kiralandı ve müşteriye teslim edildi.` : (desc || 'Araç kiralandı.'),
+      badgeStyle: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+    };
+  }
+
+  // 2. Rental return (araba alındı)
+  if (action.includes('RETURN') || desc.toLowerCase().includes('teslim alındı') || desc.toLowerCase().includes('iade')) {
+    return {
+      actionTitle: 'Araba Alındı',
+      friendlyDesc: target ? `${target} aracı müşteriden geri teslim alındı.` : (desc || 'Araç teslim alındı.'),
+      badgeStyle: 'bg-blue-50 text-blue-800 border-blue-200',
+    };
+  }
+
+  // 3. Rental extension (süre uzatıldı)
+  if (action.includes('EXTEND') || desc.toLowerCase().includes('uzat')) {
+    return {
+      actionTitle: 'Süre Uzatıldı',
+      friendlyDesc: target ? `${target} aracının kiralama süresi uzatıldı.` : (desc || 'Kira süresi uzatıldı.'),
+      badgeStyle: 'bg-purple-50 text-purple-800 border-purple-200',
+    };
+  }
+
+  // 4. Oil change (yağ değiştirildi)
+  if (action.includes('OIL') || desc.toLowerCase().includes('yağ')) {
+    return {
+      actionTitle: 'Yağ Değiştirildi',
+      friendlyDesc: target ? `${target} aracının motor yağı ve filtresi değiştirildi.` : (desc || 'Motor yağı değişimi yapıldı.'),
+      badgeStyle: 'bg-amber-50 text-amber-800 border-amber-200',
+    };
+  }
+
+  // 5. Maintenance (bakım yapıldı)
+  if (action.includes('MAINTENANCE') || desc.toLowerCase().includes('bakım')) {
+    return {
+      actionTitle: 'Bakım Yapıldı',
+      friendlyDesc: target ? `${target} aracına servis bakımı yapıldı.` : (desc || 'Servis bakımı yapıldı.'),
+      badgeStyle: 'bg-cyan-50 text-cyan-800 border-cyan-200',
+    };
+  }
+
+  // 6. Inspection (muayene yapıldı)
+  if (action.includes('INSPECTION') || desc.toLowerCase().includes('muayene')) {
+    return {
+      actionTitle: 'Muayene Yapıldı',
+      friendlyDesc: target ? `${target} aracının yıllık araç muayenesi tamamlandı.` : (desc || 'Araç muayenesi yapıldı.'),
+      badgeStyle: 'bg-indigo-50 text-indigo-800 border-indigo-200',
+    };
+  }
+
+  // 7. Parking ticket (park cezası)
+  if (action.includes('PARKING') || desc.toLowerCase().includes('ceza') || desc.toLowerCase().includes('edpk')) {
+    return {
+      actionTitle: 'Park Cezası',
+      friendlyDesc: target ? `${target} aracı için Belgrad park cezası (eDPK) işlendi.` : (desc || 'Park cezası kaydedildi.'),
+      badgeStyle: 'bg-rose-50 text-rose-800 border-rose-200',
+    };
+  }
+
+  // 8. Vehicle fault (arıza kaydı)
+  if (action.includes('FAULT') || desc.toLowerCase().includes('arıza')) {
+    return {
+      actionTitle: 'Arıza Kaydı',
+      friendlyDesc: target ? `${target} aracı için arıza kaydı girildi / güncellendi.` : (desc || 'Arıza bildirimi yapıldı.'),
+      badgeStyle: 'bg-orange-50 text-orange-800 border-orange-200',
+    };
+  }
+
+  // 9. Vehicle create (araba eklendi)
+  if (action.includes('VEHICLE') && action.includes('CREATE')) {
+    return {
+      actionTitle: 'Araba Eklendi',
+      friendlyDesc: target ? `${target} yeni araç olarak filoya kaydedildi.` : (desc || 'Yeni araç eklendi.'),
+      badgeStyle: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+    };
+  }
+
+  // 10. Customer create (müşteri eklendi)
+  if (action.includes('CUSTOMER') && action.includes('CREATE')) {
+    return {
+      actionTitle: 'Müşteri Eklendi',
+      friendlyDesc: target ? `${target} sisteme yeni müşteri olarak eklendi.` : (desc || 'Yeni müşteri kaydedildi.'),
+      badgeStyle: 'bg-teal-50 text-teal-800 border-teal-200',
+    };
+  }
+
+  // 11. User password change / suspend
+  if (action.includes('PASSWORD') || action.includes('SUSPEND') || action.includes('USER')) {
+    return {
+      actionTitle: action.includes('SUSPEND') ? 'Kullanıcı Askıya Alındı' : 'Kullanıcı Güncellendi',
+      friendlyDesc: desc || `${target} kullanıcısı işlem gördü.`,
+      badgeStyle: 'bg-slate-100 text-slate-800 border-slate-300',
+    };
+  }
+
+  // Default clean fallback
+  return {
+    actionTitle: action.replace(/_/g, ' '),
+    friendlyDesc: desc || 'Sistem işlemi yapıldı.',
+    badgeStyle: 'bg-slate-100 text-slate-700 border-slate-200',
+  };
+}
+
 export default function AuditLogsPage() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [logs, setLogs] = useState<any[]>([]);
@@ -58,47 +170,31 @@ export default function AuditLogsPage() {
   );
 
   const handleExportExcel = () => {
-    const data = filteredLogs.map((l) => ({
-      Tarih: formatDateTime(l.createdAt),
-      'İşlemi Yapan': l.userName,
-      'İlgili Araç / Hedef': l.target || '-',
-      İşlem: l.action,
-      Açıklama: l.description,
-    }));
-    exportToExcel(data, `Denetim_Izi_Loglari_${new Date().toISOString().slice(0, 10)}.xlsx`, 'Audit Log');
+    const data = filteredLogs.map((l) => {
+      const friendly = formatFriendlyAudit(l);
+      return {
+        Tarih: formatDateTime(l.createdAt),
+        'İşlemi Yapan': l.userName,
+        'İlgili Araç / Hedef': l.target || '-',
+        İşlem: friendly.actionTitle,
+        Açıklama: friendly.friendlyDesc,
+      };
+    });
+    exportToExcel(data, `Islem_Gecmisi_${new Date().toISOString().slice(0, 10)}.xlsx`, 'Audit Log');
   };
 
   const handleExportCSV = () => {
-    const data = filteredLogs.map((l) => ({
-      Tarih: formatDate(l.createdAt),
-      Kullanici: l.userName,
-      Hedef: l.target || '-',
-      Islem: l.action,
-      Aciklama: l.description,
-    }));
-    exportToCSV(data, `Denetim_Izi_Loglari_${new Date().toISOString().slice(0, 10)}.csv`);
-  };
-
-  const getActionBadge = (action: string) => {
-    if (action.includes('RENTAL') || action.includes('ASSIGN')) {
-      return 'bg-amber-50 text-amber-800 border-amber-200';
-    }
-    if (action.includes('OIL')) {
-      return 'bg-emerald-50 text-emerald-800 border-emerald-200';
-    }
-    if (action.includes('MAINTENANCE')) {
-      return 'bg-blue-50 text-blue-700 border-blue-200';
-    }
-    if (action.includes('INSPECTION')) {
-      return 'bg-purple-50 text-purple-700 border-purple-200';
-    }
-    if (action.includes('DELETE')) {
-      return 'bg-rose-50 text-rose-700 border-rose-200';
-    }
-    if (action.includes('CREATE')) {
-      return 'bg-emerald-50 text-emerald-700 border-emerald-200';
-    }
-    return 'bg-slate-100 text-slate-700 border-slate-200';
+    const data = filteredLogs.map((l) => {
+      const friendly = formatFriendlyAudit(l);
+      return {
+        Tarih: formatDate(l.createdAt),
+        Kullanici: l.userName,
+        Hedef: l.target || '-',
+        Islem: friendly.actionTitle,
+        Aciklama: friendly.friendlyDesc,
+      };
+    });
+    exportToCSV(data, `Islem_Gecmisi_${new Date().toISOString().slice(0, 10)}.csv`);
   };
 
   return (
@@ -107,10 +203,10 @@ export default function AuditLogsPage() {
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2">
             <History className="w-6 h-6 text-amber-500" />
-            İşlem Geçmişi (Denetim İzi / Audit Log)
+            İşlem Geçmişi (Denetim İzi)
           </h1>
           <p className="text-xs sm:text-sm text-slate-500">
-            Kimin, hangi tarihte, hangi araba veya müşteri üzerinde hangi işlemi yaptığı
+            Hangi araca ne yapıldı, hangi araba verildi, hangi araba geri alındı veya masraf girildi
           </p>
         </div>
 
@@ -140,7 +236,7 @@ export default function AuditLogsPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Kullanıcı, plaka (Örn: BG 123-AA), işlem türü veya detay ara..."
+            placeholder="Plaka (Örn: BG 1709-OT), işlem veya kullanıcı ara..."
             className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-amber-500 focus:outline-hidden"
           />
         </div>
@@ -150,7 +246,7 @@ export default function AuditLogsPage() {
       {loading ? (
         <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
           <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-xs text-slate-500">Denetim logları yükleniyor...</p>
+          <p className="text-xs text-slate-500">İşlem kayıtları yükleniyor...</p>
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
@@ -161,43 +257,44 @@ export default function AuditLogsPage() {
                   <th className="py-3 px-4">Tarih & Saat</th>
                   <th className="py-3 px-4">İşlemi Yapan</th>
                   <th className="py-3 px-4">İlgili Araç / Hedef</th>
-                  <th className="py-3 px-4">İşlem Türü</th>
+                  <th className="py-3 px-4">İşlem</th>
                   <th className="py-3 px-4">Yapılan İşlem Açıklaması</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium">
-                {filteredLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-amber-50/20 transition-colors">
-                    <td className="py-3.5 px-4 font-mono text-slate-600 whitespace-nowrap">
-                      {formatDateTime(log.createdAt)}
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-slate-900">
-                      {log.userName}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      {log.target ? (
-                        <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200 inline-flex items-center gap-1">
-                          <Car className="w-3 h-3 text-amber-500" />
-                          {log.target}
+                {filteredLogs.map((log) => {
+                  const friendly = formatFriendlyAudit(log);
+                  return (
+                    <tr key={log.id} className="hover:bg-amber-50/20 transition-colors">
+                      <td className="py-3.5 px-4 font-mono text-slate-600 whitespace-nowrap">
+                        {formatDateTime(log.createdAt)}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900">
+                        {log.userName}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {log.target ? (
+                          <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200 inline-flex items-center gap-1">
+                            <Car className="w-3 h-3 text-amber-500" />
+                            {log.target}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 italic">Genel Sistem</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-md text-xs font-bold border ${friendly.badgeStyle}`}
+                        >
+                          {friendly.actionTitle}
                         </span>
-                      ) : (
-                        <span className="text-slate-400 italic">Genel Sistem</span>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span
-                        className={`inline-block px-2.5 py-0.5 rounded-md text-xs font-bold border ${getActionBadge(
-                          log.action
-                        )}`}
-                      >
-                        {log.action}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-800">
-                      {log.description}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-800">
+                        {friendly.friendlyDesc}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

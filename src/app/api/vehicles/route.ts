@@ -20,35 +20,44 @@ export async function GET(req: Request) {
     const owner = searchParams.get('owner') || '';
 
     const now = new Date();
-    const where: any = { isDeleted: false };
+    const conditions: any[] = [{ isDeleted: false }];
 
     if (!isSuper && currentUser?.fleetId) {
-      where.fleetId = currentUser.fleetId;
+      conditions.push({
+        OR: [
+          { fleetId: currentUser.fleetId },
+          { fleetId: null },
+        ],
+      });
     }
 
     if (search) {
-      where.OR = [
-        { plate: { contains: search, mode: 'insensitive' } },
-        { brand: { contains: search, mode: 'insensitive' } },
-        { model: { contains: search, mode: 'insensitive' } },
-        { owner: { contains: search, mode: 'insensitive' } },
-        { fuelType: { contains: search, mode: 'insensitive' } },
-        { vin: { contains: search, mode: 'insensitive' } },
-        { engineNo: { contains: search, mode: 'insensitive' } },
-      ];
+      conditions.push({
+        OR: [
+          { plate: { contains: search, mode: 'insensitive' } },
+          { brand: { contains: search, mode: 'insensitive' } },
+          { model: { contains: search, mode: 'insensitive' } },
+          { owner: { contains: search, mode: 'insensitive' } },
+          { fuelType: { contains: search, mode: 'insensitive' } },
+          { vin: { contains: search, mode: 'insensitive' } },
+          { engineNo: { contains: search, mode: 'insensitive' } },
+        ],
+      });
     }
 
     if (status && status !== 'ALL') {
       if (status === 'RENTABLE') {
-        where.status = { in: ['AVAILABLE', 'POST_RENTAL_CHECK'] };
+        conditions.push({ status: { in: ['AVAILABLE', 'POST_RENTAL_CHECK'] } });
       } else {
-        where.status = status;
+        conditions.push({ status });
       }
     }
 
     if (owner && owner !== 'ALL') {
-      where.owner = owner;
+      conditions.push({ owner });
     }
+
+    const where = { AND: conditions };
 
     const vehicles = await prisma.vehicle.findMany({
       where,
@@ -253,6 +262,15 @@ export async function POST(req: Request) {
       );
     }
 
+    let assignedFleetId = currentUser?.fleetId || body.fleetId || null;
+    if (!assignedFleetId) {
+      const primaryFleet = await prisma.fleet.findFirst({
+        where: { status: 'ACTIVE' },
+        orderBy: { createdAt: 'asc' },
+      });
+      assignedFleetId = primaryFleet?.id || null;
+    }
+
     const vehicle = await prisma.vehicle.create({
       data: {
         plate,
@@ -277,7 +295,7 @@ export async function POST(req: Request) {
         engineNo: body.engineNo?.trim() || null,
         chronicIssues: body.chronicIssues?.trim() || null,
         notes: body.notes?.trim() || null,
-        fleetId: currentUser?.fleetId || body.fleetId || null,
+        fleetId: assignedFleetId,
       },
     });
 

@@ -6,9 +6,27 @@ import { EUR_TO_RSD_RATE } from '@/lib/formatters';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const currentUser = await getSessionUser();
+    const isSuper =
+      currentUser &&
+      (currentUser.role === 'SUPER_ADMIN' ||
+        currentUser.email === 'akif@filoyonetim.com' ||
+        currentUser.email === 'gencaksoy@outlook.com');
+
+    const where: any = {};
+    if (!isSuper && currentUser?.fleetId) {
+      where.vehicle = {
+        OR: [
+          { fleetId: currentUser.fleetId },
+          { fleetId: null },
+        ],
+      };
+    }
+
     const inspections = await prisma.inspectionRecord.findMany({
+      where,
       orderBy: { nextInspectionDate: 'asc' },
       include: { vehicle: true },
     });

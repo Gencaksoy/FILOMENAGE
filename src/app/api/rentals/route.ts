@@ -5,9 +5,27 @@ import { getSessionUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
+    const currentUser = await getSessionUser();
+    const isSuper =
+      currentUser &&
+      (currentUser.role === 'SUPER_ADMIN' ||
+        currentUser.email === 'akif@filoyonetim.com' ||
+        currentUser.email === 'gencaksoy@outlook.com');
+
+    const where: any = {};
+    if (!isSuper && currentUser?.fleetId) {
+      where.vehicle = {
+        OR: [
+          { fleetId: currentUser.fleetId },
+          { fleetId: null },
+        ],
+      };
+    }
+
     const rentals = await prisma.rental.findMany({
+      where,
       orderBy: { createdAt: 'desc' },
       include: {
         vehicle: true,

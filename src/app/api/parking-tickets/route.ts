@@ -20,31 +20,42 @@ export async function GET(req: Request) {
     const search = searchParams.get('search')?.trim() || '';
     const vehicleId = searchParams.get('vehicleId');
 
-    const where: any = {};
+    const conditions: any[] = [];
 
     // Multi-tenant filo filtrelemesi
     if (!isSuper && currentUser?.fleetId) {
-      where.vehicle = { fleetId: currentUser.fleetId };
+      conditions.push({
+        OR: [
+          { vehicle: { fleetId: currentUser.fleetId } },
+          { vehicle: { fleetId: null } },
+          { fleetId: currentUser.fleetId },
+          { fleetId: null },
+        ],
+      });
     }
 
     if (status !== 'ALL') {
-      where.status = status;
+      conditions.push({ status });
     }
 
     if (vehicleId) {
-      where.vehicleId = vehicleId;
+      conditions.push({ vehicleId });
     }
 
     if (search) {
-      where.OR = [
-        { plate: { contains: search, mode: 'insensitive' } },
-        { ticketNumber: { contains: search, mode: 'insensitive' } },
-        { street: { contains: search, mode: 'insensitive' } },
-        { zone: { contains: search, mode: 'insensitive' } },
-        { customer: { name: { contains: search, mode: 'insensitive' } } },
-        { customer: { phone: { contains: search, mode: 'insensitive' } } },
-      ];
+      conditions.push({
+        OR: [
+          { plate: { contains: search, mode: 'insensitive' } },
+          { ticketNumber: { contains: search, mode: 'insensitive' } },
+          { street: { contains: search, mode: 'insensitive' } },
+          { zone: { contains: search, mode: 'insensitive' } },
+          { customer: { name: { contains: search, mode: 'insensitive' } } },
+          { customer: { phone: { contains: search, mode: 'insensitive' } } },
+        ],
+      });
     }
+
+    const where = conditions.length > 0 ? { AND: conditions } : {};
 
     const [tickets, companySetting] = await Promise.all([
       prisma.parkingTicket.findMany({

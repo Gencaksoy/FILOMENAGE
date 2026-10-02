@@ -17,17 +17,25 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search')?.trim() || '';
 
-    const where: any = { isDeleted: false };
+    const conditions: any[] = [{ isDeleted: false }];
     if (!isSuper && currentUser?.fleetId) {
-      where.fleetId = currentUser.fleetId;
+      conditions.push({
+        OR: [
+          { fleetId: currentUser.fleetId },
+          { fleetId: null },
+        ],
+      });
     }
     if (search) {
-      where.OR = [
-        { name: { contains: search } },
-        { phone: { contains: search } },
-        { identityNo: { contains: search } },
-      ];
+      conditions.push({
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { phone: { contains: search, mode: 'insensitive' } },
+          { identityNo: { contains: search, mode: 'insensitive' } },
+        ],
+      });
     }
+    const where = { AND: conditions };
 
     const customers = await prisma.customer.findMany({
       where,
@@ -138,6 +146,15 @@ export async function POST(req: Request) {
       });
     }
 
+    let assignedFleetId = currentUser?.fleetId || body.fleetId || null;
+    if (!assignedFleetId) {
+      const primaryFleet = await prisma.fleet.findFirst({
+        where: { status: 'ACTIVE' },
+        orderBy: { createdAt: 'asc' },
+      });
+      assignedFleetId = primaryFleet?.id || null;
+    }
+
     const customer = await prisma.customer.create({
       data: {
         name,
@@ -147,7 +164,7 @@ export async function POST(req: Request) {
         address: body.address?.trim() || null,
         notes: body.notes?.trim() || null,
         documents: documentsData.length > 0 ? { create: documentsData } : undefined,
-        fleetId: currentUser?.fleetId || body.fleetId || null,
+        fleetId: assignedFleetId,
       },
       include: {
         documents: true,

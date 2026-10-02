@@ -32,6 +32,7 @@ import {
   Archive,
   Database,
   Eye,
+  UserPlus,
 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { formatDate } from '@/lib/formatters';
@@ -74,6 +75,112 @@ export default function SuperAdminPage() {
   // Modal: Extend License / Edit
   const [editingFleet, setEditingFleet] = useState<any | null>(null);
   const [extendMonths, setExtendMonths] = useState('12');
+
+  // Modal: Add User to Fleet
+  const [fleetForNewUser, setFleetForNewUser] = useState<any | null>(null);
+  const [fleetUserName, setFleetUserName] = useState('');
+  const [fleetUserEmail, setFleetUserEmail] = useState('');
+  const [fleetUserPassword, setFleetUserPassword] = useState('filo123');
+  const [fleetUserRole, setFleetUserRole] = useState<'ADMIN' | 'STAFF'>('ADMIN');
+  const [isSubmittingFleetUser, setIsSubmittingFleetUser] = useState(false);
+  const [fleetUserError, setFleetUserError] = useState<string | null>(null);
+
+  // Modal: Super Admin Reset User Password
+  const [userForPasswordReset, setUserForPasswordReset] = useState<any | null>(null);
+  const [newPasswordForUser, setNewPasswordForUser] = useState('');
+  const [isSubmittingPasswordReset, setIsSubmittingPasswordReset] = useState(false);
+
+  const openAddUserToFleetModal = (fleet: any) => {
+    setFleetForNewUser(fleet);
+    setFleetUserName('');
+    setFleetUserEmail('');
+    setFleetUserPassword('filo123');
+    setFleetUserRole('ADMIN');
+    setFleetUserError(null);
+  };
+
+  const handleAddUserToFleet = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fleetForNewUser) return;
+    setIsSubmittingFleetUser(true);
+    setFleetUserError(null);
+
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: fleetUserName,
+          email: fleetUserEmail,
+          password: fleetUserPassword,
+          role: fleetUserRole,
+          fleetId: fleetForNewUser.id,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Kullanıcı eklenemedi.');
+      }
+
+      setFleetForNewUser(null);
+      await loadData();
+      alert(`${fleetUserName} kullanıcısı ${fleetForNewUser.name} filosuna başarıyla eklendi.`);
+    } catch (err: any) {
+      setFleetUserError(err.message);
+    } finally {
+      setIsSubmittingFleetUser(false);
+    }
+  };
+
+  const handleToggleUserSuspend = async (u: any) => {
+    const actionText = u.isActive ? 'askıya almak (erişimini engellemek)' : 'tekrar aktif etmek';
+    if (!confirm(`${u.name} kullanıcısını ${actionText} istediğinize emin misiniz?`)) return;
+
+    try {
+      const res = await fetch(`/api/users/${u.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isActive: !u.isActive }),
+      });
+      if (res.ok) {
+        await loadData();
+      } else {
+        const err = await res.json();
+        alert(err.error || 'İşlem başarısız.');
+      }
+    } catch (err: any) {
+      alert(err.message);
+    }
+  };
+
+  const handleResetUserPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userForPasswordReset || newPasswordForUser.length < 6) {
+      alert('Şifre en az 6 karakter olmalıdır.');
+      return;
+    }
+    setIsSubmittingPasswordReset(true);
+    try {
+      const res = await fetch(`/api/users/${userForPasswordReset.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: newPasswordForUser }),
+      });
+      if (res.ok) {
+        setUserForPasswordReset(null);
+        setNewPasswordForUser('');
+        alert('Kullanıcı şifresi başarıyla sıfırlandı.');
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Şifre sıfırlanamadı.');
+      }
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setIsSubmittingPasswordReset(false);
+    }
+  };
 
   const fetchArchives = async (tbl: string = selectedArchiveTable, q: string = archiveSearch) => {
     try {
@@ -619,6 +726,16 @@ export default function SuperAdminPage() {
                             <Clock className="w-3.5 h-3.5 text-amber-700" />
                             <span>Lisans Uzat</span>
                           </button>
+
+                          <button
+                            type="button"
+                            onClick={() => openAddUserToFleetModal(fleet)}
+                            className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                            title="Bu filoya kullanıcı / personel ata"
+                          >
+                            <UserPlus className="w-3.5 h-3.5 text-purple-700" />
+                            <span>+ Kullanıcı</span>
+                          </button>
                         </div>
 
                         <button
@@ -657,6 +774,7 @@ export default function SuperAdminPage() {
                     <th className="py-3.5 px-4">Rol</th>
                     <th className="py-3.5 px-4">Kayıt Tarihi</th>
                     <th className="py-3.5 px-4">Durum</th>
+                    <th className="py-3.5 px-4 text-right">İşlemler</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -679,6 +797,7 @@ export default function SuperAdminPage() {
                     <td className="py-3.5 px-4">
                       <span className="text-emerald-700 font-bold">Aktif</span>
                     </td>
+                    <td className="py-3.5 px-4 text-right text-xs text-slate-400 font-mono">Sistem Sahibi</td>
                   </tr>
 
                   {/* Fleet Users */}
@@ -705,8 +824,35 @@ export default function SuperAdminPage() {
                         <td className="py-3.5 px-4 text-slate-500">{formatDate(u.createdAt)}</td>
                         <td className="py-3.5 px-4">
                           <span className={u.isActive ? 'text-emerald-700 font-bold' : 'text-rose-700 font-bold'}>
-                            {u.isActive ? 'Aktif' : 'Pasif'}
+                            {u.isActive ? 'Aktif' : 'Askıya Alındı'}
                           </span>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setUserForPasswordReset(u);
+                                setNewPasswordForUser('');
+                              }}
+                              className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                              title="Şifre Sıfırla"
+                            >
+                              Şifre Sıfırla
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleToggleUserSuspend(u)}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                                u.isActive
+                                  ? 'bg-rose-50 text-rose-700 hover:bg-rose-100'
+                                  : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+                              }`}
+                            >
+                              {u.isActive ? 'Askıya Al' : 'Aktif Et'}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))
@@ -1163,6 +1309,145 @@ export default function SuperAdminPage() {
           </div>
         </form>
       </Modal>
+
+      {/* MODAL: ADD USER TO FLEET */}
+      {fleetForNewUser && (
+        <Modal
+          isOpen={!!fleetForNewUser}
+          onClose={() => setFleetForNewUser(null)}
+          title={`${fleetForNewUser.name} Filosuna Kullanıcı Ekle`}
+          subtitle={`Filo Kodu: ${fleetForNewUser.code} • Yeni yönetici veya çalışan hesabı oluşturun`}
+          maxWidth="md"
+        >
+          {fleetUserError && (
+            <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>{fleetUserError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleAddUserToFleet} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Ad Soyad *
+              </label>
+              <input
+                type="text"
+                required
+                value={fleetUserName}
+                onChange={(e) => setFleetUserName(e.target.value)}
+                placeholder="Örn: Marko Nikolić"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                E-posta Adresi *
+              </label>
+              <input
+                type="email"
+                required
+                value={fleetUserEmail}
+                onChange={(e) => setFleetUserEmail(e.target.value)}
+                placeholder="marko@filo.com"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Giriş Şifresi *
+              </label>
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={fleetUserPassword}
+                onChange={(e) => setFleetUserPassword(e.target.value)}
+                placeholder="En az 6 karakter"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Yetki Rolü *
+              </label>
+              <select
+                value={fleetUserRole}
+                onChange={(e) => setFleetUserRole(e.target.value as any)}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-bold"
+              >
+                <option value="ADMIN">Filo Sahibi / Yönetici (ADMIN - Tam Yetki)</option>
+                <option value="STAFF">Filo Personeli (STAFF - Operasyonel Yetki)</option>
+              </select>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setFleetForNewUser(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+              >
+                İptal
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmittingFleetUser}
+                className="px-5 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                {isSubmittingFleetUser ? 'Ekleniyor...' : 'Kullanıcıyı Filoya Ekle'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* MODAL: RESET PASSWORD (SUPER ADMIN) */}
+      {userForPasswordReset && (
+        <Modal
+          isOpen={!!userForPasswordReset}
+          onClose={() => setUserForPasswordReset(null)}
+          title={`Şifre Sıfırla: ${userForPasswordReset.name}`}
+          subtitle={`${userForPasswordReset.email} hesabına yeni bir giriş şifresi tanımlayın`}
+          maxWidth="sm"
+        >
+          <form onSubmit={handleResetUserPassword} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Yeni Şifre *
+              </label>
+              <input
+                type="password"
+                required
+                minLength={6}
+                value={newPasswordForUser}
+                onChange={(e) => setNewPasswordForUser(e.target.value)}
+                placeholder="En az 6 karakter"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-mono"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setUserForPasswordReset(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+              >
+                İptal
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmittingPasswordReset}
+                className="px-5 py-2 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                {isSubmittingPasswordReset ? 'Kaydediliyor...' : 'Şifreyi Değiştir'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
 }

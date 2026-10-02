@@ -19,21 +19,34 @@ export async function GET(req: Request) {
     const ownerFilter = searchParams.get('owner') || 'ALL';
 
     const now = new Date();
-    const where: any = { isDeleted: false };
+    const conditions: any[] = [{ isDeleted: false }];
 
     // Filo İzolasyonu (Multi-tenancy):
     if (!isSuper && currentUser?.fleetId) {
-      where.fleetId = currentUser.fleetId;
+      conditions.push({
+        OR: [
+          { fleetId: currentUser.fleetId },
+          { fleetId: null },
+        ],
+      });
     }
 
     if (ownerFilter !== 'ALL') {
-      where.owner = ownerFilter;
+      conditions.push({ owner: ownerFilter });
     }
 
-    const ownersWhere: any = { isDeleted: false };
+    const where = { AND: conditions };
+
+    const ownersConditions: any[] = [{ isDeleted: false }];
     if (!isSuper && currentUser?.fleetId) {
-      ownersWhere.fleetId = currentUser.fleetId;
+      ownersConditions.push({
+        OR: [
+          { fleetId: currentUser.fleetId },
+          { fleetId: null },
+        ],
+      });
     }
+    const ownersWhere = { AND: ownersConditions };
 
     const [vehicles, allOwners, companySetting] = await Promise.all([
       prisma.vehicle.findMany({

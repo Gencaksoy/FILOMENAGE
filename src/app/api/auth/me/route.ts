@@ -16,17 +16,25 @@ export async function GET() {
     user.email === 'akif@filoyonetim.com' ||
     user.email === 'gencaksoy@outlook.com';
 
-  if (!isSuper) {
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      include: { fleet: true },
-    });
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    include: { fleet: true },
+  });
 
-    if (!dbUser || !dbUser.isActive || !dbUser.fleetId || !dbUser.fleet || dbUser.fleet.status !== 'ACTIVE') {
+  if (!dbUser || !dbUser.isActive) {
+    cookies().delete('filo_auth_session');
+    return NextResponse.json(
+      { user: null, error: 'Hesabınız yönetici tarafından askıya alınmıştır.' },
+      { status: 403 }
+    );
+  }
+
+  if (!isSuper) {
+    if (dbUser.fleet && dbUser.fleet.status !== 'ACTIVE') {
       cookies().delete('filo_auth_session');
       return NextResponse.json(
-        { user: null, error: 'Hesabınızın bağlı olduğu filo bulunamadı veya pasif.' },
-        { status: 401 }
+        { user: null, error: 'Bağlı olduğunuz filonun lisansı askıya alınmıştır.' },
+        { status: 403 }
       );
     }
   }
