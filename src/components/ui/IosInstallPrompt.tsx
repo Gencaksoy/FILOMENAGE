@@ -50,8 +50,12 @@ export function IosInstallPrompt() {
       <div className="bg-slate-900/95 backdrop-blur-xl text-white rounded-3xl p-4 shadow-2xl border border-slate-700/80">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-amber-500 flex items-center justify-center text-slate-950 font-black shadow-md shadow-amber-500/20 shrink-0">
-              <span className="text-xs font-black tracking-tighter">FİLO</span>
+            <div className="w-12 h-12 rounded-2xl overflow-hidden bg-slate-950 border border-slate-700 flex items-center justify-center shadow-md shadow-amber-500/20 shrink-0">
+              <img
+                src="/icon.png"
+                alt="Filo Logo"
+                className="w-full h-full object-cover"
+              />
             </div>
             <div>
               <div className="text-sm font-extrabold text-white leading-tight">

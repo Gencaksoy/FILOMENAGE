@@ -41,8 +41,12 @@ export default function LoginPage() {
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 pt-[max(3rem,env(safe-area-inset-top,0px))] pb-[max(3rem,env(safe-area-inset-bottom,0px))]">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <div className="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center text-white shadow-lg">
-            <Car className="w-7 h-7" />
+          <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-xl border border-slate-200 bg-white p-0.5">
+            <img
+              src="/icon.png"
+              alt="Filo Yönetim"
+              className="w-full h-full object-cover rounded-xl"
+            />
           </div>
         </div>
         <h2 className="mt-5 text-center text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">

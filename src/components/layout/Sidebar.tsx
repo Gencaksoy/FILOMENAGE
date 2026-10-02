@@ -81,12 +81,16 @@ export function Sidebar({ isOpen, onClose, unreadCount = 0, userRole = 'ADMIN', 
       >
         {/* Brand header */}
         <div className="h-16 flex items-center justify-between px-5 bg-slate-950/70 border-b border-slate-800">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center text-white font-black shadow-lg shadow-sky-500/20">
-              <Car className="w-5 h-5" />
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-md shadow-amber-500/10 border border-slate-700 bg-slate-900 shrink-0 flex items-center justify-center group-hover:border-amber-400 transition-colors">
+              <img
+                src="/icon.png"
+                alt="Filo Yönetim"
+                className="w-full h-full object-cover"
+              />
             </div>
             <div>
-              <div className="font-black text-white tracking-wider text-sm leading-tight">
+              <div className="font-black text-white tracking-wider text-sm leading-tight group-hover:text-amber-400 transition-colors">
                 FİLO YÖNETİM
               </div>
               <div className="text-xs text-amber-400 font-semibold uppercase tracking-wider">
