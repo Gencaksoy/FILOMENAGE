@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Modal } from '@/components/ui/Modal';
+import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { formatDate } from '@/lib/formatters';
 import { AuthUser } from '@/lib/auth';
 
@@ -615,26 +616,13 @@ export default function CustomersPage() {
         </div>
       )}
 
-      {/* Full-size Image Preview Modal */}
+      {/* Full-size Image Preview Modal via ImageLightbox */}
       {previewImage && (
-        <div
-          onClick={() => setPreviewImage(null)}
-          className="fixed inset-0 z-60 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
-        >
-          <div className="relative max-w-4xl max-h-[90vh]">
-            <img
-              src={previewImage}
-              alt="Belge Önizleme"
-              className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl border border-white/20"
-            />
-            <button
-              onClick={() => setPreviewImage(null)}
-              className="absolute top-2 right-2 p-2 bg-slate-900/80 text-white rounded-full hover:bg-slate-900"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
+        <ImageLightbox
+          src={previewImage}
+          title={docModalCustomer ? `Belge: ${docModalCustomer.name}` : 'Müşteri Belgesi'}
+          onClose={() => setPreviewImage(null)}
+        />
       )}
 
       {/* Modal: New / Edit Customer */}

@@ -78,6 +78,11 @@ model Vehicle {
   // Aksesuarlar (Telefon tutucu, çakmaklık şarj aleti, vb.)
   accessories         String?  // Standart aksesuarlar listesi JSON / metin
 
+  // Detaylı Araç Kimliği & Kronik Arızalar
+  vin                 String?  // Şasi Numarası
+  engineNo            String?  // Motor Numarası
+  chronicIssues       String?  // Kronik Arızalar / Bilinen Sıkıntılar
+
   notes               String?
   isDeleted           Boolean  @default(false)
   fleetId             String?

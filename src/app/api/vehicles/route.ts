@@ -16,16 +16,22 @@ export async function GET(req: Request) {
 
     if (search) {
       where.OR = [
-        { plate: { contains: search } },
-        { brand: { contains: search } },
-        { model: { contains: search } },
-        { owner: { contains: search } },
-        { fuelType: { contains: search } },
+        { plate: { contains: search, mode: 'insensitive' } },
+        { brand: { contains: search, mode: 'insensitive' } },
+        { model: { contains: search, mode: 'insensitive' } },
+        { owner: { contains: search, mode: 'insensitive' } },
+        { fuelType: { contains: search, mode: 'insensitive' } },
+        { vin: { contains: search, mode: 'insensitive' } },
+        { engineNo: { contains: search, mode: 'insensitive' } },
       ];
     }
 
     if (status && status !== 'ALL') {
-      where.status = status;
+      if (status === 'RENTABLE') {
+        where.status = { in: ['AVAILABLE', 'POST_RENTAL_CHECK'] };
+      } else {
+        where.status = status;
+      }
     }
 
     if (owner && owner !== 'ALL') {
@@ -120,6 +126,9 @@ export async function GET(req: Request) {
         purchasePrice: v.purchasePrice || 0,
         initialExpenses: v.initialExpenses || 0,
         accessories: v.accessories,
+        vin: v.vin,
+        engineNo: v.engineNo,
+        chronicIssues: v.chronicIssues,
         notes: v.notes,
 
         // Financial & Amortization
@@ -251,6 +260,9 @@ export async function POST(req: Request) {
         accessories: body.accessories
           ? (typeof body.accessories === 'string' ? body.accessories.trim() : JSON.stringify(body.accessories))
           : '["Telefon Tutucu", "Çakmaklık Şarj Aleti", "İlk Yardım Çantası", "Reflektör & Yangın Tüpü", "Paspas Seti"]',
+        vin: body.vin?.trim() || null,
+        engineNo: body.engineNo?.trim() || null,
+        chronicIssues: body.chronicIssues?.trim() || null,
         notes: body.notes?.trim() || null,
       },
     });

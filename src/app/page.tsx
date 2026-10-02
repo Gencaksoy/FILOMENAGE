@@ -26,8 +26,10 @@ import {
   ExternalLink,
   Plus,
   RefreshCw,
+  ZoomIn,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { formatDate, formatCurrency, formatKm, formatRsd, EUR_TO_RSD_RATE, VEHICLE_STATUS_MAP } from '@/lib/formatters';
 import { useRouter } from 'next/navigation';
 import { AuthUser } from '@/lib/auth';
@@ -43,7 +45,7 @@ export default function DashboardPage() {
   const [returningRental, setReturningRental] = useState<any | null>(null);
   const [returnKm, setReturnKm] = useState<string>('');
   const [returnNotes, setReturnNotes] = useState<string>('');
-  const [sentToPostCheck, setSentToPostCheck] = useState<boolean>(true); // Varsayılan olarak kiradan sonra bakıma/temizliğe gitsin
+  const [sentToPostCheck, setSentToPostCheck] = useState<boolean>(false); // Varsayılan olarak serbest bırak, hatırlatıcı isteğe bağlı
   const [accessoriesChecklist, setAccessoriesChecklist] = useState<Record<string, boolean>>({
     'Telefon Tutucu': true,
     'Çakmaklık Şarj Aleti': true,
@@ -52,6 +54,7 @@ export default function DashboardPage() {
     'Paspas Seti': true,
   });
   const [showDeliveryPhotosModal, setShowDeliveryPhotosModal] = useState<any | null>(null);
+  const [lightboxImage, setLightboxImage] = useState<{ src: string; title?: string } | null>(null);
   const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
 
   // Modal: Quick Rent (Araç Kirala + Yeni Müşteri Sekmesi + İskonto + 4 Fotoğraf)
@@ -140,7 +143,7 @@ export default function DashboardPage() {
   const openRentModal = async () => {
     try {
       const [vRes, cRes] = await Promise.all([
-        fetch('/api/vehicles?status=AVAILABLE'),
+        fetch('/api/vehicles?status=RENTABLE'),
         fetch('/api/customers'),
       ]);
       if (vRes.ok) {
@@ -1016,36 +1019,111 @@ export default function DashboardPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
               <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50">
-                <div className="p-2 text-xs font-bold text-slate-700 bg-slate-100">1. ÖN CEPHE</div>
-                <img
-                  src={showDeliveryPhotosModal.photos?.front || '/uploads/sample_car_front.svg'}
-                  alt="Ön Fotoğraf"
-                  className="w-full h-48 object-cover"
-                />
+                <div className="p-2 text-xs font-bold text-slate-700 bg-slate-100 flex items-center justify-between">
+                  <span>1. ÖN CEPHE</span>
+                  <span className="text-[11px] text-blue-600 font-semibold flex items-center gap-1">
+                    <ZoomIn className="w-3 h-3" /> Büyüt
+                  </span>
+                </div>
+                <div
+                  onClick={() =>
+                    setLightboxImage({
+                      src: showDeliveryPhotosModal.photos?.front || '/uploads/sample_car_front.svg',
+                      title: `1. Ön Cephe Fotoğrafı - ${showDeliveryPhotosModal.plate || ''}`,
+                    })
+                  }
+                  className="cursor-zoom-in relative group"
+                >
+                  <img
+                    src={showDeliveryPhotosModal.photos?.front || '/uploads/sample_car_front.svg'}
+                    alt="Ön Fotoğraf"
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
+                  />
+                  <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-1 backdrop-blur-[1px]">
+                    <ZoomIn className="w-4 h-4" /> Tam Ekran İncele
+                  </div>
+                </div>
               </div>
+
               <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50">
-                <div className="p-2 text-xs font-bold text-slate-700 bg-slate-100">2. ARKA CEPHE</div>
-                <img
-                  src={showDeliveryPhotosModal.photos?.back || '/uploads/sample_car_back.svg'}
-                  alt="Arka Fotoğraf"
-                  className="w-full h-48 object-cover"
-                />
+                <div className="p-2 text-xs font-bold text-slate-700 bg-slate-100 flex items-center justify-between">
+                  <span>2. ARKA CEPHE</span>
+                  <span className="text-[11px] text-blue-600 font-semibold flex items-center gap-1">
+                    <ZoomIn className="w-3 h-3" /> Büyüt
+                  </span>
+                </div>
+                <div
+                  onClick={() =>
+                    setLightboxImage({
+                      src: showDeliveryPhotosModal.photos?.back || '/uploads/sample_car_back.svg',
+                      title: `2. Arka Cephe Fotoğrafı - ${showDeliveryPhotosModal.plate || ''}`,
+                    })
+                  }
+                  className="cursor-zoom-in relative group"
+                >
+                  <img
+                    src={showDeliveryPhotosModal.photos?.back || '/uploads/sample_car_back.svg'}
+                    alt="Arka Fotoğraf"
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
+                  />
+                  <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-1 backdrop-blur-[1px]">
+                    <ZoomIn className="w-4 h-4" /> Tam Ekran İncele
+                  </div>
+                </div>
               </div>
+
               <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50">
-                <div className="p-2 text-xs font-bold text-slate-700 bg-slate-100">3. SAĞ CEPHE</div>
-                <img
-                  src={showDeliveryPhotosModal.photos?.right || '/uploads/sample_car_right.svg'}
-                  alt="Sağ Fotoğraf"
-                  className="w-full h-48 object-cover"
-                />
+                <div className="p-2 text-xs font-bold text-slate-700 bg-slate-100 flex items-center justify-between">
+                  <span>3. SAĞ CEPHE</span>
+                  <span className="text-[11px] text-blue-600 font-semibold flex items-center gap-1">
+                    <ZoomIn className="w-3 h-3" /> Büyüt
+                  </span>
+                </div>
+                <div
+                  onClick={() =>
+                    setLightboxImage({
+                      src: showDeliveryPhotosModal.photos?.right || '/uploads/sample_car_right.svg',
+                      title: `3. Sağ Cephe Fotoğrafı - ${showDeliveryPhotosModal.plate || ''}`,
+                    })
+                  }
+                  className="cursor-zoom-in relative group"
+                >
+                  <img
+                    src={showDeliveryPhotosModal.photos?.right || '/uploads/sample_car_right.svg'}
+                    alt="Sağ Fotoğraf"
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
+                  />
+                  <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-1 backdrop-blur-[1px]">
+                    <ZoomIn className="w-4 h-4" /> Tam Ekran İncele
+                  </div>
+                </div>
               </div>
+
               <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50">
-                <div className="p-2 text-xs font-bold text-slate-700 bg-slate-100">4. SOL CEPHE</div>
-                <img
-                  src={showDeliveryPhotosModal.photos?.left || '/uploads/sample_car_left.svg'}
-                  alt="Sol Fotoğraf"
-                  className="w-full h-48 object-cover"
-                />
+                <div className="p-2 text-xs font-bold text-slate-700 bg-slate-100 flex items-center justify-between">
+                  <span>4. SOL CEPHE</span>
+                  <span className="text-[11px] text-blue-600 font-semibold flex items-center gap-1">
+                    <ZoomIn className="w-3 h-3" /> Büyüt
+                  </span>
+                </div>
+                <div
+                  onClick={() =>
+                    setLightboxImage({
+                      src: showDeliveryPhotosModal.photos?.left || '/uploads/sample_car_left.svg',
+                      title: `4. Sol Cephe Fotoğrafı - ${showDeliveryPhotosModal.plate || ''}`,
+                    })
+                  }
+                  className="cursor-zoom-in relative group"
+                >
+                  <img
+                    src={showDeliveryPhotosModal.photos?.left || '/uploads/sample_car_left.svg'}
+                    alt="Sol Fotoğraf"
+                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-200"
+                  />
+                  <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-1 backdrop-blur-[1px]">
+                    <ZoomIn className="w-4 h-4" /> Tam Ekran İncele
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1077,7 +1155,7 @@ export default function DashboardPage() {
               {/* Araç Seçimi */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Kiralanacak Araç (Boşta Olanlar) *
+                  Kiralanacak Araç (Boşta & Kiralanabilir Araçlar) *
                 </label>
                 <select
                   value={selectedVehicleId}
@@ -1089,6 +1167,7 @@ export default function DashboardPage() {
                   {availableVehicles.map((v) => (
                     <option key={v.id} value={v.id}>
                       {v.plate} – {v.brand} {v.model} ({v.owner}) - Standart: {v.monthlyPrice || 350} €/ay
+                      {v.status === 'POST_RENTAL_CHECK' ? ' [🧼 Yıkama/Kontrol Bekliyor - Kiralanabilir]' : ''}
                     </option>
                   ))}
                 </select>
@@ -1491,6 +1570,15 @@ export default function DashboardPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Fullscreen Image Lightbox Modal */}
+      {lightboxImage && (
+        <ImageLightbox
+          src={lightboxImage.src}
+          title={lightboxImage.title}
+          onClose={() => setLightboxImage(null)}
+        />
       )}
     </AppLayout>
   );

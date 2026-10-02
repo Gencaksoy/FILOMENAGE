@@ -33,9 +33,12 @@ import {
   Image as ImageIcon,
   DollarSign,
   UserPlus,
+  Copy,
+  ZoomIn,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Modal } from '@/components/ui/Modal';
+import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { formatDate, formatDateTime, formatKm, formatCurrency, formatRsd, EUR_TO_RSD_RATE } from '@/lib/formatters';
 import { AuthUser } from '@/lib/auth';
 
@@ -170,6 +173,11 @@ export default function VehicleDetailPage() {
   const [editStatus, setEditStatus] = useState('AVAILABLE');
   const [editAccessories, setEditAccessories] = useState<string[]>(DEFAULT_ACCESSORIES);
   const [editNotes, setEditNotes] = useState('');
+  const [editVin, setEditVin] = useState('');
+  const [editEngineNo, setEditEngineNo] = useState('');
+  const [editChronicIssues, setEditChronicIssues] = useState('');
+  const [copiedVin, setCopiedVin] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState<{ src: string; title?: string } | null>(null);
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
 
   // Faults State & Modals
@@ -244,6 +252,9 @@ export default function VehicleDetailPage() {
           setEditOwner(v.owner || 'Atilla');
           setEditStatus(v.status);
           setEditNotes(v.notes || '');
+          setEditVin(v.vin || '');
+          setEditEngineNo(v.engineNo || '');
+          setEditChronicIssues(v.chronicIssues || '');
 
           let accList = DEFAULT_ACCESSORIES;
           if (v.accessories) {
@@ -571,6 +582,9 @@ export default function VehicleDetailPage() {
           owner: editOwner,
           status: editStatus,
           accessories: JSON.stringify(editAccessories),
+          vin: editVin,
+          engineNo: editEngineNo,
+          chronicIssues: editChronicIssues,
           notes: editNotes,
         }),
       });
@@ -585,6 +599,26 @@ export default function VehicleDetailPage() {
       console.error(e);
     } finally {
       setIsSubmittingEdit(false);
+    }
+  };
+
+  // Quick Action: Mark as Available (Temizlik / Kontrol Tamamlandı)
+  const handleMarkAsAvailable = async () => {
+    try {
+      const res = await fetch(`/api/vehicles/${vehicleId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'AVAILABLE' }),
+      });
+      if (res.ok) {
+        await loadVehicle();
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Araç durumu güncellenemedi');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('İşlem sırasında hata oluştu.');
     }
   };
 
@@ -886,6 +920,62 @@ export default function VehicleDetailPage() {
         </div>
       )}
 
+      {/* Kiradan Sonra Yıkama / Kontrol Hatırlatma Bannerı */}
+      {isPostCheck && (
+        <div className="mb-6 p-4 rounded-2xl bg-sky-50 border border-sky-300 text-sky-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-sky-200 text-sky-700 flex items-center justify-center shrink-0">
+              <Sparkles className="w-6 h-6 text-sky-600" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-sky-950">
+                Kiradan Sonra Yıkama & Kontrol Hatırlatması
+              </h4>
+              <p className="text-xs text-sky-800 mt-0.5">
+                Bu araç kiradan teslim alındı. İsterseniz hemen yeni müşteriye kiralayabilir ya da temizlik/kontrol tamamlandığında tek tıkla <b>Müsait</b> durumuna getirebilirsiniz.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={handleMarkAsAvailable}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-xs cursor-pointer transition-colors flex items-center gap-1.5"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              ✓ Temizlik Tamamlandı (Müsait Yap)
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Kronik Arıza & Önemli Not Bannerı */}
+      {vehicle.chronicIssues && (
+        <div className="mb-6 p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-950 shadow-xs">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-200 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
+              <AlertTriangle className="w-6 h-6 text-amber-600 animate-pulse" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-black uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                  ⚠️ Bu Aracın Kronik Arızası / Dikkat Edilecek Bilgisi Var
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(true)}
+                  className="text-xs font-bold text-amber-800 hover:underline cursor-pointer"
+                >
+                  Düzenle
+                </button>
+              </div>
+              <div className="mt-1.5 p-3 rounded-xl bg-white border border-amber-200 text-xs sm:text-sm font-semibold text-slate-900">
+                {vehicle.chronicIssues}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Vehicle Header Card */}
       <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs mb-6 relative overflow-hidden">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
@@ -947,6 +1037,41 @@ export default function VehicleDetailPage() {
                 )}
                 <span>•</span>
                 <span>Aylık Kira: <b>{vehicle.monthlyPrice || 350} €</b></span>
+              </div>
+
+              {/* VIN & Motor No Detayları */}
+              <div className="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-slate-100 text-xs">
+                <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
+                  <span className="text-slate-500 font-bold">Şasi No (VIN):</span>
+                  <span className="font-mono font-bold text-slate-800">
+                    {vehicle.vin || 'Belirtilmedi'}
+                  </span>
+                  {vehicle.vin && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(vehicle.vin);
+                        setCopiedVin(true);
+                        setTimeout(() => setCopiedVin(false), 2000);
+                      }}
+                      className="ml-1 p-0.5 hover:bg-slate-200 rounded text-slate-500 hover:text-slate-800 transition-colors"
+                      title="Şasi Numarasını Kopyala"
+                    >
+                      {copiedVin ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
+                  <span className="text-slate-500 font-bold">Motor No:</span>
+                  <span className="font-mono font-bold text-slate-800">
+                    {vehicle.engineNo || 'Belirtilmedi'}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -2646,51 +2771,123 @@ export default function VehicleDetailPage() {
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="border border-slate-200 rounded-2xl p-3 bg-slate-50">
-            <span className="text-xs font-bold text-slate-700 block mb-1.5 flex items-center gap-1.5">
-              <Camera className="w-3.5 h-3.5 text-amber-600" />
-              1. Ön Cephe
+            <span className="text-xs font-bold text-slate-700 block mb-1.5 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Camera className="w-3.5 h-3.5 text-amber-600" />
+                1. Ön Cephe
+              </span>
+              <span className="text-[11px] text-blue-600 font-semibold flex items-center gap-1">
+                <ZoomIn className="w-3 h-3" /> Büyüt
+              </span>
             </span>
-            <img
-              src={viewerPhotos.front || '/uploads/sample_car_front.svg'}
-              alt="Ön Cephe"
-              className="w-full h-44 object-cover rounded-xl border border-slate-200 bg-white"
-            />
+            <div
+              onClick={() =>
+                setLightboxImage({
+                  src: viewerPhotos.front || '/uploads/sample_car_front.svg',
+                  title: `1. Ön Cephe Fotoğrafı - ${vehicle.plate}`,
+                })
+              }
+              className="relative group cursor-zoom-in rounded-xl overflow-hidden border border-slate-200 bg-white"
+            >
+              <img
+                src={viewerPhotos.front || '/uploads/sample_car_front.svg'}
+                alt="Ön Cephe"
+                className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-200"
+              />
+              <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-1.5 backdrop-blur-[1px]">
+                <ZoomIn className="w-4 h-4" /> Tam Ekran İncele
+              </div>
+            </div>
           </div>
 
           <div className="border border-slate-200 rounded-2xl p-3 bg-slate-50">
-            <span className="text-xs font-bold text-slate-700 block mb-1.5 flex items-center gap-1.5">
-              <Camera className="w-3.5 h-3.5 text-amber-600" />
-              2. Arka Cephe
+            <span className="text-xs font-bold text-slate-700 block mb-1.5 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Camera className="w-3.5 h-3.5 text-amber-600" />
+                2. Arka Cephe
+              </span>
+              <span className="text-[11px] text-blue-600 font-semibold flex items-center gap-1">
+                <ZoomIn className="w-3 h-3" /> Büyüt
+              </span>
             </span>
-            <img
-              src={viewerPhotos.back || '/uploads/sample_car_back.svg'}
-              alt="Arka Cephe"
-              className="w-full h-44 object-cover rounded-xl border border-slate-200 bg-white"
-            />
+            <div
+              onClick={() =>
+                setLightboxImage({
+                  src: viewerPhotos.back || '/uploads/sample_car_back.svg',
+                  title: `2. Arka Cephe Fotoğrafı - ${vehicle.plate}`,
+                })
+              }
+              className="relative group cursor-zoom-in rounded-xl overflow-hidden border border-slate-200 bg-white"
+            >
+              <img
+                src={viewerPhotos.back || '/uploads/sample_car_back.svg'}
+                alt="Arka Cephe"
+                className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-200"
+              />
+              <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-1.5 backdrop-blur-[1px]">
+                <ZoomIn className="w-4 h-4" /> Tam Ekran İncele
+              </div>
+            </div>
           </div>
 
           <div className="border border-slate-200 rounded-2xl p-3 bg-slate-50">
-            <span className="text-xs font-bold text-slate-700 block mb-1.5 flex items-center gap-1.5">
-              <Camera className="w-3.5 h-3.5 text-amber-600" />
-              3. Sağ Yan Cephe
+            <span className="text-xs font-bold text-slate-700 block mb-1.5 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Camera className="w-3.5 h-3.5 text-amber-600" />
+                3. Sağ Yan Cephe
+              </span>
+              <span className="text-[11px] text-blue-600 font-semibold flex items-center gap-1">
+                <ZoomIn className="w-3 h-3" /> Büyüt
+              </span>
             </span>
-            <img
-              src={viewerPhotos.right || '/uploads/sample_car_right.svg'}
-              alt="Sağ Yan"
-              className="w-full h-44 object-cover rounded-xl border border-slate-200 bg-white"
-            />
+            <div
+              onClick={() =>
+                setLightboxImage({
+                  src: viewerPhotos.right || '/uploads/sample_car_right.svg',
+                  title: `3. Sağ Yan Cephe Fotoğrafı - ${vehicle.plate}`,
+                })
+              }
+              className="relative group cursor-zoom-in rounded-xl overflow-hidden border border-slate-200 bg-white"
+            >
+              <img
+                src={viewerPhotos.right || '/uploads/sample_car_right.svg'}
+                alt="Sağ Yan"
+                className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-200"
+              />
+              <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-1.5 backdrop-blur-[1px]">
+                <ZoomIn className="w-4 h-4" /> Tam Ekran İncele
+              </div>
+            </div>
           </div>
 
           <div className="border border-slate-200 rounded-2xl p-3 bg-slate-50">
-            <span className="text-xs font-bold text-slate-700 block mb-1.5 flex items-center gap-1.5">
-              <Camera className="w-3.5 h-3.5 text-amber-600" />
-              4. Sol Yan Cephe
+            <span className="text-xs font-bold text-slate-700 block mb-1.5 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Camera className="w-3.5 h-3.5 text-amber-600" />
+                4. Sol Yan Cephe
+              </span>
+              <span className="text-[11px] text-blue-600 font-semibold flex items-center gap-1">
+                <ZoomIn className="w-3 h-3" /> Büyüt
+              </span>
             </span>
-            <img
-              src={viewerPhotos.left || '/uploads/sample_car_left.svg'}
-              alt="Sol Yan"
-              className="w-full h-44 object-cover rounded-xl border border-slate-200 bg-white"
-            />
+            <div
+              onClick={() =>
+                setLightboxImage({
+                  src: viewerPhotos.left || '/uploads/sample_car_left.svg',
+                  title: `4. Sol Yan Cephe Fotoğrafı - ${vehicle.plate}`,
+                })
+              }
+              className="relative group cursor-zoom-in rounded-xl overflow-hidden border border-slate-200 bg-white"
+            >
+              <img
+                src={viewerPhotos.left || '/uploads/sample_car_left.svg'}
+                alt="Sol Yan"
+                className="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-200"
+              />
+              <div className="absolute inset-0 bg-black/25 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white font-bold text-xs gap-1.5 backdrop-blur-[1px]">
+                <ZoomIn className="w-4 h-4" /> Tam Ekran İncele
+              </div>
+            </div>
           </div>
         </div>
 
@@ -2791,6 +2988,49 @@ export default function VehicleDetailPage() {
                 <option value="MAINTENANCE">Bakımda</option>
               </select>
             </div>
+          </div>
+
+          {/* Detaylı Araç Kimliği (Şasi No & Motor No) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <div>
+              <label className="block text-xs font-semibold text-slate-800 mb-1">
+                Şasi Numarası (VIN - 17 Haneli)
+              </label>
+              <input
+                type="text"
+                value={editVin}
+                onChange={(e) => setEditVin(e.target.value.toUpperCase())}
+                placeholder="Örn: VF1BZ0A0548123456"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-mono font-bold uppercase bg-white"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-800 mb-1">
+                Motor Numarası
+              </label>
+              <input
+                type="text"
+                value={editEngineNo}
+                onChange={(e) => setEditEngineNo(e.target.value.toUpperCase())}
+                placeholder="Örn: K9K 836 D012345"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-mono font-bold uppercase bg-white"
+              />
+            </div>
+          </div>
+
+          {/* Kronik Arızalar / Bilinen Sorunlar */}
+          <div className="bg-amber-50/70 p-3 rounded-xl border border-amber-300/80">
+            <label className="block text-xs font-bold text-amber-900 mb-1 flex items-center gap-1.5">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+              Kronik Arızalar / Bilinen Sıkıntılar / Önemli Notlar
+            </label>
+            <textarea
+              rows={2}
+              value={editChronicIssues}
+              onChange={(e) => setEditChronicIssues(e.target.value)}
+              placeholder="Örn: Yağ yakma eğilimi var, klima sağ menfezden az üflüyor..."
+              className="w-full px-3 py-2 text-xs border border-amber-300 rounded-xl bg-white text-slate-800 placeholder:text-slate-400"
+            />
           </div>
 
           {/* Fuel & Registration */}
@@ -3077,6 +3317,15 @@ export default function VehicleDetailPage() {
           </div>
         </form>
       </Modal>
+
+      {/* Fullscreen Image Lightbox Modal */}
+      {lightboxImage && (
+        <ImageLightbox
+          src={lightboxImage.src}
+          title={lightboxImage.title}
+          onClose={() => setLightboxImage(null)}
+        />
+      )}
     </AppLayout>
   );
 }

@@ -152,28 +152,34 @@ export async function PUT(
   try {
     const body = await req.json();
 
+    const updateData: any = {};
+    if (body.brand !== undefined) updateData.brand = body.brand;
+    if (body.model !== undefined) updateData.model = body.model;
+    if (body.modelYear !== undefined) updateData.modelYear = parseInt(body.modelYear, 10);
+    if (body.color !== undefined) updateData.color = body.color;
+    if (body.currentKm !== undefined) updateData.currentKm = parseInt(body.currentKm, 10);
+    if (body.dailyPrice !== undefined) updateData.dailyPrice = parseFloat(body.dailyPrice) || 0;
+    if (body.monthlyPrice !== undefined) updateData.monthlyPrice = parseFloat(body.monthlyPrice) || 350;
+    if (body.status !== undefined) updateData.status = body.status;
+    if (body.owner !== undefined) updateData.owner = body.owner;
+    if (body.fuelType !== undefined) updateData.fuelType = body.fuelType;
+    if (body.fuelConsumptionRsd !== undefined) updateData.fuelConsumptionRsd = parseFloat(body.fuelConsumptionRsd) || 0;
+    if (body.registrationExpiry !== undefined) {
+      updateData.registrationExpiry = body.registrationExpiry ? new Date(body.registrationExpiry) : null;
+    }
+    if (body.purchasePrice !== undefined) updateData.purchasePrice = parseFloat(body.purchasePrice) || 0;
+    if (body.initialExpenses !== undefined) updateData.initialExpenses = parseFloat(body.initialExpenses) || 0;
+    if (body.accessories !== undefined) {
+      updateData.accessories = typeof body.accessories === 'string' ? body.accessories : JSON.stringify(body.accessories);
+    }
+    if (body.vin !== undefined) updateData.vin = body.vin ? body.vin.trim() : null;
+    if (body.engineNo !== undefined) updateData.engineNo = body.engineNo ? body.engineNo.trim() : null;
+    if (body.chronicIssues !== undefined) updateData.chronicIssues = body.chronicIssues ? body.chronicIssues.trim() : null;
+    if (body.notes !== undefined) updateData.notes = body.notes;
+
     const updated = await prisma.vehicle.update({
       where: { id: params.id },
-      data: {
-        brand: body.brand,
-        model: body.model,
-        modelYear: parseInt(body.modelYear, 10),
-        color: body.color,
-        currentKm: parseInt(body.currentKm, 10),
-        dailyPrice: parseFloat(body.dailyPrice) || 0,
-        monthlyPrice: parseFloat(body.monthlyPrice) || 350,
-        status: body.status,
-        owner: body.owner,
-        fuelType: body.fuelType,
-        fuelConsumptionRsd: parseFloat(body.fuelConsumptionRsd) || 0,
-        registrationExpiry: body.registrationExpiry ? new Date(body.registrationExpiry) : null,
-        purchasePrice: parseFloat(body.purchasePrice) || 0,
-        initialExpenses: parseFloat(body.initialExpenses) || 0,
-        accessories: body.accessories !== undefined
-          ? (typeof body.accessories === 'string' ? body.accessories : JSON.stringify(body.accessories))
-          : undefined,
-        notes: body.notes,
-      },
+      data: updateData,
     });
 
     await logAudit({
