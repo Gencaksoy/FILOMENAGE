@@ -1,0 +1,269 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Fleet {
+  id          String    @id @default(cuid())
+  code        String    @unique // Benzersiz Filo Kodu (Örn: FL-1001)
+  name        String    // Filo / Şirket Adı
+  ownerName   String?   // Filo Yetkilisi / Sahibi Adı
+  ownerEmail  String?   // Filo Yetkilisi E-postası
+  phone       String?   // Telefon
+  city        String?   @default("Belgrad")
+  maxVehicles Int       @default(20) // Lisanslı araç kotası
+  status      String    @default("ACTIVE") // ACTIVE, SUSPENDED, EXPIRED
+  expiresAt   DateTime? // Lisans bitiş tarihi
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  users       User[]
+  vehicles    Vehicle[]
+  customers   Customer[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("ADMIN") // SUPER_ADMIN, ADMIN, STAFF
+  avatar       String?
+  isActive     Boolean  @default(true)
+  fleetId      String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  fleet        Fleet?   @relation(fields: [fleetId], references: [id], onDelete: SetNull)
+}
+
+model ServiceShop {
+  id        String   @id @default(cuid())
+  name      String   @unique // Kayıtlı servis adı
+  phone     String?
+  address   String?
+  notes     String?
+  createdAt DateTime @default(now())
+}
+
+model Vehicle {
+  id                  String   @id @default(cuid())
+  plate               String   @unique // Sırbistan Belgrad formatı (örn: BG 123-AA)
+  brand               String
+  model               String
+  modelYear           Int
+  color               String?
+  currentKm           Int      @default(0)
+  dailyPrice          Float    @default(0) // EUR
+  monthlyPrice        Float    @default(350) // Sabit Standart Aylık Kira (EUR)
+  status              String   @default("AVAILABLE") // AVAILABLE (Boşta), RENTED (Kirada), MAINTENANCE (Serviste), POST_RENTAL_CHECK (Kiradan Sonra Bakım / Temizlik)
+  owner               String   @default("Akif Aksoy")
+  
+  // Yakıt ve Tüketim (Dinar)
+  fuelType            String   @default("Dizel") // "Dizel", "Benzin", "Benzin + LPG", "Benzin + Metan (CNG)"
+  fuelConsumptionRsd  Float    @default(0) // 100 km'de kaç Dinar (RSD) yakıyor
+
+  // Zorunlu Tescil / Register (Registracija)
+  registrationExpiry  DateTime? // Registracija bitiş tarihi (register olmadan araç trafiğe çıkamaz)
+
+  // Satın Alma & Amortisman Hesabı
+  purchasePrice       Float    @default(0) // Kaç Euro'ya satın alındı (EUR)
+  initialExpenses     Float    @default(0) // Satın alınırken yapılan ilk masraflar (Devir, ilk register, noter vb. EUR)
+
+  // Aksesuarlar (Telefon tutucu, çakmaklık şarj aleti, vb.)
+  accessories         String?  // Standart aksesuarlar listesi JSON / metin
+
+  notes               String?
+  isDeleted           Boolean  @default(false)
+  fleetId             String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  fleet               Fleet?   @relation(fields: [fleetId], references: [id], onDelete: Cascade)
+  rentals             Rental[]
+  maintenances        MaintenanceRecord[]
+  oilChanges          OilChangeRecord[]
+  inspections         InspectionRecord[]
+  faults              VehicleFault[]
+}
+
+model Customer {
+  id         String   @id @default(cuid())
+  name       String
+  phone      String
+  identityNo String?  // Pasaport No / Kimlik No
+  email      String?
+  address    String?
+  notes      String?
+  isDeleted  Boolean  @default(false)
+  fleetId    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  fleet      Fleet?   @relation(fields: [fleetId], references: [id], onDelete: Cascade)
+  documents  CustomerDocument[]
+  rentals    Rental[]
+}
+
+model CustomerDocument {
+  id         String   @id @default(cuid())
+  customerId String
+  docType    String   // ID_CARD, DRIVING_LICENSE, PASSPORT, OTHER
+  title      String
+  fileUrl    String
+  createdAt  DateTime @default(now())
+
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model Rental {
+  id                    String    @id @default(cuid())
+  vehicleId             String
+  customerId            String
+  startDate             DateTime  @default(now())
+  endDate               DateTime  // Planlanan İade Tarihi
+  returnDate            DateTime? // Gerçek İade Tarihi
+  startKm               Int       @default(0)
+  returnKm              Int?
+  dailyRate             Float     @default(0) // EUR
+  monthlyRate           Float     @default(350) // Anlaşılan aylık kira bedeli (EUR)
+  discountAmount        Float     @default(0) // Yapılan iskonto / indirim (EUR)
+  totalAmount           Float     @default(0) // EUR
+  isPaid                Boolean   @default(true) // Kira bedeli ödendi mi teyidi
+  status                String    @default("ACTIVE") // ACTIVE, RETURNED
+
+  // Teslimat Öncesi 4 Fotoğraf (Ön, Arka, Sağ, Sol)
+  photoFront            String?
+  photoBack             String?
+  photoRight            String?
+  photoLeft             String?
+
+  // Aksesuar ve İade Kontrolü
+  deliveryAccessories   String?   // Teslim edilirken araçta olan aksesuarlar (JSON)
+  returnAccessories     String?   // Teslim alınırken kontrol edilen aksesuarlar (JSON)
+  sentToPostCheck       Boolean   @default(false) // Kiradan sonra genel bakıma/temizliğe gitti mi?
+  returnInspectionNotes String?   // Hasar ve aksesuar kontrol notları
+
+  notes                 String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  vehicle               Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  customer              Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+}
+
+model MaintenanceRecord {
+  id                  String   @id @default(cuid())
+  vehicleId           String
+  maintenanceDate     DateTime @default(now())
+  nextMaintenanceDate DateTime?
+  laborCost           Float    @default(0) // EUR İşçilik
+  partsCost           Float    @default(0) // EUR Parça Toplamı
+  totalCost           Float    @default(0) // EUR Toplam (İşçilik + Parça)
+  currency            String   @default("EUR") // EUR veya RSD
+  originalCost        Float    @default(0) // Girilen orijinal tutar
+  exchangeRate        Float    @default(117) // 1 EUR = 117 RSD
+  description         String
+  serviceName         String?
+  notes               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  vehicle             Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  parts               MaintenancePart[]
+}
+
+model MaintenancePart {
+  id            String   @id @default(cuid())
+  maintenanceId String
+  partName      String
+  partCode      String?
+  changeDate    DateTime @default(now())
+  cost          Float    @default(0) // EUR
+  originalCost  Float    @default(0)
+  currency      String   @default("EUR")
+  quantity      Int      @default(1)
+  createdAt     DateTime @default(now())
+
+  maintenance   MaintenanceRecord @relation(fields: [maintenanceId], references: [id], onDelete: Cascade)
+}
+
+model OilChangeRecord {
+  id            String   @id @default(cuid())
+  vehicleId     String
+  changeDate    DateTime @default(now())
+  km            Int      @default(0)
+  oilType       String
+  filterChanged Boolean  @default(true)
+  cost          Float    @default(0) // EUR
+  originalCost  Float    @default(0)
+  currency      String   @default("EUR")
+  exchangeRate  Float    @default(117)
+  serviceName   String?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  vehicle       Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+}
+
+model InspectionRecord {
+  id                 String   @id @default(cuid())
+  vehicleId          String
+  inspectionDate     DateTime @default(now())
+  nextInspectionDate DateTime
+  cost               Float    @default(0) // EUR
+  originalCost       Float    @default(0)
+  currency           String   @default("EUR")
+  station            String   @default("Auto Centar Beograd")
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  vehicle            Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userName    String
+  userRole    String?  // ADMIN, STAFF
+  action      String
+  target      String?
+  description String
+  createdAt   DateTime @default(now())
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  title       String
+  message     String
+  type        String   @default("INFO")
+  targetPlate String?
+  link        String?
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model VehicleFault {
+  id              String    @id @default(cuid())
+  vehicleId       String
+  title           String    // Arıza başlığı (örn: Frenlerden ses geliyor)
+  description     String?   // Detaylı arıza açıklaması
+  severity        String    @default("MEDIUM") // LOW (Düşük), MEDIUM (Orta), HIGH (Yüksek), CRITICAL (Kritik/Trafiğe Çıkamaz)
+  status          String    @default("OPEN") // OPEN (Açık/Bekliyor), IN_PROGRESS (Tamirde), RESOLVED (Düzeltildi)
+  reportedBy      String?   // Arızayı bildiren (örn: Müşteri, Atilla, Onur, Miloš)
+  reportedDate    DateTime  @default(now())
+  resolvedDate    DateTime? // Düzeltilme tarihi
+  resolutionNotes String?   // Nasıl çözüldü / tamir edildi
+  cost            Float?    // Varsa onarım maliyeti (EUR)
+  currency        String    @default("EUR")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  vehicle         Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+}

@@ -1,0 +1,1726 @@
+# ARAÇ KİRALAMA ŞİRKETİ – FİLO, KURYE, BAKIM VE MASRAF TAKİP PANELİ
+
+Modern, profesyonel ve kurumsal bir **araç kiralama / filo yönetim web uygulaması** geliştir.
+
+Uygulamanın temel amacı; şirkete ait veya kiralanan araçların, bu araçları kullanan kuryelerin, araç teslim ve zimmet bilgilerinin, kilometrelerinin, periyodik bakımlarının, servis geçmişlerinin, değişen parçalarının, işçilik ve toplam masraflarının, sonraki bakım tarihlerinin ve tüm geçmiş kayıtlarının tek bir merkezi panelden takip edilmesini sağlamaktır.
+
+Uygulama masaüstü bilgisayarda öncelikli olmak üzere tablet ve mobil cihazlarda da tamamen responsive çalışmalıdır.
+
+Sistem Türkçe hazırlanmalıdır.
+
+---
+
+# 1. GENEL TASARIM
+
+Arayüz:
+
+* Modern
+* Kurumsal
+* Premium
+* Sade
+* Hızlı
+* Kullanımı kolay
+* Gereksiz karmaşadan uzak
+
+Bir filo yönetim yazılımı hissi vermeli.
+
+Sol tarafta sabit bir sidebar menü kullan.
+
+Üst bölümde:
+
+* Kullanıcı adı
+* Profil
+* Bildirimler
+* Sistem saati/tarihi
+* Çıkış
+
+bulunsun.
+
+Ana renk paleti:
+
+* Koyu lacivert
+* Beyaz
+* Açık gri
+* Gri tonları
+* Önemli durumlar için yeşil / turuncu / kırmızı
+
+kullanılabilir.
+
+Kartlar modern ve hafif gölgeli olsun.
+
+Tablolar profesyonel görünsün.
+
+Tüm formlarda Türkçe alan isimleri kullan.
+
+---
+
+# 2. KULLANICI VE YETKİLENDİRME SİSTEMİ
+
+Sisteme toplam 3 kişi erişebilecek.
+
+Kullanıcı sistemi gerçek authentication ile çalışmalı.
+
+Roller:
+
+### Yönetici
+
+Tam yetkiye sahip.
+
+* Araç ekleme
+* Araç silme
+* Araç düzenleme
+* Kurye ekleme
+* Kurye düzenleme
+* Araç-kurye eşleştirme
+* Bakım kaydı oluşturma
+* Masraf girme
+* Servis ekleme
+* Kullanıcı yönetimi
+* Raporları görüntüleme
+* Kayıt geçmişini görüntüleme
+* Dashboard görüntüleme
+
+### Personel 1
+
+Operasyonel kayıtları yönetebilir.
+
+### Personel 2
+
+Operasyonel kayıtları yönetebilir.
+
+Yetki sistemi ileride genişletilebilir şekilde tasarlanmalı.
+
+Her kayıt için:
+
+* Kim oluşturdu?
+* Kim değiştirdi?
+* Ne zaman oluşturuldu?
+* Ne zaman değiştirildi?
+
+bilgileri otomatik tutulmalı.
+
+---
+
+# 3. DASHBOARD
+
+Ana sayfa kapsamlı bir filo dashboard'u olsun.
+
+Üstte KPI kartları:
+
+* Toplam Araç
+* Aktif Araç
+* Boşta Olan Araç
+* Kuryede Olan Araç
+* Bakım Yaklaşan Araç
+* Bakımı Geciken Araç
+* Toplam Kurye
+* Bu Ay Toplam Masraf
+* Bu Ay Bakım Masrafı
+* Bu Ay Parça Masrafı
+
+Göster.
+
+---
+
+# 4. DASHBOARD ARAÇ DURUMU
+
+Araçların mevcut durumunu grafik veya kart şeklinde göster.
+
+Durumlar:
+
+* Kuryede
+* Boşta
+* Bakımda
+* Serviste
+* Pasif
+* Satıldı
+
+Örneğin:
+
+AKTİF ARAÇLAR
+42
+
+KURYELERDE
+35
+
+BOŞTA
+4
+
+BAKIMDA
+2
+
+SERVİSTE
+1
+
+---
+
+# 5. YAKLAŞAN BAKIMLAR
+
+Dashboard'da özel bir alan oluştur:
+
+"Yaklaşan Bakımlar"
+
+Burada:
+
+* Araç
+* Plaka
+* Mevcut KM
+* Son bakım tarihi
+* Son bakım KM
+* Sonraki bakım tarihi
+* Sonraki bakım KM
+* Kalan gün
+* Kalan KM
+
+gösterilsin.
+
+Durum renkleri:
+
+Yeşil:
+Bakım uzak
+
+Turuncu:
+Bakım yaklaşıyor
+
+Kırmızı:
+Bakım tarihi veya KM'si geçmiş
+
+Bakım yaklaşımı hem tarihe hem kilometreye göre hesaplanmalı.
+
+---
+
+# 6. ARAÇLAR MODÜLÜ
+
+Sidebar:
+
+"ARAÇLAR"
+
+Araçlar sayfasında profesyonel bir tablo oluştur.
+
+Kolonlar:
+
+* Plaka
+* Marka
+* Model
+* Model Yılı
+* Şasi No
+* Motor No
+* Yakıt Türü
+* Motor Hacmi
+* Güncel KM
+* Araç Durumu
+* Mevcut Kurye
+* Son Bakım
+* Sonraki Bakım
+* Toplam Masraf
+* İşlemler
+
+İşlemler:
+
+* Görüntüle
+* Düzenle
+* Bakım Geçmişi
+* Masraflar
+* Kurye Geçmişi
+* Sil
+
+---
+
+# 7. YENİ ARAÇ EKLEME
+
+"Yeni Araç Ekle" butonu bulunmalı.
+
+Form alanları:
+
+## Araç Kimlik Bilgileri
+
+* Plaka
+* Marka
+* Model
+* Model Yılı
+* Araç Tipi
+* Şasi Numarası
+* Motor Numarası
+* VIN
+* Yakıt Türü
+* Motor Hacmi
+* Vites Tipi
+* Renk
+
+## Tarih Bilgileri
+
+* Register Tarihi
+* Satın Alma Tarihi
+* İlk Tescil Tarihi
+
+## Kilometre
+
+* Satın Alındığındaki KM
+* Güncel KM
+
+## Finansal Bilgiler
+
+* Satın Alma Bedeli
+* Para Birimi
+* Satın Alma Notu
+
+## Durum
+
+* Aktif
+* Boşta
+* Kuryede
+* Bakımda
+* Serviste
+* Pasif
+* Satıldı
+
+## Ekstra
+
+* Araç Notları
+
+---
+
+# 8. ARAÇ DETAY SAYFASI
+
+Bir araca tıklandığında kapsamlı detay sayfası açılmalı.
+
+Üstte:
+
+PLAKA
+MARKA MODEL
+GÜNCEL KM
+ARAÇ DURUMU
+MEVCUT KURYE
+
+göster.
+
+Altında sekmeler oluştur:
+
+### Genel Bilgiler
+
+Araçla ilgili tüm teknik bilgiler.
+
+### Kurye
+
+Aracı şu anda kullanan kişi.
+
+### Bakım Geçmişi
+
+Tüm bakım kayıtları.
+
+### Masraflar
+
+Tüm araç masrafları.
+
+### Servis Geçmişi
+
+Aracın hangi servislere gittiği.
+
+### Kilometre Geçmişi
+
+KM girişlerinin geçmişi.
+
+### Zimmet Geçmişi
+
+Aracın kimlerde olduğunu geçmişe dönük göster.
+
+### Notlar
+
+Araçla ilgili özel notlar.
+
+### İşlem Geçmişi
+
+Sistemde bu araçla ilgili yapılan tüm değişiklikleri göster.
+
+---
+
+# 9. KURYE MODÜLÜ
+
+Sidebar:
+
+"KURYELER"
+
+Kurye listesi oluştur.
+
+Tablo:
+
+* Ad Soyad
+* Telefon
+* E-posta
+* Kimlik / Personel No
+* İşe Başlama Tarihi
+* Aktif/Pasif
+* Üzerindeki Araç
+* Araç Plakası
+* Araç Teslim Tarihi
+* Güncel KM
+* Notlar
+
+---
+
+# 10. YENİ KURYE EKLE
+
+Alanlar:
+
+* Ad
+* Soyad
+* Telefon
+* Alternatif Telefon
+* E-posta
+* Personel No
+* Adres
+* İşe Başlama Tarihi
+* Durum
+* Notlar
+
+Kurye aktif/pasif yapılabilmeli.
+
+---
+
+# 11. ARAÇ – KURYE ZİMMET SİSTEMİ
+
+Bir aracın kime verildiği mutlaka takip edilmeli.
+
+"Zimmet Ver" butonu oluştur.
+
+Alanlar:
+
+* Araç
+* Kurye
+* Teslim Tarihi
+* Teslim Saati
+* Teslim KM
+* Yakıt Seviyesi
+* Araç Durumu
+* Teslim Notu
+* Teslim Eden
+* Teslim Alan
+
+Araç teslim edildiğinde otomatik olarak:
+
+Araç Durumu = Kuryede
+
+olmalı.
+
+Kurye otomatik olarak araç detayında görünmeli.
+
+---
+
+# 12. ARAÇ GERİ ALMA
+
+Araç geri alındığında:
+
+* İade Tarihi
+* İade Saati
+* İade KM
+* Yakıt Seviyesi
+* Araç Durumu
+* Hasar Bilgisi
+* İade Notu
+* Teslim Alan
+* Teslim Eden
+
+girilebilmeli.
+
+Sistem otomatik olarak:
+
+* Kullanım süresini
+* Kullanılan KM'yi
+* Kurye geçmişini
+
+hesaplamalı.
+
+---
+
+# 13. KURYE ARAÇ GEÇMİŞİ
+
+Her kurye için:
+
+"Hangi tarihler arasında hangi aracı kullandı?"
+
+sorusu cevaplanabilmeli.
+
+Örnek:
+
+Ahmet Yılmaz
+
+01.09.2026 – 15.09.2026
+34 ABC 123
+
+15.09.2026 – Günümüz
+34 XYZ 456
+
+şeklinde geçmiş tutulmalı.
+
+---
+
+# 14. BAKIM MODÜLÜ
+
+Sidebar:
+
+"BAKIMLAR"
+
+Bakım kayıtları tablo halinde gösterilmeli.
+
+Kolonlar:
+
+* Tarih
+* Araç
+* Plaka
+* KM
+* Bakım Türü
+* Servis
+* İşçilik
+* Parça Tutarı
+* Toplam Tutar
+* Sonraki Bakım Tarihi
+* Sonraki Bakım KM
+* Kaydı Giren
+
+---
+
+# 15. YENİ BAKIM KAYDI
+
+"Bakım Ekle"
+
+Form:
+
+## Araç
+
+* Araç
+* Plaka
+* KM
+
+## Bakım Bilgileri
+
+* Bakım Tarihi
+* Bakım Türü
+* Periyodik Bakım
+* Ara Bakım
+* Arıza
+* Genel Kontrol
+* Fren Bakımı
+* Motor Bakımı
+* Şanzıman
+* Lastik
+* Diğer
+
+## Servis
+
+* Servis Adı
+* Servis Yetkilisi
+* Servis Telefonu
+* Servis Adresi
+
+## İşçilik
+
+* İşçilik Tutarı
+* Para Birimi
+
+## Parçalar
+
+Dinamik parça ekleme sistemi oluştur.
+
+Her parça için:
+
+* Parça Adı
+* Parça Kodu
+* Marka
+* Adet
+* Birim Fiyat
+* Toplam
+
+Örneğin:
+
+Yağ Filtresi
+1 adet
+25 EUR
+
+Hava Filtresi
+1 adet
+30 EUR
+
+Motor Yağı
+5 litre
+50 EUR
+
+Fren Balatası
+1 takım
+80 EUR
+
+Sistem otomatik hesaplasın.
+
+---
+
+# 16. BAKIM TOPLAM TUTARI
+
+Otomatik hesap:
+
+Parça Toplamı
++
+İşçilik
+=======
+
+Toplam Bakım Maliyeti
+
+Örnek:
+
+Parçalar: 185 EUR
+İşçilik: 50 EUR
+
+Toplam:
+235 EUR
+
+Manuel toplam girişi yerine mümkün olduğunca sistem otomatik hesaplamalı.
+
+---
+
+# 17. SONRAKİ BAKIM
+
+Bakım kaydında:
+
+* Sonraki Bakım Tarihi
+* Sonraki Bakım KM
+
+alanları zorunlu/opsiyonel şekilde yapılandırılmalı.
+
+Örneğin:
+
+Son bakım:
+02.10.2026
+120.000 KM
+
+Sonraki bakım:
+02.01.2027
+130.000 KM
+
+Sistem hem tarih hem KM üzerinden bakım durumunu kontrol etmeli.
+
+---
+
+# 18. BAKIM UYARI SİSTEMİ
+
+Dashboard'da otomatik uyarılar.
+
+Örnek:
+
+🔴 BAKIM GECİKTİ
+
+34 ABC 123
+Bakım tarihi 5 gün geçti.
+
+🟠 BAKIM YAKLAŞIYOR
+
+34 XYZ 456
+Bakım için 12 gün kaldı.
+
+🟢 BAKIM NORMAL
+
+35 DEF 789
+Bakım için 45 gün kaldı.
+
+KM bazlı uyarı da olmalı.
+
+Örneğin:
+
+Bakım: 130.000 KM
+Mevcut: 128.700 KM
+Kalan: 1.300 KM
+
+---
+
+# 19. SERVİSLER MODÜLÜ
+
+Sidebar:
+
+"SERVİSLER"
+
+Servis veritabanı oluştur.
+
+Alanlar:
+
+* Servis Adı
+* Yetkili Kişi
+* Telefon
+* E-posta
+* Adres
+* Şehir
+* Servis Türü
+* Notlar
+
+Servis detayında:
+
+* Hangi araçlar geldi?
+* Kaç bakım yapıldı?
+* Toplam ne kadar ödeme yapıldı?
+* Son işlem tarihi?
+
+göster.
+
+---
+
+# 20. MASRAFLAR MODÜLÜ
+
+Sidebar:
+
+"MASRAFLAR"
+
+Tüm araç masrafları burada listelenmeli.
+
+Masraf türleri:
+
+* Periyodik Bakım
+* Arıza
+* Parça
+* İşçilik
+* Lastik
+* Sigorta
+* Vergi
+* Muayene
+* Yakıt
+* Çekici
+* Hasar
+* Diğer
+
+Alanlar:
+
+* Tarih
+* Araç
+* Plaka
+* Masraf Türü
+* Açıklama
+* Tutar
+* Para Birimi
+* Servis
+* Fatura No
+* Fatura Tarihi
+* Ödeme Durumu
+* Not
+* Kaydı Giren
+
+---
+
+# 21. MASRAF RAPORLARI
+
+Araç bazında toplam masraf göster.
+
+Örneğin:
+
+34 ABC 123
+
+Toplam Masraf:
+4.250 EUR
+
+Bakım:
+2.100 EUR
+
+Parça:
+1.400 EUR
+
+İşçilik:
+750 EUR
+
+Aylık masraf grafiği göster.
+
+---
+
+# 22. ARAÇ MALİYET ANALİZİ
+
+Her araç için:
+
+* Toplam bakım maliyeti
+* Toplam parça maliyeti
+* Toplam işçilik
+* Toplam diğer masraflar
+* Toplam masraf
+* Kilometre başına maliyet
+* Aylık ortalama maliyet
+
+hesaplanabilmeli.
+
+Örneğin:
+
+Toplam KM:
+25.000
+
+Toplam masraf:
+5.000 EUR
+
+KM başına maliyet:
+0,20 EUR/km
+
+---
+
+# 23. KİLOMETRE TAKİBİ
+
+Ayrı bir:
+
+"KİLOMETRE"
+
+modülü oluştur.
+
+Her araç için kilometre kayıtları tutulmalı.
+
+Alanlar:
+
+* Araç
+* Tarih
+* KM
+* Girilen KM
+* KM kaynağı
+* Not
+* Kaydı Giren
+
+KM değeri geriye doğru düşürülememeli.
+
+Örneğin mevcut:
+
+120.000 KM
+
+yeni giriş:
+
+119.000 KM
+
+ise sistem uyarı vermeli.
+
+---
+
+# 24. KM GİRİŞİ
+
+Kurye araç kullanıyorsa belirli periyotlarla KM girişi yapılabilmeli.
+
+Araç detayında:
+
+Güncel KM:
+128.450 KM
+
+Son KM kaydı:
+01.10.2026
+
+şeklinde göster.
+
+KM geçmişini grafik olarak göster.
+
+---
+
+# 25. YAKIT TAKİBİ
+
+Sisteme yakıt modülü de ekle.
+
+Her yakıt girişinde:
+
+* Araç
+* Tarih
+* KM
+* Yakıt Türü
+* Litre
+* Litre Fiyatı
+* Toplam Tutar
+* İstasyon
+* Kurye
+* Not
+
+alanları olsun.
+
+Sistem:
+
+* Ortalama tüketim
+* KM başına yakıt maliyeti
+* Aylık yakıt maliyeti
+
+hesaplayabilsin.
+
+---
+
+# 26. BELGE / FATURA EKLEME
+
+Bakım veya masraf kayıtlarına dosya yükleme sistemi oluştur.
+
+Destekle:
+
+* PDF
+* JPG
+* PNG
+* WEBP
+
+Örneğin bakım faturası sisteme yüklenebilmeli.
+
+Dosya adı ve yükleyen kullanıcı tutulmalı.
+
+---
+
+# 27. NOT SİSTEMİ
+
+Araçlara ve bakım kayıtlarına not eklenebilmeli.
+
+Örnek:
+
+"Ön fren balataları değiştirildi."
+
+"Sol ön lastikte aşınma gözlemlendi."
+
+"Bir sonraki bakımda yağ filtresi kontrol edilecek."
+
+Notun:
+
+* Kim tarafından
+* Ne zaman
+
+girildiği görünmeli.
+
+---
+
+# 28. İŞLEM GEÇMİŞİ / AUDIT LOG
+
+Sistem yapılan her kritik işlemi kaydetmeli.
+
+Örnek:
+
+02.10.2026 – 14:32
+
+Aslan Atasoy
+
+34 ABC 123 aracının bakım kaydını oluşturdu.
+
+02.10.2026 – 15:10
+
+Mehmet Kaya
+
+34 ABC 123 güncel KM'sini 128.450 olarak değiştirdi.
+
+Loglarda:
+
+* Kullanıcı
+* İşlem
+* Tarih
+* Saat
+* Değişen alan
+* Eski değer
+* Yeni değer
+
+tutulmalı.
+
+---
+
+# 29. RAPORLAR
+
+Sidebar:
+
+"RAPORLAR"
+
+Filtrelenebilir rapor sistemi oluştur.
+
+Filtreler:
+
+* Tarih aralığı
+* Araç
+* Kurye
+* Servis
+* Masraf türü
+* Durum
+
+Raporlar:
+
+### Araç Masraf Raporu
+
+Araç bazında toplam masraflar.
+
+### Kurye Araç Kullanım Raporu
+
+Kuryenin hangi aracı ne kadar süre kullandığı.
+
+### Bakım Raporu
+
+Tüm bakım geçmişi.
+
+### Servis Raporu
+
+Servis bazında toplam harcama.
+
+### Aylık Masraf Raporu
+
+Ay ay toplam harcama.
+
+### Araç Maliyet Raporu
+
+Araç başına toplam maliyet.
+
+---
+
+# 30. EXCEL / CSV DIŞA AKTARMA
+
+Tabloların tamamında:
+
+"Excel'e Aktar"
+
+butonu bulunmalı.
+
+CSV dışa aktarma da desteklenmeli.
+
+Raporlar PDF olarak da alınabilmeli.
+
+---
+
+# 31. ARAMA VE FİLTRELEME
+
+Her ana tabloda:
+
+* Arama
+* Filtre
+* Sıralama
+* Sayfalama
+
+olmalı.
+
+Araç araması:
+
+* Plaka
+* Marka
+* Model
+* Şasi No
+* Motor No
+* Kurye
+
+üzerinden yapılabilmeli.
+
+---
+
+# 32. GLOBAL ARAMA
+
+Panelin üst kısmında global arama alanı oluştur.
+
+Kullanıcı:
+
+"34 ABC"
+
+yazdığında ilgili araç çıkmalı.
+
+"Ahmet"
+
+yazdığında kurye çıkmalı.
+
+"Toyota"
+
+yazdığında ilgili araçlar çıkmalı.
+
+---
+
+# 33. BİLDİRİM SİSTEMİ
+
+Sağ üstte bildirim merkezi oluştur.
+
+Bildirim örnekleri:
+
+* Bakımı yaklaşan araç
+* Bakımı geçmiş araç
+* KM bakımına yaklaşan araç
+* Sigortası yaklaşan araç
+* Muayenesi yaklaşan araç
+* Yeni masraf kaydı
+* Yeni bakım kaydı
+
+---
+
+# 34. SİGORTA VE MUAYENE TAKİBİ
+
+Araç detayına:
+
+## Sigorta
+
+* Sigorta şirketi
+* Poliçe No
+* Başlangıç Tarihi
+* Bitiş Tarihi
+* Tutar
+* Not
+
+## Muayene
+
+* Muayene Tarihi
+* Sonraki Muayene
+* Muayene KM
+* Tutar
+* Not
+
+alanlarını ekle.
+
+Bunlar için de otomatik uyarı oluştur.
+
+---
+
+# 35. ARAÇ DURUMU
+
+Her aracın durumunu görsel badge ile göster.
+
+Örnek:
+
+🟢 AKTİF
+
+🔵 KURYede
+
+🟠 BAKIMDA
+
+🔴 SERVİSTE
+
+⚪ BOŞTA
+
+⚫ PASİF
+
+---
+
+# 36. ARAÇ PROFİL SAYFASI
+
+Araç profilinin üst bölümünde büyük bir özet kartı oluştur:
+
+TOYOTA COROLLA
+
+34 ABC 123
+
+128.450 KM
+
+KURYede
+
+AHMET YILMAZ
+
+Son bakım:
+02.09.2026
+
+Sonraki bakım:
+02.12.2026
+
+Toplam masraf:
+4.250 EUR
+
+Altında tüm sekmeler.
+
+---
+
+# 37. VERİTABANI MİMARİSİ
+
+Sistemi gerçek ilişkisel veritabanı mantığıyla geliştir.
+
+Temel tablolar:
+
+users
+vehicles
+couriers
+vehicle_assignments
+maintenance_records
+maintenance_parts
+services
+expenses
+mileage_records
+fuel_records
+insurance_records
+inspection_records
+documents
+notes
+audit_logs
+notifications
+
+Tablolar arasında ilişkiler doğru kurulmalı.
+
+Araç silindiğinde geçmiş bakım ve masraf kayıtlarının bozulmasını önle.
+
+Mümkün olduğunca soft delete kullan.
+
+---
+
+# 38. VERİ BÜTÜNLÜĞÜ
+
+Aşağıdaki kontroller mutlaka yapılmalı:
+
+* Aynı plaka iki kez eklenememeli.
+* Aynı şasi numarası iki kez eklenememeli.
+* Aynı motor numarası için uyarı verilmeli.
+* KM geriye düşürülememeli.
+* Pasif araç kuryeye zimmetlenememeli.
+* Satılmış araç kuryeye atanamamalı.
+* Aynı araç aynı anda iki aktif kuryede bulunamamalı.
+* Tarihler mantıksal sırada olmalı.
+* Toplam masraf otomatik hesaplanmalı.
+
+---
+
+# 39. GÜVENLİK
+
+Authentication sistemi kullan.
+
+Şifreler güvenli şekilde hashlenmeli.
+
+Her kullanıcının sadece yetkili olduğu işlemleri yapabilmesi sağlanmalı.
+
+Veritabanı erişimi güvenli olmalı.
+
+Özellikle kullanıcıların birbirlerinin yetkilerini değiştirmesi engellenmeli.
+
+Audit log silinememeli.
+
+---
+
+# 40. RESPONSIVE TASARIM
+
+Masaüstünde:
+
+Sol sidebar + geniş tablo.
+
+Tablet:
+
+Sidebar daraltılabilir.
+
+Mobil:
+
+Sidebar hamburger menüye dönüşmeli.
+
+Tablolar mobilde yatay kaydırılabilir veya kart görünümüne dönüşebilmeli.
+
+---
+
+# 41. DASHBOARD GRAFİKLERİ
+
+Dashboard'a grafikler ekle:
+
+### Aylık Masraf Grafiği
+
+Son 12 ay.
+
+### Araç Başına Masraf
+
+En fazla masraf yapılan araçlar.
+
+### Bakım Dağılımı
+
+Bakım türlerine göre.
+
+### Araç Durumları
+
+Kuryede / boşta / bakımda / serviste.
+
+### Aylık KM
+
+Toplam filo KM'si.
+
+### Yakıt Maliyeti
+
+Aylık yakıt harcaması.
+
+---
+
+# 42. VERİ GİRİŞİNDE KULLANICI DENEYİMİ
+
+Formlar mümkün olduğunca hızlı doldurulmalı.
+
+Örneğin bakım eklerken araç seçildiğinde:
+
+* Plaka
+* Marka
+* Model
+* Güncel KM
+
+otomatik gelsin.
+
+Servis seçildiğinde servis bilgileri otomatik gelsin.
+
+Parça eklendiğinde toplam otomatik hesaplansın.
+
+Araç seçildiğinde mevcut kurye gösterilsin.
+
+---
+
+# 43. TARİH VE PARA BİRİMİ
+
+Tarih formatı:
+
+GG.AA.YYYY
+
+Saat:
+
+24 saat formatı.
+
+Para birimleri:
+
+* EUR
+* USD
+* TRY
+* RSD
+
+desteklensin.
+
+Sistem tüm kayıtların para birimini saklamalı.
+
+İleride kur bazlı raporlama yapılabilecek şekilde tasarla.
+
+---
+
+# 44. SEKMELER
+
+Ana sidebar:
+
+1. Dashboard
+2. Araçlar
+3. Kuryeler
+4. Zimmetler
+5. Bakımlar
+6. Masraflar
+7. Kilometre
+8. Yakıt
+9. Servisler
+10. Sigorta
+11. Muayene
+12. Raporlar
+13. Bildirimler
+14. Kullanıcılar
+15. Sistem Ayarları
+
+---
+
+# 45. SİSTEM AYARLARI
+
+Ayarlar:
+
+* Şirket bilgileri
+* Para birimleri
+* Bakım uyarı süreleri
+* KM bakım uyarı limiti
+* Bildirim ayarları
+* Kullanıcı yönetimi
+* Yetkiler
+* Masraf kategorileri
+* Bakım kategorileri
+
+---
+
+# 46. BAKIM UYARI PARAMETRELERİ
+
+Admin tarafından değiştirilebilir.
+
+Örneğin:
+
+Bakım tarihinden:
+
+30 gün önce → sarı uyarı
+
+7 gün önce → turuncu uyarı
+
+Tarih geçti → kırmızı
+
+KM bakımına:
+
+2.000 KM kala → sarı
+
+500 KM kala → turuncu
+
+Bakım KM'si geçti → kırmızı
+
+Bu değerler Ayarlar'dan değiştirilebilmeli.
+
+---
+
+# 47. GELİŞMİŞ ARAÇ DETAYI
+
+Araç sayfasında ayrıca şu özetler göster:
+
+Toplam Kullanım Süresi
+
+Toplam KM
+
+Toplam Bakım
+
+Toplam Parça
+
+Toplam İşçilik
+
+Toplam Masraf
+
+KM Başına Maliyet
+
+Son Servis
+
+Son Bakım
+
+Son Kurye
+
+Mevcut Kurye
+
+---
+
+# 48. KURYE DETAYI
+
+Kurye profilinde:
+
+* Kişisel bilgiler
+* İletişim
+* Aktif araç
+* Araç geçmişi
+* Teslim aldığı araçlar
+* İade ettiği araçlar
+* Toplam kullanım KM'si
+* Araç kullanım süreleri
+* Notlar
+
+göster.
+
+---
+
+# 49. TASARIMDA TABLO KULLANIMI
+
+Tablolar çok kalabalık hale geldiğinde kolonların tamamını göstermek yerine:
+
+Ana kolonlar görünür olsun.
+
+Detaylar:
+
+"Detay" butonuyla açılsın.
+
+Filtreler kolay erişilebilir olsun.
+
+Kolon sıralama yapılabilsin.
+
+---
+
+# 50. EMPTY STATE
+
+Hiç veri yoksa boş beyaz ekran gösterme.
+
+Örneğin:
+
+"Henüz araç eklenmemiş."
+
+"İlk aracınızı eklemek için Yeni Araç butonuna tıklayın."
+
+şeklinde kullanıcı dostu empty state oluştur.
+
+---
+
+# 51. ONAY SİSTEMİ
+
+Silme işlemlerinde modal onayı kullan.
+
+Örneğin:
+
+"Bu aracı silmek istediğinizden emin misiniz?"
+
+Geçmiş bakım ve masraf kayıtları bulunan araçlar doğrudan fiziksel olarak silinmemeli.
+
+Pasif hale getirilmeli.
+
+---
+
+# 52. PERFORMANS
+
+Sistem ileride yüzlerce hatta binlerce araç ve binlerce bakım/masraf kaydı içerebilir.
+
+Bu nedenle:
+
+* Pagination
+* Server-side filtering
+* Database indexing
+* Lazy loading
+* Optimized queries
+
+kullan.
+
+Dashboard sorgularını optimize et.
+
+---
+
+# 53. DEMO VERİLERİ
+
+İlk açılışta sistemi göstermek için gerçekçi demo verileri oluştur.
+
+Örneğin:
+
+10 araç
+15 kurye
+10 bakım kaydı
+20 masraf kaydı
+5 servis
+50 KM kaydı
+
+oluştur.
+
+Ancak bunların DEMO verisi olduğu açıkça belli olsun.
+
+---
+
+# 54. ANA DASHBOARD ÖRNEĞİ
+
+Dashboard şu mantıkta görünmeli:
+
+---
+
+FİLO YÖNETİMİ
+
+Toplam Araç: 42
+Kuryede: 35
+Boşta: 4
+Bakımda: 2
+Serviste: 1
+
+---
+
+YAKLAŞAN BAKIMLAR
+
+34 ABC 123
+Toyota Corolla
+128.450 KM
+Bakım: 02.10.2026
+⚠️ BUGÜN
+
+35 DEF 456
+Renault Clio
+119.200 KM
+Bakım: 10.10.2026
+7 gün kaldı
+
+---
+
+AYLIK MASRAFLAR
+
+Grafik
+
+---
+
+ARAÇ DURUMLARI
+
+Grafik
+
+---
+
+SON İŞLEMLER
+
+Aslan Atasoy
+34 ABC 123 aracına bakım kaydı ekledi.
+
+Mehmet Kaya
+35 DEF 456 aracının KM bilgisini güncelledi.
+
+---
+
+---
+
+# 55. VERİ GİRİŞ KAYNAĞI
+
+Sisteme girilen her kayıt için otomatik:
+
+created_by
+created_at
+updated_by
+updated_at
+
+alanları tutulmalı.
+
+Arayüzde:
+
+"Bu kaydı Aslan Atasoy 02.10.2026 15:43 tarihinde oluşturdu."
+
+şeklinde gösterilebilmeli.
+
+---
+
+# 56. GELİŞTİRİLEBİLİRLİK
+
+Kod yapısı ileride aşağıdaki özelliklerin eklenmesine uygun olmalı:
+
+* GPS
+* Canlı araç takibi
+* Mobil uygulama
+* WhatsApp bildirimleri
+* E-posta bildirimleri
+* SMS
+* QR kod ile araç teslimi
+* QR kod ile KM girişi
+* Dijital sözleşme
+* E-imza
+* Online ödeme
+* Fatura OCR
+* Yapay zekâ destekli bakım tahmini
+
+Şimdilik bunları geliştirme ancak mimariyi gelecekte eklenebilecek şekilde oluştur.
+
+---
+
+# 57. QR KOD HAZIRLIĞI
+
+Her araca benzersiz QR kod oluşturulabilecek altyapı hazırla.
+
+QR okutulduğunda araç profilinin güvenli bir sayfasına ulaşılabilecek.
+
+İleride kurye:
+
+QR okut
+→ Araç bilgisi
+→ KM gir
+→ Hasar bildir
+→ Fotoğraf yükle
+
+işlemlerini yapabilecek.
+
+---
+
+# 58. FOTOĞRAF / HASAR KAYDI
+
+Araç için fotoğraf yükleme alanı oluştur.
+
+Hasar kaydında:
+
+* Tarih
+* Araç
+* KM
+* Hasar türü
+* Açıklama
+* Fotoğraf
+* Masraf
+* Servis
+* Not
+* Kaydı oluşturan
+
+alanları bulunmalı.
+
+---
+
+# 59. SONUÇ
+
+Ortaya çıkan uygulama basit bir CRUD paneli gibi görünmemeli.
+
+Profesyonel bir:
+
+"Fleet Management / Araç Filo Yönetim Sistemi"
+
+gibi çalışmalı.
+
+Kullanıcı sisteme girdiğinde ilk bakışta:
+
+* Kaç aracım var?
+* Hangi araç kimde?
+* Hangi araç boşta?
+* Hangi araç bakımda?
+* Hangi aracın bakımı yaklaşıyor?
+* Hangi araca ne kadar para harcadım?
+* Hangi servise ne kadar ödeme yaptım?
+* Hangi kurye hangi aracı kullanıyor?
+* Araçların güncel KM'si ne?
+* Son bakım ne zaman yapıldı?
+* Bir sonraki bakım ne zaman?
+* Hangi parçalar değişti?
+* İşçilik ne kadar?
+* Toplam maliyet ne?
+* Bu kaydı kim girdi?
+
+sorularının tamamının cevabını birkaç saniye içinde görebilmeli.
+
+---
+
+# 60. GELİŞTİRME YÖNTEMİ
+
+Önce çalışan temel sistemi oluştur.
+
+1. Authentication
+2. Database
+3. Dashboard
+4. Araçlar
+5. Kuryeler
+6. Zimmet sistemi
+7. Bakımlar
+8. Servisler
+9. Masraflar
+10. KM
+11. Yakıt
+12. Sigorta
+13. Muayene
+14. Raporlar
+15. Bildirimler
+16. Audit Log
+
+sırasıyla geliştir.
+
+Her modülü gerçek veritabanına bağla.
+
+Mockup veya sadece frontend oluşturma.
+
+Butonların tamamı gerçekten çalışmalı.
+
+Formlardan girilen veriler veritabanına kaydedilmeli.
+
+Sayfa yenilendiğinde veriler kaybolmamalı.
+
+CRUD işlemleri eksiksiz çalışmalı.
+
+Authentication gerçek olmalı.
+
+Yetkilendirme gerçek olmalı.
+
+Veri ilişkileri gerçek olmalı.
+
+Dashboard gerçek verilerden hesaplanmalı.
+
+---
+
+# 61. TEKNOLOJİ TERCİHİ
+
+Modern ve sürdürülebilir bir teknoloji stack kullan.
+
+Tercihen:
+
+Frontend:
+React / Next.js
+
+UI:
+Tailwind CSS
+
+Backend:
+Next.js API veya uygun backend
+
+Database:
+PostgreSQL
+
+Authentication:
+Güvenli authentication sistemi
+
+Dosya:
+Cloud storage
+
+Grafikler:
+Modern chart library
+
+Form validation:
+Zod veya eşdeğeri
+
+Tablo:
+Profesyonel data table
+
+Kod modüler ve temiz olmalı.
+
+---
+
+# 62. ÖNEMLİ GELİŞTİRME KURALI
+
+Kod üretmeye başlamadan önce veritabanı ilişkilerini ve kullanıcı akışlarını düşün.
+
+Önce database schema oluştur.
+
+Sonra authentication.
+
+Sonra layout.
+
+Sonra modülleri sırayla oluştur.
+
+Her modülü tamamladıktan sonra çalıştığını kontrol et.
+
+Kırık buton, sahte veri, çalışmayan form veya sadece görsel amaçlı komponent bırakma.
+
+Uygulama production'a çıkmaya hazır bir SaaS/Filo Yönetim paneli kalitesinde olsun.
+
+Öncelik:
+
+VERİ DOĞRULUĞU
++
+KULLANIM KOLAYLIĞI
++
+TAKİP EDİLEBİLİRLİK
++
+GÜVENLİK
++
+PROFESYONEL TASARIM
+
+olmalıdır.
