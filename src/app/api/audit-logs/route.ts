@@ -1,20 +1,42 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
   try {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search')?.trim() || '';
 
     const where: any = {};
-    if (search) {
-      where.OR = [
-        { userName: { contains: search } },
-        { description: { contains: search } },
-        { action: { contains: search } },
+
+    // Kullanıcılar Süper Admin'in (Akif Aksoy) yaptığı değişiklikleri ASLA göremez!
+    if (currentUser.role !== 'SUPER_ADMIN') {
+      where.AND = [
+        { userName: { not: 'Akif Aksoy' } },
+        { userRole: { not: 'SUPER_ADMIN' } },
       ];
+    }
+
+    if (search) {
+      const searchCondition = {
+        OR: [
+          { userName: { contains: search } },
+          { description: { contains: search } },
+          { action: { contains: search } },
+        ],
+      };
+      if (where.AND) {
+        where.AND.push(searchCondition);
+      } else {
+        where.OR = searchCondition.OR;
+      }
     }
 
     const logs = await prisma.auditLog.findMany({

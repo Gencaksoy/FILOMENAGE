@@ -47,12 +47,12 @@ function MaintenancesContent() {
   const [maintCurrency, setMaintCurrency] = useState<'EUR' | 'RSD'>('EUR');
   const [maintVehicleId, setMaintVehicleId] = useState('');
   const [maintDate, setMaintDate] = useState(new Date().toISOString().slice(0, 10));
-  const [maintLaborCost, setMaintLaborCost] = useState<number | string>(0);
+  const [maintLaborCost, setMaintLaborCost] = useState<number | string>('');
   const [maintDesc, setMaintDesc] = useState('');
   const [maintService, setMaintService] = useState('Belgrade Auto Centar');
   const [customMaintService, setCustomMaintService] = useState('');
   const [maintParts, setMaintParts] = useState<PartItem[]>([
-    { partName: '', partCode: '', changeDate: new Date().toISOString().slice(0, 10), cost: 0 },
+    { partName: '', partCode: '', changeDate: new Date().toISOString().slice(0, 10), cost: '' },
   ]);
   const [maintLoading, setMaintLoading] = useState(false);
   const [maintError, setMaintError] = useState<string | null>(null);
@@ -154,8 +154,8 @@ function MaintenancesContent() {
 
       setIsNewMaintOpen(false);
       setMaintDesc('');
-      setMaintLaborCost(0);
-      setMaintParts([{ partName: '', partCode: '', changeDate: new Date().toISOString().slice(0, 10), cost: 0 }]);
+      setMaintLaborCost('');
+      setMaintParts([{ partName: '', partCode: '', changeDate: new Date().toISOString().slice(0, 10), cost: '' }]);
       await loadData();
     } catch (err: any) {
       setMaintError(err.message);
@@ -209,7 +209,7 @@ function MaintenancesContent() {
   const addPartRow = () => {
     setMaintParts([
       ...maintParts,
-      { partName: '', partCode: '', changeDate: maintDate, cost: 0 },
+      { partName: '', partCode: '', changeDate: maintDate, cost: '' },
     ]);
   };
 
@@ -626,7 +626,9 @@ function MaintenancesContent() {
               <label className="block text-xs font-semibold text-slate-700 mb-1">İşçilik Masrafı ({maintCurrency})</label>
               <input
                 type="number"
+                inputMode="decimal"
                 value={maintLaborCost}
+                onFocus={(e) => e.target.select()}
                 onChange={(e) => setMaintLaborCost(e.target.value)}
                 placeholder="Örn: 80"
                 className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-blue-500 focus:outline-hidden font-bold"
@@ -724,7 +726,9 @@ function MaintenancesContent() {
                   <div className="col-span-2">
                     <input
                       type="number"
+                      inputMode="decimal"
                       value={p.cost}
+                      onFocus={(e) => e.target.select()}
                       onChange={(e) => updatePartRow(idx, 'cost', e.target.value)}
                       placeholder={`Fiyat (${maintCurrency})`}
                       className="w-full px-2 py-1 text-xs border border-slate-200 rounded-md focus:border-blue-500 focus:outline-hidden font-bold"

@@ -76,9 +76,9 @@ export default function VehicleDetailPage() {
   const [maintDesc, setMaintDesc] = useState('');
   const [maintService, setMaintService] = useState('');
   const [customMaintService, setCustomMaintService] = useState('');
-  const [laborCost, setLaborCost] = useState<number | string>(0);
+  const [laborCost, setLaborCost] = useState<number | string>('');
   const [parts, setParts] = useState<PartItem[]>([
-    { partName: '', partCode: '', changeDate: new Date().toISOString().split('T')[0], cost: 0 },
+    { partName: '', partCode: '', changeDate: new Date().toISOString().split('T')[0], cost: '' },
   ]);
   const [isSubmittingMaint, setIsSubmittingMaint] = useState(false);
 
@@ -286,8 +286,8 @@ export default function VehicleDetailPage() {
         setMaintDesc('');
         setMaintService('');
         setCustomMaintService('');
-        setLaborCost(0);
-        setParts([{ partName: '', partCode: '', changeDate: new Date().toISOString().split('T')[0], cost: 0 }]);
+        setLaborCost('');
+        setParts([{ partName: '', partCode: '', changeDate: new Date().toISOString().split('T')[0], cost: '' }]);
         await loadVehicle();
       } else {
         const err = await res.json();
@@ -340,7 +340,7 @@ export default function VehicleDetailPage() {
   const addPartRow = () => {
     setParts([
       ...parts,
-      { partName: '', partCode: '', changeDate: maintDate, cost: 0 },
+      { partName: '', partCode: '', changeDate: maintDate, cost: '' },
     ]);
   };
 
@@ -2333,9 +2333,12 @@ export default function VehicleDetailPage() {
               </label>
               <input
                 type="number"
+                inputMode="decimal"
                 required
                 value={laborCost}
+                onFocus={(e) => e.target.select()}
                 onChange={(e) => setLaborCost(e.target.value)}
+                placeholder="Örn: 80"
                 className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-blue-500 font-mono font-bold"
               />
             </div>
@@ -2406,7 +2409,9 @@ export default function VehicleDetailPage() {
                   />
                   <input
                     type="number"
+                    inputMode="decimal"
                     value={p.cost}
+                    onFocus={(e) => e.target.select()}
                     onChange={(e) => updatePartRow(idx, 'cost', e.target.value)}
                     placeholder={`Tutar (${maintCurrency})`}
                     className="w-24 px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:border-blue-500 font-mono font-bold"

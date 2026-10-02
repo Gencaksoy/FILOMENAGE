@@ -47,7 +47,7 @@ export function Sidebar({ isOpen, onClose, unreadCount = 0, userRole = 'ADMIN' }
       icon: Bell,
       badge: unreadCount > 0 ? unreadCount : undefined,
     },
-    { name: 'İşlem Geçmişi (Audit)', href: '/audit-logs', icon: History, adminOnly: false },
+    { name: 'İşlem Geçmişi (Audit)', href: '/audit-logs', icon: History, adminOnly: true },
     { name: 'Kullanıcılar', href: '/users', icon: UserCog, adminOnly: true },
     { name: 'Sistem Ayarları', href: '/settings', icon: Settings, adminOnly: true },
   ];

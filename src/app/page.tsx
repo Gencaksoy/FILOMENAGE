@@ -1203,7 +1203,9 @@ export default function DashboardPage() {
                   </label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     value={rentMonthlyRate}
+                    onFocus={(e) => e.target.select()}
                     onChange={(e) => setRentMonthlyRate(e.target.value)}
                     className="w-full px-3 py-2 text-xs border border-amber-300 rounded-xl font-bold bg-white"
                   />
@@ -1214,7 +1216,9 @@ export default function DashboardPage() {
                   </label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     value={rentDiscount}
+                    onFocus={(e) => e.target.select()}
                     onChange={(e) => setRentDiscount(e.target.value)}
                     placeholder="Örn: 30"
                     className="w-full px-3 py-2 text-xs border border-amber-300 rounded-xl font-bold bg-white text-rose-600"
@@ -1421,7 +1425,9 @@ export default function DashboardPage() {
                   </label>
                   <input
                     type="number"
+                    inputMode="decimal"
                     value={oilCost}
+                    onFocus={(e) => e.target.select()}
                     onChange={(e) => setOilCost(e.target.value)}
                     className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded-xl font-bold"
                   />
