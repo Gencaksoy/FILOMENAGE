@@ -361,8 +361,42 @@ export async function GET(req: Request) {
       orderBy: { createdAt: 'desc' },
     });
 
+    // Park Cezaları (eDPK)
+    const parkingWhere: any = { status: 'UNPAID' };
+    if (!isSuper && currentUser?.fleetId) {
+      parkingWhere.vehicle = { fleetId: currentUser.fleetId };
+    }
+    if (ownerFilter !== 'ALL') {
+      parkingWhere.vehicle = { ...parkingWhere.vehicle, owner: ownerFilter };
+    }
+
+    const [unpaidTickets, unpaidParkingAgg] = await Promise.all([
+      prisma.parkingTicket.findMany({
+        where: parkingWhere,
+        include: {
+          vehicle: { select: { id: true, plate: true, brand: true, model: true } },
+          customer: { select: { id: true, name: true, phone: true } },
+        },
+        orderBy: { issueDate: 'desc' },
+        take: 5,
+      }),
+      prisma.parkingTicket.aggregate({
+        where: parkingWhere,
+        _sum: { amountRsd: true, amountEur: true },
+        _count: { id: true },
+      }),
+    ]);
+
+    const parkingStats = {
+      unpaidCount: unpaidParkingAgg._count.id || 0,
+      unpaidAmountRsd: unpaidParkingAgg._sum.amountRsd || 0,
+      unpaidAmountEur: unpaidParkingAgg._sum.amountEur || 0,
+      recentUnpaid: unpaidTickets,
+    };
+
     return NextResponse.json({
       isStaff,
+      parkingStats,
       kpi: {
         totalVehicles,
         rentedVehicles,

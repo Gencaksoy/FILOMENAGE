@@ -16,6 +16,7 @@ import {
   X,
   Droplet,
   FolderLock,
+  AlertTriangle,
 } from 'lucide-react';
 
 import { AuthUser } from '@/lib/auth';
@@ -46,6 +47,7 @@ export function Sidebar({ isOpen, onClose, unreadCount = 0, userRole = 'ADMIN', 
     { name: 'Müşteriler & Belgeler', href: '/customers', icon: Users },
     { name: 'Bakım & Yağ Takibi', href: '/maintenances', icon: Wrench },
     { name: 'Yıllık Muayene & Registracija', href: '/inspection', icon: FileCheck2 },
+    { name: 'Park Cezaları (eDPK)', href: '/parking-tickets', icon: AlertTriangle },
     {
       name: 'Bildirimler',
       href: '/notifications',

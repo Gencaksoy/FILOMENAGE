@@ -95,6 +95,7 @@ model Vehicle {
   oilChanges          OilChangeRecord[]
   inspections         InspectionRecord[]
   faults              VehicleFault[]
+  parkingTickets      ParkingTicket[]
 }
 
 model Customer {
@@ -113,6 +114,7 @@ model Customer {
   fleet      Fleet?   @relation(fields: [fleetId], references: [id], onDelete: Cascade)
   documents  CustomerDocument[]
   rentals    Rental[]
+  parkingTickets ParkingTicket[]
 }
 
 model CustomerDocument {
@@ -162,6 +164,7 @@ model Rental {
 
   vehicle               Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
   customer              Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  parkingTickets        ParkingTicket[]
 }
 
 model MaintenanceRecord {
@@ -299,4 +302,49 @@ model ArchivedRecord {
   @@index([fleetId])
   @@index([deletedAt])
 }
+
+model ParkingTicket {
+  id                  String    @id @default(cuid())
+  ticketNumber        String    // eDPK No (örn: "9823412")
+  vehicleId           String
+  plate               String    // BG 1709-OT
+  cleanPlate          String    // BG1709OT
+  zone                String?   // Bölge (örn: "Zona 2")
+  street              String?   // Sokak / Cadde (örn: "Knez Mihailova 14")
+  violation           String?   // İhlal sebebi (örn: "Isteklo vreme parkiranja")
+  amountRsd           Float     @default(0) // Dinar tutarı (örn: 1870.00)
+  amountEur           Float     @default(0) // Euro karşılığı (örn: 16.00)
+  discountDescription String?   // %50 erken ödeme indirimi notu
+  paymentDeadline     DateTime? // Son ödeme tarihi
+  referenceNumber     String?   // Poziv na broj (Ödeme referans kodu)
+  ipsUrl              String?   // IPS QR kod görsel linki
+  paymentUrl          String?   // Parking Servis online kredi kartı ödeme linki
+  status              String    @default("UNPAID") // UNPAID (Ödenmedi), PAID (Ödendi), APPEALED (İtiraz Edildi)
+  issueDate           DateTime  // Cezanın kesildiği tarih saat
+  
+  // Müşteri & Kiralama Eşleşmesi
+  customerId          String?
+  rentalId            String?
+  isCustomerNotified  Boolean   @default(false)
+  notifiedAt          DateTime?
+  
+  fleetId             String?
+  rawData             String?   @db.Text
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  vehicle             Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  customer            Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  rental              Rental?   @relation(fields: [rentalId], references: [id], onDelete: SetNull)
+
+  @@unique([ticketNumber, plate])
+  @@index([plate])
+  @@index([cleanPlate])
+  @@index([vehicleId])
+  @@index([customerId])
+  @@index([status])
+  @@index([fleetId])
+  @@index([issueDate])
+}
+
 

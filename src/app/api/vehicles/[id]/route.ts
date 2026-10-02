@@ -37,6 +37,17 @@ export async function GET(
             { createdAt: 'desc' },
           ],
         },
+        parkingTickets: {
+          orderBy: { issueDate: 'desc' },
+          include: {
+            customer: {
+              select: { id: true, name: true, phone: true },
+            },
+            rental: {
+              select: { id: true, startDate: true, endDate: true },
+            },
+          },
+        },
       },
     });
 

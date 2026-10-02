@@ -610,6 +610,39 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* BELGRAD PARK CEZASI (eDPK) ALERTI */}
+      {data?.parkingStats?.unpaidCount > 0 && (
+        <div className="mb-5 bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-slate-900">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-rose-600 text-white shrink-0 shadow-xs">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-rose-950 uppercase tracking-wide flex items-center gap-2">
+                  Belgrad Park Cezası Tespit Edildi ({data.parkingStats.unpaidCount} Adet Ödenmemiş)
+                </h3>
+                <p className="text-xs text-rose-800">
+                  Toplam Ceza Borcu:{' '}
+                  <span className="font-black text-rose-900">
+                    {data.parkingStats.unpaidAmountRsd?.toLocaleString('tr-TR')} RSD (~
+                    {data.parkingStats.unpaidAmountEur} €)
+                  </span>
+                  . Parking Servis kuralı: 20 gün içinde %50 indirimli ödenebilir!
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/parking-tickets?status=UNPAID"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all shrink-0 shadow-xs"
+            >
+              <span>Cezaları Gör & WhatsApp Bildir</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* AKTİF ARAÇ ARIZALARI & HASAR BİLDİRİMLERİ (DÜZELTİLDİYE ÇEVİRME) */}
       {activeFaults.length > 0 && (
         <div className="mb-5 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-slate-900">

@@ -103,3 +103,46 @@ export const VEHICLE_STATUS_MAP: Record<string, { label: string; bg: string; tex
     text: 'text-purple-700',
   },
 };
+
+export function generateParkingFineWhatsAppUrl(
+  customerPhone?: string | null,
+  customerName?: string | null,
+  ticket?: {
+    plate: string;
+    ticketNumber: string;
+    street?: string | null;
+    zone?: string | null;
+    amountRsd: number;
+    amountEur?: number | null;
+    issueDate: string | Date;
+    referenceNumber?: string | null;
+  } | null,
+  companyName: string = 'Filo Yönetim'
+): string {
+  if (!customerPhone || !ticket) return '#';
+
+  const cleanPhone = customerPhone.replace(/[^\d+]/g, '');
+  const formattedDate = formatDate(ticket.issueDate);
+  const location = [ticket.street, ticket.zone].filter(Boolean).join(' - ') || 'Belgrad';
+  const name = customerName || 'Değerli Müşterimiz';
+  const eurText = ticket.amountEur ? ` (~${ticket.amountEur} €)` : '';
+
+  const message = `Merhaba Sayın ${name},
+
+${companyName} firmasından ulaşıyoruz.
+
+Kullanımınızda bulunan ${ticket.plate} plakalı aracımız için aşağıdaki park cezası tespit edilmiştir:
+
+📍 Konum: ${location}
+📅 Tarih: ${formattedDate}
+💰 Ceza Tutarı: ${ticket.amountRsd} RSD${eurText}
+📋 eDPK No: ${ticket.ticketNumber}
+🔢 Referans No: ${ticket.referenceNumber || ticket.ticketNumber}
+
+⚠️ Önemli Not: Belgrad Parking Servis kuralları uyarınca, cezanın 20 gün içinde ödenmesi durumunda %50 indirim uygulanmaktadır.
+
+Cezanın ödenmesi veya detayları için lütfen tarafımızla en kısa sürede iletişime geçiniz.`;
+
+  return `https://wa.me/${cleanPhone.replace('+', '')}?text=${encodeURIComponent(message)}`;
+}
+
