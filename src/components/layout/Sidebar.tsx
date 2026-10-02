@@ -86,7 +86,7 @@ export function Sidebar({ isOpen, onClose, unreadCount = 0, userRole = 'ADMIN', 
               <img
                 src="/icon.png"
                 alt="Filo Yönetim"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain p-0.5"
               />
             </div>
             <div>

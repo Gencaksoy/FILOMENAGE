@@ -54,7 +54,7 @@ export function IosInstallPrompt() {
               <img
                 src="/icon.png"
                 alt="Filo Logo"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-contain p-0.5"
               />
             </div>
             <div>

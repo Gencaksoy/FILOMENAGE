@@ -153,6 +153,14 @@ export function Header({ onToggleSidebar, currentUser, unreadCount = 0 }: Header
             <Menu className="w-5 h-5" />
           </button>
 
+          <Link href="/" className="lg:hidden flex items-center shrink-0 mr-1 group">
+            <img
+              src="/icon.png"
+              alt="Filo Yönetim"
+              className="w-8 h-8 rounded-lg object-contain shadow-xs border border-slate-700 bg-slate-900 group-hover:scale-105 transition-transform"
+            />
+          </Link>
+
           {/* Global Search */}
           <div className="relative w-full">
             <div className="relative">

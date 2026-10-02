@@ -41,11 +41,11 @@ export default function LoginPage() {
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 pt-[max(3rem,env(safe-area-inset-top,0px))] pb-[max(3rem,env(safe-area-inset-bottom,0px))]">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center">
-          <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-xl border border-slate-200 bg-white p-0.5">
+          <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-xl border border-slate-800 bg-slate-900 p-1 flex items-center justify-center">
             <img
               src="/icon.png"
               alt="Filo Yönetim"
-              className="w-full h-full object-cover rounded-xl"
+              className="w-full h-full object-contain"
             />
           </div>
         </div>
