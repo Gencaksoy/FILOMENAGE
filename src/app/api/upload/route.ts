@@ -46,6 +46,7 @@ export async function POST(req: Request) {
             success: true,
             fileName,
             fileUrl: publicUrl,
+            url: publicUrl,
           });
         } else {
           console.warn('Supabase storage upload failed with status:', uploadRes.status, await uploadRes.text());
@@ -64,10 +65,12 @@ export async function POST(req: Request) {
       const filePath = path.join(uploadsDir, fileName);
       fs.writeFileSync(filePath, buffer);
 
+      const localUrl = `/uploads/${fileName}`;
       return NextResponse.json({
         success: true,
         fileName,
-        fileUrl: `/uploads/${fileName}`,
+        fileUrl: localUrl,
+        url: localUrl,
       });
     } catch (localErr: any) {
       console.error('Local fallback failed:', localErr);

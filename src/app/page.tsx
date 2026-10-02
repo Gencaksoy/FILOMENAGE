@@ -174,7 +174,9 @@ export default function DashboardPage() {
     const res = await fetch('/api/upload', { method: 'POST', body: data });
     if (!res.ok) throw new Error('Fotoğraf yüklenemedi');
     const json = await res.json();
-    return json.url;
+    const url = json.fileUrl || json.url;
+    if (!url) throw new Error('Fotoğraf adresi oluşturulamadı');
+    return url;
   };
 
   const openOilModal = async (preselectedVehicleId?: string) => {
@@ -369,31 +371,7 @@ export default function DashboardPage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="text-center max-w-sm">
-          <div className="w-12 h-12 border-4 border-slate-900 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm font-semibold text-slate-800">Filo Paneli Yükleniyor...</p>
-          <p className="text-xs text-slate-500 mt-1">Veriler ve araç listesi hazırlanıyor</p>
-          <div className="mt-4 flex items-center justify-center gap-2">
-            <button
-              onClick={() => setLoading(false)}
-              className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-            >
-              Paneli Aç
-            </button>
-            <Link
-              href="/login"
-              className="px-3 py-1.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-            >
-              Giriş Yap
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+
 
   const isStaff = data?.isStaff || user?.role === 'STAFF';
   const kpi = data?.kpi || {
@@ -637,44 +615,68 @@ export default function DashboardPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
         {/* 1. Aktif Kirada */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <Link
+          href="/vehicles?status=RENTED"
+          className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs hover:border-amber-400 hover:shadow-md transition-all group cursor-pointer block"
+        >
           <div className="flex items-center justify-between text-amber-600 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Kirada</span>
-            <KeyRound className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-amber-600">Kirada</span>
+            <KeyRound className="w-4 h-4 transition-transform group-hover:scale-110" />
           </div>
-          <div className="text-2xl font-extrabold text-slate-900">{kpi.rentedVehicles}</div>
-          <div className="text-xs text-slate-500 mt-1">Müşteride aktif çalışan</div>
-        </div>
+          <div className="text-2xl font-extrabold text-slate-900 group-hover:text-amber-600">{kpi.rentedVehicles}</div>
+          <div className="text-xs text-slate-500 mt-1 flex items-center justify-between">
+            <span>Müşteride çalışan</span>
+            <span className="text-xs font-bold text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity">Listele →</span>
+          </div>
+        </Link>
 
         {/* 2. Boşta (Hazır) */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <Link
+          href="/vehicles?status=AVAILABLE"
+          className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs hover:border-emerald-400 hover:shadow-md transition-all group cursor-pointer block"
+        >
           <div className="flex items-center justify-between text-emerald-600 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Boşta (Hazır)</span>
-            <CheckCircle2 className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-emerald-600">Boşta (Hazır)</span>
+            <CheckCircle2 className="w-4 h-4 transition-transform group-hover:scale-110" />
           </div>
           <div className="text-2xl font-extrabold text-emerald-600">{kpi.availableVehicles}</div>
-          <div className="text-xs text-slate-500 mt-1">Kiralanmaya hazır otoparkta</div>
-        </div>
+          <div className="text-xs text-slate-500 mt-1 flex items-center justify-between">
+            <span>Kiralanmaya hazır</span>
+            <span className="text-xs font-bold text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">Listele →</span>
+          </div>
+        </Link>
 
         {/* 3. Kiradan Sonra Bakım */}
-        <div className="bg-white p-4 rounded-2xl border border-purple-200 shadow-xs">
+        <Link
+          href="/vehicles?status=POST_RENTAL_CHECK"
+          className="bg-white p-4 rounded-2xl border border-purple-200 shadow-xs hover:border-purple-400 hover:shadow-md transition-all group cursor-pointer block"
+        >
           <div className="flex items-center justify-between text-purple-600 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-purple-700">Kiradan Sonra Bakım</span>
-            <Sparkles className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider text-purple-700">Kira Sonrası Kontrol</span>
+            <Sparkles className="w-4 h-4 transition-transform group-hover:scale-110" />
           </div>
           <div className="text-2xl font-extrabold text-purple-700">{kpi.postRentalCheckVehicles}</div>
-          <div className="text-xs text-purple-600 mt-1">Yeni kiracı öncesi kontrol/yıkama</div>
-        </div>
+          <div className="text-xs text-purple-600 mt-1 flex items-center justify-between">
+            <span>Yıkama & kontrol</span>
+            <span className="text-xs font-bold text-purple-700 opacity-0 group-hover:opacity-100 transition-opacity">Listele →</span>
+          </div>
+        </Link>
 
         {/* 4. Serviste / Bakımda */}
-        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <Link
+          href="/vehicles?status=MAINTENANCE"
+          className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs hover:border-rose-400 hover:shadow-md transition-all group cursor-pointer block"
+        >
           <div className="flex items-center justify-between text-rose-600 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Serviste</span>
-            <Wrench className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-rose-600">Serviste</span>
+            <Wrench className="w-4 h-4 transition-transform group-hover:scale-110" />
           </div>
           <div className="text-2xl font-extrabold text-rose-600">{kpi.maintenanceVehicles}</div>
-          <div className="text-xs text-slate-500 mt-1">Tamir & periyodik servis</div>
-        </div>
+          <div className="text-xs text-slate-500 mt-1 flex items-center justify-between">
+            <span>Tamir & bakımda</span>
+            <span className="text-xs font-bold text-rose-600 opacity-0 group-hover:opacity-100 transition-opacity">Listele →</span>
+          </div>
+        </Link>
 
         {/* 5. 1 Hafta Sonra Boşa Çıkacak */}
         <div className="bg-white p-4 rounded-2xl border border-blue-200 shadow-xs col-span-2 sm:col-span-1">
@@ -683,7 +685,7 @@ export default function DashboardPage() {
             <Clock className="w-4 h-4" />
           </div>
           <div className="text-2xl font-extrabold text-blue-700">{forecast.returnsNext7DaysCount}</div>
-          <div className="text-xs text-blue-600 mt-1">Gelecek 7 gün içinde iade</div>
+          <div className="text-xs text-blue-600 mt-1">Gelecek 7 günde iade</div>
         </div>
       </div>
 

@@ -10,11 +10,12 @@ export async function POST(
 ) {
   try {
     const body = await req.json();
-    const { docType, title, fileUrl } = body;
+    const targetFileUrl = body.fileUrl || body.url;
+    const targetDocType = body.docType || 'OTHER';
 
-    if (!docType || !fileUrl) {
+    if (!targetFileUrl) {
       return NextResponse.json(
-        { error: 'Belge türü ve dosya yolu zorunludur.' },
+        { error: 'Yüklenecek belge dosyası zorunludur.' },
         { status: 400 }
       );
     }
@@ -30,9 +31,9 @@ export async function POST(
     const doc = await prisma.customerDocument.create({
       data: {
         customerId: params.id,
-        docType: docType || 'OTHER',
-        title: title || 'Müşteri Belgesi',
-        fileUrl,
+        docType: targetDocType,
+        title: body.title || 'Müşteri Belgesi',
+        fileUrl: targetFileUrl,
       },
     });
 

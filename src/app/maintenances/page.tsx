@@ -696,52 +696,59 @@ function MaintenancesContent() {
 
             <div className="space-y-2">
               {maintParts.map((p, idx) => (
-                <div key={idx} className="grid grid-cols-12 gap-2 items-center bg-white p-2 rounded-lg border border-slate-200">
-                  <div className="col-span-4">
+                <div key={idx} className="bg-white p-3 rounded-xl border border-slate-200/90 shadow-2xs space-y-2 sm:space-y-0 sm:grid sm:grid-cols-12 sm:gap-2 sm:items-center">
+                  <div className="sm:col-span-4">
+                    <label className="sm:hidden block text-xs font-semibold text-slate-500 mb-0.5">Parça Adı</label>
                     <input
                       type="text"
                       value={p.partName}
                       onChange={(e) => updatePartRow(idx, 'partName', e.target.value)}
                       placeholder="Parça Adı (Örn: Ön Balata)"
-                      className="w-full px-2 py-1 text-xs border border-slate-200 rounded-md focus:border-blue-500 focus:outline-hidden"
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:border-blue-500 focus:outline-hidden"
                     />
                   </div>
-                  <div className="col-span-3">
+                  <div className="sm:col-span-3">
+                    <label className="sm:hidden block text-xs font-semibold text-slate-500 mb-0.5">Parça Kodu (OEM)</label>
                     <input
                       type="text"
                       value={p.partCode}
                       onChange={(e) => updatePartRow(idx, 'partCode', e.target.value)}
                       placeholder="Parça Kodu (OEM)"
-                      className="w-full px-2 py-1 text-xs border border-slate-200 rounded-md focus:border-blue-500 focus:outline-hidden font-mono"
+                      className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:border-blue-500 focus:outline-hidden font-mono"
                     />
                   </div>
-                  <div className="col-span-2">
-                    <input
-                      type="date"
-                      value={p.changeDate}
-                      onChange={(e) => updatePartRow(idx, 'changeDate', e.target.value)}
-                      className="w-full px-1.5 py-1 text-xs border border-slate-200 rounded-md focus:border-blue-500 focus:outline-hidden"
-                    />
+                  <div className="grid grid-cols-2 sm:contents gap-2">
+                    <div className="sm:col-span-2">
+                      <label className="sm:hidden block text-xs font-semibold text-slate-500 mb-0.5">Tarih</label>
+                      <input
+                        type="date"
+                        value={p.changeDate}
+                        onChange={(e) => updatePartRow(idx, 'changeDate', e.target.value)}
+                        className="w-full px-2 py-1.5 text-xs border border-slate-200 rounded-lg focus:border-blue-500 focus:outline-hidden"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="sm:hidden block text-xs font-semibold text-slate-500 mb-0.5">Fiyat ({maintCurrency})</label>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        value={p.cost}
+                        onFocus={(e) => e.target.select()}
+                        onChange={(e) => updatePartRow(idx, 'cost', e.target.value)}
+                        placeholder={`Fiyat (${maintCurrency})`}
+                        className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:border-blue-500 focus:outline-hidden font-bold"
+                      />
+                    </div>
                   </div>
-                  <div className="col-span-2">
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      value={p.cost}
-                      onFocus={(e) => e.target.select()}
-                      onChange={(e) => updatePartRow(idx, 'cost', e.target.value)}
-                      placeholder={`Fiyat (${maintCurrency})`}
-                      className="w-full px-2 py-1 text-xs border border-slate-200 rounded-md focus:border-blue-500 focus:outline-hidden font-bold"
-                    />
-                  </div>
-                  <div className="col-span-1 text-center">
+                  <div className="sm:col-span-1 flex items-center justify-end sm:justify-center pt-1 sm:pt-0">
                     {maintParts.length > 1 && (
                       <button
                         type="button"
                         onClick={() => removePartRow(idx)}
-                        className="text-rose-500 hover:text-rose-700 cursor-pointer"
+                        className="inline-flex items-center gap-1 text-xs text-rose-500 hover:text-rose-700 font-semibold cursor-pointer p-1"
                       >
-                        <Trash2 className="w-4 h-4 mx-auto" />
+                        <Trash2 className="w-4 h-4" />
+                        <span className="sm:hidden">Sil</span>
                       </button>
                     )}
                   </div>

@@ -22,6 +22,7 @@ import {
   X,
   CreditCard,
   UserCheck,
+  MessageCircle,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Modal } from '@/components/ui/Modal';
@@ -126,7 +127,9 @@ export default function CustomersPage() {
       throw new Error(err.error || 'Dosya yüklenemedi');
     }
     const json = await res.json();
-    return json.url;
+    const url = json.fileUrl || json.url;
+    if (!url) throw new Error('Dosya URL adresi oluşturulamadı.');
+    return url;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -327,8 +330,29 @@ export default function CustomersPage() {
                           <Phone className="w-3.5 h-3.5 text-slate-400" />
                           {c.phone}
                         </div>
+                        {/* Direct Call & WhatsApp Action Buttons */}
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                          <a
+                            href={`tel:${(c.phone || '').replace(/[^0-9+]/g, '')}`}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold transition-colors cursor-pointer"
+                            title="GSM Üzerinden Doğrudan Ara"
+                          >
+                            <Phone className="w-3 h-3 text-emerald-600" />
+                            <span>Ara</span>
+                          </a>
+                          <a
+                            href={`https://wa.me/${(c.phone || '').replace(/[^0-9]/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-green-50 hover:bg-green-100 text-green-800 border border-green-200 text-xs font-bold transition-colors cursor-pointer"
+                            title="WhatsApp ile Sohbet Başlat"
+                          >
+                            <MessageCircle className="w-3 h-3 text-green-600" />
+                            <span>WhatsApp</span>
+                          </a>
+                        </div>
                         {c.email && (
-                          <div className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
+                          <div className="text-xs text-slate-400 flex items-center gap-1 mt-1">
                             <Mail className="w-3 h-3" />
                             {c.email}
                           </div>

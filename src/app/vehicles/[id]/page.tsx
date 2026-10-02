@@ -126,6 +126,26 @@ export default function VehicleDetailPage() {
     left: '/uploads/sample_car_left.svg',
   });
   const [isSubmittingRent, setIsSubmittingRent] = useState(false);
+  const [uploadingPhotoSide, setUploadingPhotoSide] = useState<string | null>(null);
+
+  const handlePhotoUpload = async (file: File, side: 'front' | 'back' | 'right' | 'left') => {
+    setUploadingPhotoSide(side);
+    try {
+      const data = new FormData();
+      data.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: data });
+      if (!res.ok) throw new Error('Fotoğraf yüklenemedi');
+      const json = await res.json();
+      const url = json.fileUrl || json.url;
+      if (url) {
+        setRentPhotos((prev) => ({ ...prev, [side]: url }));
+      }
+    } catch (e: any) {
+      alert('Fotoğraf yüklenirken hata: ' + e.message);
+    } finally {
+      setUploadingPhotoSide(null);
+    }
+  };
 
   // Modal: Photo Viewer
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
@@ -2204,23 +2224,42 @@ export default function VehicleDetailPage() {
               <Camera className="w-4 h-4 text-amber-600" />
               Teslimat Öncesi 4 Araç Fotoğrafı (Ön, Arka, Sağ, Sol)
             </span>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               {(['front', 'back', 'right', 'left'] as const).map((side) => {
                 const labelMap = { front: 'Ön Cephe', back: 'Arka Cephe', right: 'Sağ Yan', left: 'Sol Yan' };
+                const isUploadingThis = uploadingPhotoSide === side;
                 return (
-                  <div key={side} className="border border-slate-200 rounded-lg p-2 text-center bg-slate-50">
-                    <span className="text-xs font-bold text-slate-600 block mb-1">{labelMap[side]}</span>
-                    <img
-                      src={rentPhotos[side]}
-                      alt={side}
-                      className="w-full h-16 object-cover rounded border border-slate-200 mb-1"
-                    />
-                    <input
-                      type="text"
-                      value={rentPhotos[side]}
-                      onChange={(e) => setRentPhotos({ ...rentPhotos, [side]: e.target.value })}
-                      className="w-full text-xs px-1 py-0.5 border border-slate-200 rounded"
-                    />
+                  <div key={side} className="border border-slate-200 rounded-xl p-2 text-center bg-slate-50 flex flex-col justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-slate-700 block mb-1">{labelMap[side]}</span>
+                      <div className="relative w-full h-20 bg-slate-200 rounded-lg overflow-hidden border border-slate-200 mb-2">
+                        <img
+                          src={rentPhotos[side]}
+                          alt={side}
+                          className="w-full h-full object-cover"
+                        />
+                        {isUploadingThis && (
+                          <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center text-white text-xs font-bold">
+                            Yükleniyor...
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <label className="block cursor-pointer">
+                      <span className="inline-block w-full py-1 px-2 text-xs font-bold text-slate-800 bg-white hover:bg-amber-500 hover:text-slate-950 border border-slate-300 rounded-lg transition-colors text-center shadow-2xs">
+                        {isUploadingThis ? 'Bekleyiniz...' : 'Fotoğraf Çek / Seç'}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={isUploadingThis}
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handlePhotoUpload(file, side);
+                        }}
+                      />
+                    </label>
                   </div>
                 );
               })}
@@ -2392,39 +2431,41 @@ export default function VehicleDetailPage() {
 
             <div className="space-y-2">
               {parts.map((p, idx) => (
-                <div key={idx} className="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200">
+                <div key={idx} className="bg-white p-2.5 rounded-xl border border-slate-200/90 shadow-2xs space-y-2 sm:space-y-0 sm:flex sm:items-center sm:gap-2">
                   <input
                     type="text"
                     value={p.partName}
                     onChange={(e) => updatePartRow(idx, 'partName', e.target.value)}
                     placeholder="Parça Adı (Örn: Ön Fren Balatası)"
-                    className="flex-2 px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:border-blue-500"
+                    className="w-full sm:flex-2 px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:border-blue-500"
                   />
                   <input
                     type="text"
                     value={p.partCode}
                     onChange={(e) => updatePartRow(idx, 'partCode', e.target.value)}
                     placeholder="Parça Kodu"
-                    className="flex-1 px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:border-blue-500"
+                    className="w-full sm:flex-1 px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:border-blue-500 font-mono"
                   />
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    value={p.cost}
-                    onFocus={(e) => e.target.select()}
-                    onChange={(e) => updatePartRow(idx, 'cost', e.target.value)}
-                    placeholder={`Tutar (${maintCurrency})`}
-                    className="w-24 px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:border-blue-500 font-mono font-bold"
-                  />
-                  {parts.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removePartRow(idx)}
-                      className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      value={p.cost}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => updatePartRow(idx, 'cost', e.target.value)}
+                      placeholder={`Tutar (${maintCurrency})`}
+                      className="flex-1 sm:w-28 px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:border-blue-500 font-mono font-bold"
+                    />
+                    {parts.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removePartRow(idx)}
+                        className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

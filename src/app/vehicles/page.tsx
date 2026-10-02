@@ -87,6 +87,14 @@ function VehiclesContent() {
 
     loadVehicles();
 
+    const statusParam = searchParams.get('status');
+    if (statusParam) {
+      setStatusFilter(statusParam.toUpperCase());
+    }
+    const ownerParam = searchParams.get('owner');
+    if (ownerParam) {
+      setOwnerFilter(ownerParam);
+    }
     if (searchParams.get('action') === 'new') {
       setIsNewModalOpen(true);
     }
