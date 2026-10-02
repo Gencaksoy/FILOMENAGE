@@ -6,6 +6,8 @@ import { useParams, useRouter } from 'next/navigation';
 import {
   Car,
   ArrowLeft,
+  ArrowRight,
+  ExternalLink,
   Wrench,
   Clock,
   Phone,
@@ -1405,9 +1407,15 @@ export default function VehicleDetailPage() {
             )}
           </div>
 
-          <div className="mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-            <span>Periyot:</span>
-            <span className="font-semibold text-slate-700">Yılda 1 Kez Zorunlu</span>
+          <div className="mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span className="text-slate-400">Yılda 1 Kez Zorunlu</span>
+            <Link
+              href={`/inspection?search=${encodeURIComponent(vehicle.plate)}`}
+              className="font-bold text-purple-700 hover:text-purple-900 hover:underline inline-flex items-center gap-1"
+            >
+              <span>Muayene Kayıtları</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
         </div>
 
@@ -1428,9 +1436,14 @@ export default function VehicleDetailPage() {
 
             {latestMaintenance ? (
               <>
-                <div className="text-lg font-black text-slate-900">
-                  {formatDate(latestMaintenance.maintenanceDate)}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('maintenances')}
+                  className="text-lg font-black text-slate-900 hover:text-blue-600 hover:underline text-left cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>{formatDate(latestMaintenance.maintenanceDate)}</span>
+                  <span className="text-xs font-normal text-blue-600">↗ İncele</span>
+                </button>
                 <p className="text-xs text-slate-600 mt-1 line-clamp-2">
                   {latestMaintenance.description}
                 </p>
@@ -1450,11 +1463,18 @@ export default function VehicleDetailPage() {
             )}
           </div>
 
-          <div className="mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-            <span>Sisteme Giriş Zamanı:</span>
-            <span className="font-mono font-semibold text-slate-700">
+          <div className="mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span className="text-slate-400 font-mono">
               {latestMaintenance ? formatDateTime(latestMaintenance.createdAt) : '-'}
             </span>
+            <button
+              type="button"
+              onClick={() => setActiveTab('maintenances')}
+              className="font-bold text-blue-700 hover:text-blue-900 hover:underline inline-flex items-center gap-1 cursor-pointer"
+            >
+              <span>Bakımları Gör ({maintenances?.length || 0})</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
           </div>
         </div>
 
@@ -1473,9 +1493,14 @@ export default function VehicleDetailPage() {
 
             {latestMaintenance?.nextMaintenanceDate ? (
               <>
-                <div className="text-xl font-black text-amber-600 font-mono">
-                  {formatDate(latestMaintenance.nextMaintenanceDate)}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('maintenances')}
+                  className="text-xl font-black text-amber-600 hover:text-amber-700 hover:underline font-mono text-left cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>{formatDate(latestMaintenance.nextMaintenanceDate)}</span>
+                  <span className="text-xs font-normal text-amber-700">↗ Plan</span>
+                </button>
                 <p className="text-xs text-slate-600 mt-1">
                   Son bakımdan itibaren tam 1 ay süreyle otomatik planlanmıştır.
                 </p>
@@ -1493,11 +1518,16 @@ export default function VehicleDetailPage() {
             )}
           </div>
 
-          <div className="mt-4 pt-2.5 border-t border-amber-100 flex items-center justify-between text-xs text-slate-400">
-            <span>Hesaplanma Zamanı:</span>
-            <span className="font-mono font-semibold text-slate-700">
-              {latestMaintenance ? formatDateTime(latestMaintenance.createdAt) : '-'}
-            </span>
+          <div className="mt-4 pt-2.5 border-t border-amber-100 flex items-center justify-between text-xs">
+            <span className="text-slate-400">1 Aylık Periyot</span>
+            <button
+              type="button"
+              onClick={() => setActiveTab('maintenances')}
+              className="font-bold text-amber-800 hover:text-amber-950 hover:underline inline-flex items-center gap-1 cursor-pointer"
+            >
+              <span>Bakım Planına Git</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
           </div>
         </div>
 
@@ -1519,9 +1549,14 @@ export default function VehicleDetailPage() {
 
             {latestOilChange ? (
               <>
-                <div className="text-lg font-black text-slate-900">
-                  {formatDate(latestOilChange.changeDate)}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('oil')}
+                  className="text-lg font-black text-slate-900 hover:text-emerald-700 hover:underline text-left cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>{formatDate(latestOilChange.changeDate)}</span>
+                  <span className="text-xs font-normal text-emerald-700">↗ Yağ Kayıtları</span>
+                </button>
                 <p className="text-xs text-slate-700 font-semibold mt-1">
                   {latestOilChange.oilType} • {formatKm(latestOilChange.km)}
                 </p>
@@ -1541,11 +1576,18 @@ export default function VehicleDetailPage() {
             )}
           </div>
 
-          <div className="mt-4 pt-2.5 border-t border-emerald-100 flex items-center justify-between text-xs text-slate-400">
-            <span>Sisteme Giriş Zamanı:</span>
-            <span className="font-mono font-semibold text-slate-700">
+          <div className="mt-4 pt-2.5 border-t border-emerald-100 flex items-center justify-between text-xs">
+            <span className="text-slate-400 font-mono">
               {latestOilChange ? formatDateTime(latestOilChange.createdAt) : '-'}
             </span>
+            <button
+              type="button"
+              onClick={() => setActiveTab('oil')}
+              className="font-bold text-emerald-800 hover:text-emerald-950 hover:underline inline-flex items-center gap-1 cursor-pointer"
+            >
+              <span>Yağ Değişimleri ({oilChanges?.length || 0})</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
           </div>
         </div>
 
@@ -1577,9 +1619,14 @@ export default function VehicleDetailPage() {
             {activeRental ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
                 <div>
-                  <div className="text-lg font-black text-slate-900">
-                    {activeRental.customerName}
-                  </div>
+                  <Link
+                    href={`/customers?search=${encodeURIComponent(activeRental.customerName)}`}
+                    className="text-lg font-black text-slate-900 hover:text-amber-600 hover:underline inline-flex items-center gap-1.5 group/c"
+                    title={`${activeRental.customerName} müşterisinin detayına git`}
+                  >
+                    <span>{activeRental.customerName}</span>
+                    <span className="text-xs text-amber-600 opacity-0 group-hover/c:opacity-100 transition-opacity">↗ Müşteri Profili</span>
+                  </Link>
                   <div className="text-xs text-slate-600 flex items-center gap-1 mt-0.5">
                     <Phone className="w-3.5 h-3.5 text-slate-400" />
                     <span>{activeRental.customerPhone}</span>
@@ -1661,11 +1708,19 @@ export default function VehicleDetailPage() {
             )}
           </div>
 
-          <div className="mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
-            <span>Kiralama Sistemi Giriş Zamanı:</span>
-            <span className="font-mono font-semibold text-slate-700">
+          <div className="mt-4 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
+            <span className="text-slate-400 font-mono">
               {activeRental ? formatDateTime(activeRental.createdAt) : '-'}
             </span>
+            {activeRental && (
+              <Link
+                href={`/customers?search=${encodeURIComponent(activeRental.customerName)}`}
+                className="font-bold text-purple-700 hover:text-purple-900 hover:underline inline-flex items-center gap-1"
+              >
+                <span>Müşteri Sayfasına Git</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -1944,7 +1999,18 @@ export default function VehicleDetailPage() {
                       {rentalHistory.map((r: any) => (
                         <tr key={r.id} className="hover:bg-slate-50">
                           <td className="py-2.5 px-3">
-                            <div className="font-bold text-slate-900">{r.customer?.name}</div>
+                            {r.customer?.name ? (
+                              <Link
+                                href={`/customers?search=${encodeURIComponent(r.customer.name)}`}
+                                className="font-bold text-slate-900 hover:text-amber-600 hover:underline inline-flex items-center gap-1 group/c"
+                                title={`${r.customer.name} müşterisinin profiline git`}
+                              >
+                                <span>{r.customer.name}</span>
+                                <span className="text-[10px] text-amber-600 opacity-0 group-hover/c:opacity-100 transition-opacity">↗</span>
+                              </Link>
+                            ) : (
+                              <div className="font-bold text-slate-900">-</div>
+                            )}
                             <div className="text-xs text-slate-400">{r.customer?.phone}</div>
                           </td>
                           <td className="py-2.5 px-3">{formatDate(r.startDate)}</td>

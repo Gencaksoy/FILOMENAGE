@@ -91,6 +91,15 @@ function MaintenancesContent() {
       }
       setIsNewMaintOpen(true);
     }
+
+    const s = searchParams.get('search');
+    if (s) {
+      setSearch(s);
+    }
+    const tab = searchParams.get('tab');
+    if (tab === 'oil' || tab === 'maintenances') {
+      setActiveTab(tab as any);
+    }
   }, [searchParams]);
 
   const loadData = async () => {

@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   FileCheck2,
   Plus,
@@ -20,7 +21,8 @@ import { Modal } from '@/components/ui/Modal';
 import { formatDate, formatDateTime, formatCurrency, formatRsd, EUR_TO_RSD_RATE } from '@/lib/formatters';
 import { AuthUser } from '@/lib/auth';
 
-export default function InspectionPage() {
+function InspectionContent() {
+  const searchParams = useSearchParams();
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [inspections, setInspections] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
@@ -51,7 +53,9 @@ export default function InspectionPage() {
       });
 
     loadData();
-  }, []);
+    const s = searchParams.get('search');
+    if (s) setSearch(s);
+  }, [searchParams]);
 
   const loadData = async () => {
     try {
@@ -414,5 +418,19 @@ export default function InspectionPage() {
         </form>
       </Modal>
     </AppLayout>
+  );
+}
+
+export default function InspectionPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <InspectionContent />
+    </Suspense>
   );
 }

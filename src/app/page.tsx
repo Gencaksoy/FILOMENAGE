@@ -573,11 +573,19 @@ export default function DashboardPage() {
       {/* CRITICAL ALERTS: Zorunlu Registracija Bitiş Uyarıları (Register olmadan trafiğe çıkamaz!) */}
       {registrationAlerts.length > 0 && (
         <div className="mb-5 bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-slate-900">
-          <div className="flex items-center gap-2 mb-2">
-            <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0" />
-            <h3 className="text-sm font-black text-rose-950 uppercase tracking-wide">
-              Zorunlu Araç Registracija (Tescil) Süresi Biten / Yaklaşan Araçlar
-            </h3>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0" />
+              <h3 className="text-sm font-black text-rose-950 uppercase tracking-wide">
+                Zorunlu Araç Registracija (Tescil) Süresi Biten / Yaklaşan Araçlar
+              </h3>
+            </div>
+            <Link
+              href="/vehicles?status=REGISTRATION_EXPIRING"
+              className="text-xs font-bold text-rose-900 hover:text-rose-700 underline flex items-center gap-1 shrink-0"
+            >
+              Tüm Regi Yaklaşan Araçları Gör ({registrationAlerts.length}) <ArrowRight className="w-3 h-3" />
+            </Link>
           </div>
           <p className="text-xs text-rose-800 mb-3">
             Sırbistan yasalarına göre register süresi biten araç trafiğe çıkamaz. Lütfen süresi bitmeden yenileyiniz.
@@ -796,14 +804,20 @@ export default function DashboardPage() {
         </Link>
 
         {/* 5. 1 Hafta Sonra Boşa Çıkacak */}
-        <div className="bg-white p-4 rounded-2xl border border-blue-200 shadow-xs col-span-2 sm:col-span-1">
+        <Link
+          href="/vehicles?status=RETURNING_SOON"
+          className="bg-white p-4 rounded-2xl border border-blue-200 shadow-xs col-span-2 sm:col-span-1 hover:border-blue-400 hover:shadow-md transition-all group cursor-pointer block"
+        >
           <div className="flex items-center justify-between text-blue-600 mb-1">
             <span className="text-xs font-bold uppercase tracking-wider text-blue-700">1 Hafta İçinde Dönecek</span>
-            <Clock className="w-4 h-4" />
+            <Clock className="w-4 h-4 transition-transform group-hover:scale-110" />
           </div>
           <div className="text-2xl font-extrabold text-blue-700">{forecast.returnsNext7DaysCount}</div>
-          <div className="text-xs text-blue-600 mt-1">Gelecek 7 günde iade</div>
-        </div>
+          <div className="text-xs text-blue-600 mt-1 flex items-center justify-between">
+            <span>Gelecek 7 günde iade</span>
+            <span className="text-xs font-bold text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">Listele →</span>
+          </div>
+        </Link>
       </div>
 
       {/* FİLO İSTATİSTİKLERİ, ARAÇ BAŞINA MASRAF & ARIZA ANALİTİĞİ (YALNIZCA ADMIN / ORTAKLAR GÖRÜR) */}
@@ -1314,7 +1328,17 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="text-xs text-slate-600 mt-1 flex flex-wrap items-center gap-2">
-                      <span>Müşteri: <b className="text-slate-900">{item.customerName}</b></span>
+                      <span>
+                        Müşteri:{' '}
+                        <Link
+                          href={`/customers?search=${encodeURIComponent(item.customerName)}`}
+                          className="font-bold text-slate-900 hover:text-amber-600 hover:underline inline-flex items-center gap-0.5"
+                          title="Müşteri sayfasına git"
+                        >
+                          {item.customerName}
+                          <span className="text-[10px] text-amber-600">↗</span>
+                        </Link>
+                      </span>
                       <span>•</span>
                       <span className="font-mono flex items-center gap-1">
                         <Phone className="w-3 h-3 text-slate-400" />

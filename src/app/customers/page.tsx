@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   Users,
   Plus,
@@ -30,7 +31,8 @@ import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { formatDate } from '@/lib/formatters';
 import { AuthUser } from '@/lib/auth';
 
-export default function CustomersPage() {
+function CustomersContent() {
+  const searchParams = useSearchParams();
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [customers, setCustomers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,7 +82,11 @@ export default function CustomersPage() {
       .catch(() => {});
 
     loadCustomers();
-  }, []);
+    const s = searchParams.get('search');
+    if (s) {
+      setSearch(s);
+    }
+  }, [searchParams]);
 
   const loadCustomers = async () => {
     try {
@@ -808,5 +814,19 @@ export default function CustomersPage() {
         </form>
       </Modal>
     </AppLayout>
+  );
+}
+
+export default function CustomersPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <CustomersContent />
+    </Suspense>
   );
 }

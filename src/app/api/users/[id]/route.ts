@@ -66,6 +66,12 @@ export async function PATCH(
       updateData.isActive = isActive;
     }
     if (typeof password === 'string' && password.trim().length >= 6) {
+      if (!isSuper && targetUser.id !== currentUser.id) {
+        return NextResponse.json(
+          { error: 'Süper yönetici olmayan kullanıcılar yalnızca kendi şifrelerini değiştirebilirler.' },
+          { status: 403 }
+        );
+      }
       updateData.passwordHash = await bcrypt.hash(password.trim(), 10);
     }
     if (isSuper && fleetId !== undefined) {

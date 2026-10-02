@@ -113,7 +113,14 @@ function VehiclesContent() {
 
     const statusParam = searchParams.get('status');
     if (statusParam) {
-      setStatusFilter(statusParam.toUpperCase());
+      const up = statusParam.toUpperCase();
+      if (up === 'RETURNING_SOON' || up === 'RETURNS_7_DAYS' || up === 'RETURNS_SOON') {
+        setStatusFilter('RETURNING_SOON');
+      } else if (up === 'REGISTRATION_EXPIRING' || up === 'REGI_SOON' || up === 'REG_EXPIRING') {
+        setStatusFilter('REGISTRATION_EXPIRING');
+      } else {
+        setStatusFilter(up);
+      }
     }
     const ownerParam = searchParams.get('owner');
     if (ownerParam) {
@@ -173,6 +180,32 @@ function VehiclesContent() {
     }
   };
 
+  // Category counts
+  const totalCount = vehicles.length;
+  const rentedCount = vehicles.filter((v) => v.status === 'RENTED').length;
+  const availableCount = vehicles.filter((v) => v.status === 'AVAILABLE').length;
+  const returningSoonCount = vehicles.filter(
+    (v) =>
+      v.status === 'RENTED' &&
+      v.activeRental &&
+      v.activeRental.remainingDays !== null &&
+      v.activeRental.remainingDays <= 7
+  ).length;
+  const regExpiringCount = vehicles.filter((v) => {
+    const daysLeft =
+      v.regDaysLeft !== null
+        ? v.regDaysLeft
+        : v.registrationExpiry
+        ? Math.ceil((new Date(v.registrationExpiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+        : null;
+    return daysLeft !== null && daysLeft <= 30;
+  }).length;
+  const postCheckCount = vehicles.filter((v) => v.status === 'POST_RENTAL_CHECK').length;
+  const maintCount = vehicles.filter((v) => v.status === 'MAINTENANCE').length;
+  const faultsCount = vehicles.filter(
+    (v) => v.hasActiveFault || (v.activeFaultsCount && v.activeFaultsCount > 0)
+  ).length;
+
   // Filtered vehicles
   const filteredVehicles = vehicles.filter((v) => {
     const matchesSearch =
@@ -184,12 +217,29 @@ function VehiclesContent() {
       (v.activeRental?.customerName &&
         v.activeRental.customerName.toLowerCase().includes(search.toLowerCase()));
 
-    const matchesStatus =
-      statusFilter === 'ALL'
-        ? true
-        : statusFilter === 'FAULTS'
-        ? v.hasActiveFault
-        : v.status === statusFilter;
+    let matchesStatus = true;
+    if (statusFilter === 'ALL') {
+      matchesStatus = true;
+    } else if (statusFilter === 'RETURNING_SOON') {
+      matchesStatus =
+        v.status === 'RENTED' &&
+        v.activeRental &&
+        v.activeRental.remainingDays !== null &&
+        v.activeRental.remainingDays <= 7;
+    } else if (statusFilter === 'REGISTRATION_EXPIRING') {
+      const daysLeft =
+        v.regDaysLeft !== null
+          ? v.regDaysLeft
+          : v.registrationExpiry
+          ? Math.ceil((new Date(v.registrationExpiry).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+          : null;
+      matchesStatus = daysLeft !== null && daysLeft <= 30;
+    } else if (statusFilter === 'FAULTS') {
+      matchesStatus = !!v.hasActiveFault || (v.activeFaultsCount && v.activeFaultsCount > 0);
+    } else {
+      matchesStatus = v.status === statusFilter;
+    }
+
     const matchesOwner = ownerFilter === 'ALL' || v.owner === ownerFilter;
 
     return matchesSearch && matchesStatus && matchesOwner;
@@ -225,6 +275,137 @@ function VehiclesContent() {
         >
           <Plus className="w-4 h-4" />
           Yeni Araç Ekle
+        </button>
+      </div>
+
+      {/* Category / Status Tabs (Hızlı Sekmeler) */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none">
+        <button
+          type="button"
+          onClick={() => setStatusFilter('ALL')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer border ${
+            statusFilter === 'ALL'
+              ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+              : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          <Car className="w-3.5 h-3.5" />
+          <span>Tüm Araçlar</span>
+          <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-mono ${statusFilter === 'ALL' ? 'bg-slate-800 text-amber-300' : 'bg-slate-100 text-slate-600'}`}>
+            {totalCount}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatusFilter('RENTED')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer border ${
+            statusFilter === 'RENTED'
+              ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-xs'
+              : 'bg-white text-slate-700 border-slate-200 hover:bg-amber-50/50'
+          }`}
+        >
+          <KeyRound className="w-3.5 h-3.5" />
+          <span>Kirada</span>
+          <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-mono ${statusFilter === 'RENTED' ? 'bg-amber-600 text-slate-950 font-black' : 'bg-amber-50 text-amber-900 font-bold'}`}>
+            {rentedCount}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatusFilter('AVAILABLE')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer border ${
+            statusFilter === 'AVAILABLE'
+              ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+              : 'bg-white text-slate-700 border-slate-200 hover:bg-emerald-50/50'
+          }`}
+        >
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          <span>Boşta (Hazır)</span>
+          <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-mono ${statusFilter === 'AVAILABLE' ? 'bg-emerald-700 text-white' : 'bg-emerald-50 text-emerald-800 font-bold'}`}>
+            {availableCount}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatusFilter('RETURNING_SOON')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer border ${
+            statusFilter === 'RETURNING_SOON'
+              ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+              : 'bg-white text-blue-900 border-blue-200 hover:bg-blue-50/50'
+          }`}
+        >
+          <Clock className="w-3.5 h-3.5 text-blue-600" />
+          <span>1 Hafta İçinde Dönecek</span>
+          <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-mono ${statusFilter === 'RETURNING_SOON' ? 'bg-blue-700 text-white' : 'bg-blue-100 text-blue-900 font-black'}`}>
+            {returningSoonCount}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatusFilter('REGISTRATION_EXPIRING')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer border ${
+            statusFilter === 'REGISTRATION_EXPIRING'
+              ? 'bg-purple-700 text-white border-purple-700 shadow-xs'
+              : 'bg-white text-purple-900 border-purple-200 hover:bg-purple-50/50'
+          }`}
+        >
+          <FileCheck2 className="w-3.5 h-3.5 text-purple-600" />
+          <span>Regi (Tescil) Yaklaşan</span>
+          <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-mono ${statusFilter === 'REGISTRATION_EXPIRING' ? 'bg-purple-800 text-white' : 'bg-purple-100 text-purple-900 font-black'}`}>
+            {regExpiringCount}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatusFilter('POST_RENTAL_CHECK')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer border ${
+            statusFilter === 'POST_RENTAL_CHECK'
+              ? 'bg-sky-600 text-white border-sky-600 shadow-xs'
+              : 'bg-white text-slate-700 border-slate-200 hover:bg-sky-50/50'
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5 text-sky-600" />
+          <span>Kira Sonrası Kontrol</span>
+          <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-mono ${statusFilter === 'POST_RENTAL_CHECK' ? 'bg-sky-700 text-white' : 'bg-sky-50 text-sky-800'}`}>
+            {postCheckCount}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatusFilter('MAINTENANCE')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer border ${
+            statusFilter === 'MAINTENANCE'
+              ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+              : 'bg-white text-slate-700 border-slate-200 hover:bg-rose-50/50'
+          }`}
+        >
+          <Wrench className="w-3.5 h-3.5 text-rose-600" />
+          <span>Serviste</span>
+          <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-mono ${statusFilter === 'MAINTENANCE' ? 'bg-rose-700 text-white' : 'bg-rose-50 text-rose-800'}`}>
+            {maintCount}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setStatusFilter('FAULTS')}
+          className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 cursor-pointer border ${
+            statusFilter === 'FAULTS'
+              ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+              : 'bg-white text-slate-700 border-slate-200 hover:bg-amber-50/50'
+          }`}
+        >
+          <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+          <span>Arızalı Araçlar</span>
+          <span className={`px-1.5 py-0.2 rounded-md text-[10px] font-mono ${statusFilter === 'FAULTS' ? 'bg-amber-700 text-white' : 'bg-amber-100 text-amber-900 font-bold'}`}>
+            {faultsCount}
+          </span>
         </button>
       </div>
 
@@ -274,9 +455,11 @@ function VehiclesContent() {
             <option value="ALL">Tüm Durumlar (Tümü)</option>
             <option value="RENTED">Müşteride (Kirada)</option>
             <option value="AVAILABLE">Boşta (Kiralanabilir)</option>
+            <option value="RETURNING_SOON">🕒 1 Hafta İçinde Dönecek ({returningSoonCount})</option>
+            <option value="REGISTRATION_EXPIRING">📋 Regi (Tescil) Yaklaşan / Biten ({regExpiringCount})</option>
             <option value="POST_RENTAL_CHECK">Kira Sonrası Kontrol / Bakımda</option>
             <option value="MAINTENANCE">Serviste (Bakım)</option>
-            <option value="FAULTS">⚠️ Arızalı Araçlar ({vehicles.filter((x) => x.hasActiveFault).length})</option>
+            <option value="FAULTS">⚠️ Arızalı Araçlar ({faultsCount})</option>
           </select>
         </div>
       </div>
@@ -391,27 +574,38 @@ function VehiclesContent() {
                       <td className="py-3.5 px-4">
                         {v.registrationExpiry ? (
                           <div>
-                            <div className="text-slate-800 font-semibold flex items-center gap-1">
-                              <FileCheck2 className="w-3 h-3 text-slate-400" />
-                              {formatDate(v.registrationExpiry)}
-                            </div>
+                            <Link
+                              href={`/inspection?search=${encodeURIComponent(v.plate)}`}
+                              className="text-slate-800 font-semibold flex items-center gap-1 hover:text-purple-700 hover:underline transition-colors"
+                              title={`${v.plate} aracının muayene & registracija geçmişini gör`}
+                            >
+                              <FileCheck2 className="w-3.5 h-3.5 text-slate-400 group-hover:text-purple-600 shrink-0" />
+                              <span>{formatDate(v.registrationExpiry)}</span>
+                            </Link>
                             {regWarning && (
-                              <div
-                                className={`text-xs font-bold mt-0.5 flex items-center gap-1 ${
+                              <Link
+                                href={`/inspection?search=${encodeURIComponent(v.plate)}`}
+                                className={`text-xs font-bold mt-0.5 flex items-center gap-1 hover:underline ${
                                   regWarning.danger
                                     ? 'text-rose-600'
                                     : regWarning.warning
                                     ? 'text-amber-600'
                                     : 'text-emerald-600'
                                 }`}
+                                title="Muayene sayfasına git"
                               >
                                 {regWarning.danger && <ShieldAlert className="w-2.5 h-2.5" />}
                                 {regWarning.text}
-                              </div>
+                              </Link>
                             )}
                           </div>
                         ) : (
-                          <span className="text-rose-500 text-xs font-bold">Girilmedi (Uyarı!)</span>
+                          <Link
+                            href={`/inspection?search=${encodeURIComponent(v.plate)}`}
+                            className="text-rose-500 text-xs font-bold hover:underline"
+                          >
+                            Girilmedi (Uyarı!)
+                          </Link>
                         )}
                       </td>
 
@@ -472,7 +666,14 @@ function VehiclesContent() {
                       <td className="py-3.5 px-4">
                         {v.activeRental ? (
                           <div>
-                            <div className="font-bold text-slate-900">{v.activeRental.customerName}</div>
+                            <Link
+                              href={`/customers?search=${encodeURIComponent(v.activeRental.customerName)}`}
+                              className="font-bold text-slate-900 hover:text-amber-600 hover:underline flex items-center gap-1 group/c"
+                              title={`${v.activeRental.customerName} müşterisinin detayına git`}
+                            >
+                              <span>{v.activeRental.customerName}</span>
+                              <span className="text-[10px] text-amber-600 opacity-0 group-hover/c:opacity-100 transition-opacity">↗</span>
+                            </Link>
                             <div className="text-xs text-slate-500 flex items-center gap-1">
                               <Phone className="w-3 h-3 text-slate-400" />
                               {v.activeRental.customerPhone}
@@ -509,9 +710,14 @@ function VehiclesContent() {
                       <td className="py-3.5 px-4">
                         {v.latestMaintenance ? (
                           <div>
-                            <div className="text-slate-800 font-semibold">
-                              {formatDate(v.latestMaintenance.maintenanceDate)}
-                            </div>
+                            <Link
+                              href={`/vehicles/${v.id}?tab=maintenances`}
+                              className="text-slate-800 font-semibold hover:text-blue-600 hover:underline flex items-center gap-1"
+                              title="Aracın bakım geçmişini incele"
+                            >
+                              <span>{formatDate(v.latestMaintenance.maintenanceDate)}</span>
+                              <span className="text-[10px] text-blue-600">↗</span>
+                            </Link>
                             <div className="text-xs text-slate-500 font-medium">
                               Toplam: <b className="text-slate-900">{formatCurrency(v.latestMaintenance.totalCost, 'EUR')}</b>
                               {v.latestMaintenance.partsCount > 0 && (

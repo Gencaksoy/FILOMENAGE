@@ -45,6 +45,11 @@ export default function UsersPage() {
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
+  const isSuper =
+    currentUser?.role === 'SUPER_ADMIN' ||
+    currentUser?.email === 'akif@filoyonetim.com' ||
+    currentUser?.email === 'gencaksoy@outlook.com';
+
   const openEditModal = (u: any) => {
     setEditingUser(u);
     setEditName(u.name);
@@ -89,7 +94,9 @@ export default function UsersPage() {
         if (editPassword.trim().length < 6) {
           throw new Error('Yeni şifre en az 6 karakter olmalıdır.');
         }
-        payload.password = editPassword.trim();
+        if (isSuper || editingUser.id === currentUser?.id) {
+          payload.password = editPassword.trim();
+        }
       }
 
       const res = await fetch(`/api/users/${editingUser.id}`, {
@@ -525,22 +532,34 @@ export default function UsersPage() {
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Yeni Şifre Belirle (Boş bırakırsanız mevcut şifre değişmez)
-              </label>
-              <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="password"
-                  value={editPassword}
-                  onChange={(e) => setEditPassword(e.target.value)}
-                  placeholder="Değiştirmek istemiyorsanız boş bırakın"
-                  minLength={6}
-                  className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-amber-500 font-mono"
-                />
+            {isSuper || editingUser.id === currentUser?.id ? (
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Yeni Şifre Belirle (Boş bırakırsanız mevcut şifre değişmez)
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="password"
+                    value={editPassword}
+                    onChange={(e) => setEditPassword(e.target.value)}
+                    placeholder="Değiştirmek istemiyorsanız boş bırakın"
+                    minLength={6}
+                    className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-amber-500 font-mono"
+                  />
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 flex items-start gap-2">
+                <Lock className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-bold text-slate-800">Şifre Değiştirme Yetkisi Sınırlandırılmıştır</div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
+                    Süper yönetici haricindeki kullanıcılar yalnızca kendi şifrelerini profil ayarlarından değiştirebilir. Başka bir kullanıcının şifresini değiştiremezsiniz.
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
