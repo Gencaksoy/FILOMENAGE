@@ -57,6 +57,14 @@ export default function DashboardPage() {
   const [lightboxImage, setLightboxImage] = useState<{ src: string; title?: string } | null>(null);
   const [isSubmittingReturn, setIsSubmittingReturn] = useState(false);
 
+  // Modal: Rental Extension (Süre Uzatma)
+  const [extendingRental, setExtendingRental] = useState<any | null>(null);
+  const [extendDays, setExtendDays] = useState<number | string>(30);
+  const [extendAmount, setExtendAmount] = useState<number | string>(350);
+  const [extendIsPaid, setExtendIsPaid] = useState<boolean>(true);
+  const [extendNotes, setExtendNotes] = useState<string>('');
+  const [isSubmittingExtend, setIsSubmittingExtend] = useState(false);
+
   // Modal: Quick Rent (Araç Kirala + Yeni Müşteri Sekmesi + İskonto + 4 Fotoğraf)
   const [showRentModal, setShowRentModal] = useState(false);
   const [rentCustomerMode, setRentCustomerMode] = useState<'existing' | 'new'>('existing');
@@ -101,6 +109,7 @@ export default function DashboardPage() {
   const [oilCost, setOilCost] = useState('75');
   const [oilService, setOilService] = useState('');
   const [oilNotes, setOilNotes] = useState('');
+  const [oilPaidBy, setOilPaidBy] = useState('Atilla');
   const [isSubmittingOil, setIsSubmittingOil] = useState(false);
 
   const fetchData = async (owner: string = selectedOwner) => {
@@ -357,6 +366,7 @@ export default function DashboardPage() {
           currency: oilCurrency,
           serviceName: oilService,
           notes: oilNotes,
+          paidBy: oilPaidBy,
         }),
       });
       if (res.ok) {
@@ -371,6 +381,39 @@ export default function DashboardPage() {
       console.error(e);
     } finally {
       setIsSubmittingOil(false);
+    }
+  };
+
+  // Extend Rental Submit
+  const handleExtendSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!extendingRental) return;
+    setIsSubmittingExtend(true);
+    try {
+      const res = await fetch('/api/rentals/extend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rentalId: extendingRental.rentalId,
+          additionalDays: parseInt(String(extendDays), 10) || 30,
+          additionalAmount: parseFloat(String(extendAmount)) || 0,
+          isPaid: extendIsPaid,
+          notes: extendNotes,
+        }),
+      });
+      if (res.ok) {
+        setExtendingRental(null);
+        setExtendNotes('');
+        await fetchData(selectedOwner);
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Süre uzatma işlemi başarısız oldu.');
+      }
+    } catch (e: any) {
+      console.error(e);
+      alert('Süre uzatma sırasında bir hata oluştu.');
+    } finally {
+      setIsSubmittingExtend(false);
     }
   };
 
@@ -834,6 +877,12 @@ export default function DashboardPage() {
                         {item.statusText}
                       </span>
 
+                      {item.extensionCount > 0 && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                          🔄 {item.extensionCount} Kez Uzatıldı
+                        </span>
+                      )}
+
                       {/* Teslimat Fotoğraflarını İncele */}
                       {item.photos?.front && (
                         <button
@@ -849,9 +898,9 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Actions: WhatsApp Link + Return Car Button */}
+                {/* Actions: WhatsApp Link + Süre Uzat + Return Car Button */}
                 <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
-                  {/* WhatsApp Reminder Button (İstenen Özellik!) */}
+                  {/* WhatsApp Reminder Button */}
                   <a
                     href={item.whatsAppUrl}
                     target="_blank"
@@ -862,6 +911,22 @@ export default function DashboardPage() {
                     <MessageCircle className="w-4 h-4" />
                     WhatsApp ile Hatırlat
                   </a>
+
+                  {/* Süre Uzat Button */}
+                  <button
+                    onClick={() => {
+                      setExtendingRental(item);
+                      setExtendDays(30);
+                      setExtendAmount(item.monthlyRate || 350);
+                      setExtendIsPaid(true);
+                      setExtendNotes('');
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                    title="Kiralama süresini uzat"
+                  >
+                    <Clock className="w-4 h-4" />
+                    Süre Uzat
+                  </button>
 
                   {/* Aracı Teslim Al */}
                   <button
@@ -882,9 +947,154 @@ export default function DashboardPage() {
         )}
       </div>
 
+      {/* MODAL: KİRALAMA SÜRESİ UZATMA (Varsayılan 30 Gün + Tutar + Ödeme Durumu) */}
+      {extendingRental && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto pt-safe pb-safe">
+          <div className="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 my-8">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-indigo-600" />
+                  Kiralama Süresini Uzat ({extendingRental.plate})
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Müşteri: <b className="text-slate-800">{extendingRental.customerName}</b>
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setExtendingRental(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mt-3 p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Mevcut İade Tarihi:</span>
+                <span className="font-bold font-mono text-slate-800">{formatDate(extendingRental.endDate)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Mevcut Toplam Tutar:</span>
+                <span className="font-bold font-mono text-slate-800">{extendingRental.totalAmount ? `${extendingRental.totalAmount} €` : '-'}</span>
+              </div>
+              {extendingRental.extensionCount > 0 && (
+                <div className="flex justify-between text-indigo-600 font-semibold">
+                  <span>Daha Önceki Uzatmalar:</span>
+                  <span>{extendingRental.extensionCount} kez uzatıldı</span>
+                </div>
+              )}
+            </div>
+
+            <form onSubmit={handleExtendSubmit} className="space-y-4 mt-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Uzatılacak Gün Sayısı (Varsayılan 30 Gün) *
+                </label>
+                <div className="grid grid-cols-4 gap-2 mb-2">
+                  {[7, 15, 30, 60].map((days) => (
+                    <button
+                      key={days}
+                      type="button"
+                      onClick={() => {
+                        setExtendDays(days);
+                        const monthly = extendingRental.monthlyRate || 350;
+                        const calculated = Math.round((monthly / 30) * days);
+                        setExtendAmount(calculated);
+                      }}
+                      className={`py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                        Number(extendDays) === days
+                          ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                      }`}
+                    >
+                      +{days} Gün
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="number"
+                  value={extendDays}
+                  onChange={(e) => setExtendDays(e.target.value)}
+                  required
+                  min={1}
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl font-bold font-mono"
+                  placeholder="Örn: 30"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Ek Dönem Kira Bedeli (€) *
+                </label>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={extendAmount}
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => setExtendAmount(e.target.value)}
+                  required
+                  min={0}
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl font-bold font-mono"
+                  placeholder="Örn: 350"
+                />
+                <span className="text-[11px] text-slate-400 mt-1 block">
+                  Bu tutar mevcut sözleşme toplamına otomatik eklenecektir.
+                </span>
+              </div>
+
+              {/* Kira Bedeli Ödendi mi Teyidi */}
+              <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-bold text-emerald-950">Uzatma Ücreti Tahsil Edildi mi?</div>
+                  <div className="text-[11px] text-emerald-700">Ödeme alındı olarak işaretle</div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={extendIsPaid}
+                  onChange={(e) => setExtendIsPaid(e.target.checked)}
+                  className="w-5 h-5 text-emerald-600 rounded-md focus:ring-emerald-400 cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Uzatma Notu (Opsiyonel)
+                </label>
+                <textarea
+                  rows={2}
+                  value={extendNotes}
+                  onChange={(e) => setExtendNotes(e.target.value)}
+                  placeholder="Müşteri telefonla teyit etti, ödeme elden alındı..."
+                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setExtendingRental(null)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+                >
+                  Vazgeç
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingExtend}
+                  className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-md cursor-pointer transition-colors"
+                >
+                  {isSubmittingExtend ? 'Uzatılıyor...' : 'Süreyi Uzat & Onayla'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* MODAL: ARACI TESLİM AL (Aksesuar Checklist + Bakıma Gönder + Fotoğraf Karşılaştırma) */}
       {returningRental && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto pt-safe pb-safe">
           <div className="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 my-8">
             <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
               <CheckSquare className="w-5 h-5 text-amber-500" />
@@ -893,6 +1103,29 @@ export default function DashboardPage() {
             <p className="text-xs text-slate-500 mt-1">
               Aksesuarları kontrol edip aracın kiradan sonraki durumunu belirleyiniz.
             </p>
+
+            {/* Süre Uzatma Yönlendirme Banner */}
+            <div className="mt-3 p-3 bg-indigo-50/80 rounded-2xl border border-indigo-200 flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs font-bold text-indigo-950">Müşteri teslim yerine süreyi uzatmak mı istiyor?</div>
+                <div className="text-[11px] text-indigo-700">Aracı teslim almadan 30 gün uzatabilirsiniz.</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const target = returningRental;
+                  setReturningRental(null);
+                  setExtendingRental(target);
+                  setExtendDays(30);
+                  setExtendAmount(target.monthlyRate || 350);
+                  setExtendIsPaid(true);
+                  setExtendNotes('');
+                }}
+                className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shrink-0 cursor-pointer shadow-xs transition-colors"
+              >
+                ⏱️ Süre Uzatmaya Geç
+              </button>
+            </div>
 
             <form onSubmit={handleReturnSubmit} className="space-y-4 mt-4">
               <div>
@@ -1549,6 +1782,39 @@ export default function DashboardPage() {
                     className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl"
                   />
                 </div>
+              </div>
+
+              {/* Masrafı / Ödemeyi Yapan (Kim Ödedi?) */}
+              <div className="p-3 bg-amber-50/60 rounded-2xl border border-amber-200">
+                <label className="block text-xs font-bold text-amber-950 mb-1.5">
+                  Ödemeyi Yapan (Masrafı Karşılayan) *
+                </label>
+                <div className="grid grid-cols-3 gap-2 mb-1.5">
+                  {['Atilla', 'Onur', 'Ortak Kasa'].map((person) => (
+                    <button
+                      key={person}
+                      type="button"
+                      onClick={() => setOilPaidBy(person)}
+                      className={`py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                        oilPaidBy === person
+                          ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-xs'
+                          : 'bg-white text-slate-700 border-amber-200 hover:bg-amber-100/50'
+                      }`}
+                    >
+                      {person}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  value={oilPaidBy}
+                  onChange={(e) => setOilPaidBy(e.target.value)}
+                  placeholder="Veya başka bir isim girin"
+                  className="w-full px-2.5 py-1.5 text-xs border border-amber-300 rounded-xl bg-white text-slate-800"
+                />
+                <span className="text-[11px] text-amber-800 mt-1 block">
+                  💡 Ortaklar arasında hesap karışıklığını önlemek için harcamayı yapan kişiyi seçiniz.
+                </span>
               </div>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">

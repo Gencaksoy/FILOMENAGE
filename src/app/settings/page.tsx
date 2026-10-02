@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, Building, BellRing, Check } from 'lucide-react';
+import { Settings, Save, Building, BellRing, Check, ShieldAlert } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthUser } from '@/lib/auth';
 
@@ -19,6 +19,8 @@ export default function SettingsPage() {
     maintenance_interval_months: '1',
     inspection_interval_years: '1',
   });
+
+  const isStaff = currentUser?.role === 'STAFF';
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -40,6 +42,10 @@ export default function SettingsPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isStaff) {
+      alert('Çalışanların şirket adını veya sistem ayarlarını değiştirme yetkisi yoktur.');
+      return;
+    }
     setSaved(false);
     try {
       const res = await fetch('/api/settings', {
@@ -52,7 +58,8 @@ export default function SettingsPage() {
         setSaved(true);
         setTimeout(() => setSaved(false), 3000);
       } else {
-        alert('Ayarlar kaydedilemedi.');
+        const err = await res.json();
+        alert(err.error || 'Ayarlar kaydedilemedi.');
       }
     } catch (err) {
       console.error(err);
@@ -80,6 +87,18 @@ export default function SettingsPage() {
         )}
       </div>
 
+      {isStaff && (
+        <div className="mb-6 p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-amber-950 flex items-center gap-3">
+          <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0" />
+          <div>
+            <div className="text-xs font-black">Yetki Kısıtlaması (Çalışan / STAFF Modu)</div>
+            <div className="text-xs text-amber-800">
+              Şirket adını ve sistem parametrelerini yalnızca yöneticiler ve şirket ortakları değiştirebilir. Çalışanların bu ayarları düzenleme yetkisi yoktur.
+            </div>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSave} className="space-y-6">
         {/* Şirket Bilgileri */}
         <div className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-xs">
@@ -90,21 +109,26 @@ export default function SettingsPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Şirket Ünvanı</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Şirket / Filo Ünvanı</label>
               <input
                 type="text"
+                disabled={isStaff}
                 value={settings.company_name}
                 onChange={(e) => setSettings({ ...settings, company_name: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-amber-500"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-amber-500 disabled:bg-slate-100 disabled:text-slate-500 font-bold"
               />
+              <span className="text-[11px] text-slate-400 mt-1 block">
+                Bu isim müşterilere giden WhatsApp bildirimlerinde ve başlıkta görünür.
+              </span>
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1.5">İletişim Telefonu (Sırbistan)</label>
               <input
                 type="text"
+                disabled={isStaff}
                 value={settings.company_phone}
                 onChange={(e) => setSettings({ ...settings, company_phone: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-mono focus:border-amber-500"
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-mono focus:border-amber-500 disabled:bg-slate-100 disabled:text-slate-500"
               />
             </div>
             <div>
@@ -184,10 +208,11 @@ export default function SettingsPage() {
         <div className="flex justify-end">
           <button
             type="submit"
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs sm:text-sm font-bold rounded-xl shadow-md cursor-pointer transition-colors"
+            disabled={isStaff}
+            className="inline-flex items-center gap-2 px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs sm:text-sm font-bold rounded-xl shadow-md cursor-pointer transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Save className="w-4 h-4" />
-            Ayarları Kaydet
+            {isStaff ? 'Yetki Yok (Yalnızca Yönetici Kaydedebilir)' : 'Ayarları Kaydet'}
           </button>
         </div>
       </form>

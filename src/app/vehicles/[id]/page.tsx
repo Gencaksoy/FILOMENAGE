@@ -83,6 +83,7 @@ export default function VehicleDetailPage() {
   const [parts, setParts] = useState<PartItem[]>([
     { partName: '', partCode: '', changeDate: new Date().toISOString().split('T')[0], cost: '' },
   ]);
+  const [maintPaidBy, setMaintPaidBy] = useState('Atilla');
   const [isSubmittingMaint, setIsSubmittingMaint] = useState(false);
 
   // Modal: Oil Change (Motor Yağı Değişimi)
@@ -95,7 +96,16 @@ export default function VehicleDetailPage() {
   const [filterChanged, setFilterChanged] = useState(true);
   const [oilCost, setOilCost] = useState<number | string>(75);
   const [oilNotes, setOilNotes] = useState('');
+  const [oilPaidBy, setOilPaidBy] = useState('Atilla');
   const [isSubmittingOil, setIsSubmittingOil] = useState(false);
+
+  // Modal: Extend Rental (Süre Uzatma)
+  const [showExtendModal, setShowExtendModal] = useState(false);
+  const [extendDays, setExtendDays] = useState<number | string>(30);
+  const [extendAmount, setExtendAmount] = useState<number | string>(350);
+  const [extendIsPaid, setExtendIsPaid] = useState<boolean>(true);
+  const [extendNotes, setExtendNotes] = useState<string>('');
+  const [isSubmittingExtend, setIsSubmittingExtend] = useState(false);
 
   // Modal: Return Rental
   const [showReturnModal, setShowReturnModal] = useState(false);
@@ -309,6 +319,7 @@ export default function VehicleDetailPage() {
           description: maintDesc,
           serviceName: resolvedService,
           parts: validParts,
+          paidBy: maintPaidBy,
         }),
       });
 
@@ -349,6 +360,7 @@ export default function VehicleDetailPage() {
           filterChanged,
           cost: parseFloat(oilCost.toString()) || 0,
           notes: oilNotes,
+          paidBy: oilPaidBy,
         }),
       });
 
@@ -364,6 +376,39 @@ export default function VehicleDetailPage() {
       console.error(e);
     } finally {
       setIsSubmittingOil(false);
+    }
+  };
+
+  // Handle Extend Submit
+  const handleExtendSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!data?.activeRental) return;
+    setIsSubmittingExtend(true);
+    try {
+      const res = await fetch('/api/rentals/extend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rentalId: data.activeRental.id,
+          additionalDays: parseInt(String(extendDays), 10) || 30,
+          additionalAmount: parseFloat(String(extendAmount)) || 0,
+          isPaid: extendIsPaid,
+          notes: extendNotes,
+        }),
+      });
+      if (res.ok) {
+        setShowExtendModal(false);
+        setExtendNotes('');
+        await loadVehicle();
+      } else {
+        const err = await res.json();
+        alert(err.error || 'Süre uzatma işlemi başarısız oldu.');
+      }
+    } catch (e: any) {
+      console.error(e);
+      alert('Süre uzatma sırasında bir hata oluştu.');
+    } finally {
+      setIsSubmittingExtend(false);
     }
   };
 
@@ -819,13 +864,29 @@ export default function VehicleDetailPage() {
 
         <div className="flex flex-wrap items-center gap-2">
           {isRented ? (
-            <button
-              onClick={openReturnModal}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow-md cursor-pointer transition-colors"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              Aracı Müşteriden İade Al
-            </button>
+            <>
+              <button
+                onClick={() => {
+                  setExtendDays(30);
+                  setExtendAmount(activeRental?.monthlyRate || vehicle.monthlyPrice || 350);
+                  setExtendIsPaid(true);
+                  setExtendNotes('');
+                  setShowExtendModal(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-md cursor-pointer transition-colors"
+                title="Kiralama süresini uzat"
+              >
+                <Clock className="w-4 h-4" />
+                Süre Uzat
+              </button>
+              <button
+                onClick={openReturnModal}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow-md cursor-pointer transition-colors"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                Aracı Müşteriden İade Al
+              </button>
+            </>
           ) : (
             <button
               onClick={openRentModal}
@@ -1441,6 +1502,13 @@ export default function VehicleDetailPage() {
                       <span className="ml-2 text-rose-600">(-{formatCurrency(activeRental.discountAmount, 'EUR')} İskonto)</span>
                     )}
                   </div>
+                  {activeRental.extensionCount > 0 && (
+                    <div className="mt-1">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                        🔄 {activeRental.extensionCount} Kez Uzatıldı
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col justify-center sm:items-end">
@@ -1457,14 +1525,32 @@ export default function VehicleDetailPage() {
                     {activeRental.remainingText}
                   </div>
 
-                  {/* Condition Photos Button */}
-                  <button
-                    onClick={() => openPhotosModal(activeRental, `${vehicle.plate} - ${activeRental.customerName} Teslimat Fotoğrafları`)}
-                    className="inline-flex items-center gap-1 px-3 py-1 mt-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
-                  >
-                    <Camera className="w-3.5 h-3.5 text-amber-600" />
-                    4 Teslimat Fotoğrafını Aç
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2 mt-3">
+                    {/* Condition Photos Button */}
+                    <button
+                      onClick={() => openPhotosModal(activeRental, `${vehicle.plate} - ${activeRental.customerName} Teslimat Fotoğrafları`)}
+                      className="inline-flex items-center gap-1 px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                    >
+                      <Camera className="w-3.5 h-3.5 text-amber-600" />
+                      4 Fotoğraf
+                    </button>
+
+                    {/* Süre Uzat Button */}
+                    <button
+                      onClick={() => {
+                        setExtendDays(30);
+                        setExtendAmount(activeRental?.monthlyRate || vehicle.monthlyPrice || 350);
+                        setExtendIsPaid(true);
+                        setExtendNotes('');
+                        setShowExtendModal(true);
+                      }}
+                      className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer shadow-xs"
+                      title="Kiralama süresini uzat"
+                    >
+                      <Clock className="w-3.5 h-3.5" />
+                      Süreyi Uzat
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : isPostCheck ? (
@@ -1598,12 +1684,24 @@ export default function VehicleDetailPage() {
                       className="border border-slate-200 rounded-2xl p-4 hover:border-blue-300 transition-colors"
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-3">
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
                           <span className="font-bold text-slate-900 text-sm">
                             {formatDate(m.maintenanceDate)}
                           </span>
                           <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-blue-50 text-blue-800 border border-blue-200">
                             {m.serviceName || 'Servis Belirtilmedi'}
+                          </span>
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-xs font-bold border ${
+                              m.paidBy && vehicle.owner && m.paidBy !== vehicle.owner
+                                ? 'bg-amber-100 text-amber-950 border-amber-300'
+                                : 'bg-slate-100 text-slate-700 border-slate-200'
+                            }`}
+                          >
+                            Ödeyen: <b>{m.paidBy || vehicle.owner || 'Atilla'}</b>
+                            {m.paidBy && vehicle.owner && m.paidBy !== vehicle.owner && (
+                              <span className="ml-1 text-[11px] text-amber-800 font-semibold">(Araç: {vehicle.owner})</span>
+                            )}
                           </span>
                         </div>
                         <div className="text-right">
@@ -1668,6 +1766,7 @@ export default function VehicleDetailPage() {
                         <th className="py-2.5 px-3">Yağ Türü</th>
                         <th className="py-2.5 px-3">Filtre Durumu</th>
                         <th className="py-2.5 px-3">Servis</th>
+                        <th className="py-2.5 px-3">Ödeyen</th>
                         <th className="py-2.5 px-3">Maliyet</th>
                         <th className="py-2.5 px-3">Gelecek Yağ Değişimi</th>
                       </tr>
@@ -1686,6 +1785,20 @@ export default function VehicleDetailPage() {
                             )}
                           </td>
                           <td className="py-2.5 px-3 text-slate-600">{o.serviceName || '-'}</td>
+                          <td className="py-2.5 px-3">
+                            <span
+                              className={`px-2 py-0.5 rounded-md text-xs font-bold border ${
+                                o.paidBy && vehicle.owner && o.paidBy !== vehicle.owner
+                                  ? 'bg-amber-100 text-amber-950 border-amber-300'
+                                  : 'bg-slate-100 text-slate-700 border-slate-200'
+                              }`}
+                            >
+                              {o.paidBy || vehicle.owner || 'Atilla'}
+                              {o.paidBy && vehicle.owner && o.paidBy !== vehicle.owner && (
+                                <span className="ml-1 text-[11px] text-amber-800">🤝</span>
+                              )}
+                            </span>
+                          </td>
                           <td className="py-2.5 px-3 font-bold text-slate-900">{formatCurrency(o.cost, 'EUR')}</td>
                           <td className="py-2.5 px-3 font-mono text-emerald-700 font-bold">
                             {o.nextChangeKm ? formatKm(o.nextChangeKm) : '-'}
@@ -2028,6 +2141,133 @@ export default function VehicleDetailPage() {
         </div>
       </div>
 
+      {/* MODAL: EXTEND RENTAL (SÜRE UZATMA) */}
+      <Modal
+        isOpen={showExtendModal}
+        onClose={() => setShowExtendModal(false)}
+        title="Kiralama Süresini Uzat"
+        subtitle={`${vehicle.plate} • ${activeRental?.customerName} için yeni kiralama dönemi`}
+        maxWidth="md"
+      >
+        <div className="mb-3 p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1">
+          <div className="flex justify-between">
+            <span className="text-slate-500">Mevcut İade Tarihi:</span>
+            <span className="font-bold font-mono text-slate-800">{activeRental ? formatDate(activeRental.endDate) : '-'}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-slate-500">Mevcut Toplam:</span>
+            <span className="font-bold font-mono text-slate-800">{activeRental?.totalAmount ? `${activeRental.totalAmount} €` : '-'}</span>
+          </div>
+          {activeRental?.extensionCount > 0 && (
+            <div className="flex justify-between text-indigo-600 font-semibold">
+              <span>Daha Önceki Uzatmalar:</span>
+              <span>{activeRental.extensionCount} kez uzatıldı</span>
+            </div>
+          )}
+        </div>
+
+        <form onSubmit={handleExtendSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Uzatılacak Gün Sayısı (Varsayılan 30 Gün) *
+            </label>
+            <div className="grid grid-cols-4 gap-2 mb-2">
+              {[7, 15, 30, 60].map((days) => (
+                <button
+                  key={days}
+                  type="button"
+                  onClick={() => {
+                    setExtendDays(days);
+                    const monthly = activeRental?.monthlyRate || vehicle.monthlyPrice || 350;
+                    const calculated = Math.round((monthly / 30) * days);
+                    setExtendAmount(calculated);
+                  }}
+                  className={`py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                    Number(extendDays) === days
+                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  +{days} Gün
+                </button>
+              ))}
+            </div>
+            <input
+              type="number"
+              value={extendDays}
+              onChange={(e) => setExtendDays(e.target.value)}
+              required
+              min={1}
+              className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl font-bold font-mono"
+              placeholder="Örn: 30"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Ek Dönem Kira Bedeli (€) *
+            </label>
+            <input
+              type="number"
+              inputMode="decimal"
+              value={extendAmount}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => setExtendAmount(e.target.value)}
+              required
+              min={0}
+              className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl font-bold font-mono"
+              placeholder="Örn: 350"
+            />
+            <span className="text-[11px] text-slate-400 mt-1 block">
+              Bu tutar mevcut sözleşme toplamına otomatik eklenecektir.
+            </span>
+          </div>
+
+          <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+            <div>
+              <div className="text-xs font-bold text-emerald-950">Uzatma Ücreti Tahsil Edildi mi?</div>
+              <div className="text-[11px] text-emerald-700">Ödeme alındı olarak işaretle</div>
+            </div>
+            <input
+              type="checkbox"
+              checked={extendIsPaid}
+              onChange={(e) => setExtendIsPaid(e.target.checked)}
+              className="w-5 h-5 text-emerald-600 rounded-md focus:ring-emerald-400 cursor-pointer"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Uzatma Notu (Opsiyonel)
+            </label>
+            <textarea
+              rows={2}
+              value={extendNotes}
+              onChange={(e) => setExtendNotes(e.target.value)}
+              placeholder="Müşteri talebiyle 30 gün uzatıldı..."
+              className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={() => setShowExtendModal(false)}
+              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
+            >
+              Vazgeç
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmittingExtend}
+              className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-md cursor-pointer transition-colors"
+            >
+              {isSubmittingExtend ? 'Uzatılıyor...' : 'Süreyi Uzat & Onayla'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
       {/* MODAL: RETURN RENTAL */}
       <Modal
         isOpen={showReturnModal}
@@ -2037,6 +2277,28 @@ export default function VehicleDetailPage() {
         maxWidth="lg"
       >
         <form onSubmit={handleReturnSubmit} className="space-y-4">
+          {/* Süre Uzatma Yönlendirme Banner */}
+          <div className="p-3 bg-indigo-50/80 rounded-2xl border border-indigo-200 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-xs font-bold text-indigo-950">Müşteri aracı iade etmek yerine süreyi uzatmak mı istiyor?</div>
+              <div className="text-[11px] text-indigo-700">Aracı iade almadan yeni dönemi uzatabilirsiniz.</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowReturnModal(false);
+                setExtendDays(30);
+                setExtendAmount(activeRental?.monthlyRate || vehicle.monthlyPrice || 350);
+                setExtendIsPaid(true);
+                setExtendNotes('');
+                setShowExtendModal(true);
+              }}
+              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shrink-0 cursor-pointer shadow-xs transition-colors"
+            >
+              ⏱️ Süre Uzatmaya Geç
+            </button>
+          </div>
+
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               Dönüş Kilometresi (KM) *
@@ -2608,6 +2870,39 @@ export default function VehicleDetailPage() {
             </div>
           </div>
 
+          {/* Masrafı / Ödemeyi Yapan (Kim Ödedi?) */}
+          <div className="p-3 bg-amber-50/60 rounded-2xl border border-amber-200">
+            <label className="block text-xs font-bold text-amber-950 mb-1.5">
+              Ödemeyi Yapan (Masrafı Karşılayan Ortak) *
+            </label>
+            <div className="grid grid-cols-3 gap-2 mb-1.5">
+              {['Atilla', 'Onur', 'Ortak Kasa'].map((person) => (
+                <button
+                  key={person}
+                  type="button"
+                  onClick={() => setMaintPaidBy(person)}
+                  className={`py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                    maintPaidBy === person
+                      ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-xs'
+                      : 'bg-white text-slate-700 border-amber-200 hover:bg-amber-100/50'
+                  }`}
+                >
+                  {person}
+                </button>
+              ))}
+            </div>
+            <input
+              type="text"
+              value={maintPaidBy}
+              onChange={(e) => setMaintPaidBy(e.target.value)}
+              placeholder="Veya başka bir isim girin"
+              className="w-full px-2.5 py-1.5 text-xs border border-amber-300 rounded-xl bg-white text-slate-800"
+            />
+            <span className="text-[11px] text-amber-800 mt-1 block">
+              💡 Araç Sahibi: <b>{vehicle.owner}</b>. Başka ortak ödediyse hesap mutabakatında alacak/verecek olarak görünür.
+            </span>
+          </div>
+
           <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
             <button
               type="button"
@@ -2740,6 +3035,39 @@ export default function VehicleDetailPage() {
               placeholder="Marka, istasyon veya ek açıklamalar..."
               className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-emerald-500"
             />
+          </div>
+
+          {/* Masrafı / Ödemeyi Yapan (Kim Ödedi?) */}
+          <div className="p-3 bg-amber-50/60 rounded-2xl border border-amber-200">
+            <label className="block text-xs font-bold text-amber-950 mb-1.5">
+              Ödemeyi Yapan (Masrafı Karşılayan Ortak) *
+            </label>
+            <div className="grid grid-cols-3 gap-2 mb-1.5">
+              {['Atilla', 'Onur', 'Ortak Kasa'].map((person) => (
+                <button
+                  key={person}
+                  type="button"
+                  onClick={() => setOilPaidBy(person)}
+                  className={`py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                    oilPaidBy === person
+                      ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-xs'
+                      : 'bg-white text-slate-700 border-amber-200 hover:bg-amber-100/50'
+                  }`}
+                >
+                  {person}
+                </button>
+              ))}
+            </div>
+            <input
+              type="text"
+              value={oilPaidBy}
+              onChange={(e) => setOilPaidBy(e.target.value)}
+              placeholder="Veya başka bir isim girin"
+              className="w-full px-2.5 py-1.5 text-xs border border-amber-300 rounded-xl bg-white text-slate-800"
+            />
+            <span className="text-[11px] text-amber-800 mt-1 block">
+              💡 Araç Sahibi: <b>{vehicle.owner}</b>. Başka ortak ödediyse hesap mutabakatında alacak/verecek olarak görünür.
+            </span>
           </div>
 
           <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">

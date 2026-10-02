@@ -8,18 +8,31 @@
   --background-end-rgb: 248, 250, 252;
 }
 
-body {
+html, body {
   color: rgb(var(--foreground-rgb));
   background-color: #f8fafc;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-tap-highlight-color: transparent;
 }
 
-@supports (padding-top: env(safe-area-inset-top)) {
-  .pt-safe {
-    padding-top: env(safe-area-inset-top, 0px);
+/* iOS Safari & PWA Standalone Safe Area Utilities */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.mt-safe {
+  margin-top: env(safe-area-inset-top, 0px);
+}
+
+/* Standalone / PWA iOS Safe Area Support */
+@media all and (display-mode: standalone) {
+  header.sticky {
+    padding-top: max(env(safe-area-inset-top, 0px), 24px) !important;
   }
-  .pb-safe {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+  aside.fixed {
+    padding-top: max(env(safe-area-inset-top, 0px), 24px) !important;
   }
 }
 

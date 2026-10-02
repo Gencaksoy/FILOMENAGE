@@ -1,16 +1,14 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
+import { prisma } from '@/lib/prisma';
 import { logAudit } from '@/lib/audit';
+import { getSessionUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-const settingsFilePath = path.join(process.cwd(), 'src', 'lib', 'settings.json');
-
 const defaultSettings: Record<string, string> = {
-  company_name: 'Belgrad Filo & Rent a Car',
+  company_name: 'Filo Yönetim & Rent a Car',
   company_phone: '+381 11 123 4567',
-  company_email: 'operasyon@belgradfilo.com',
+  company_email: 'operasyon@filoyonetim.com',
   default_currency: 'EUR',
   maintenance_interval_months: '1',
   inspection_interval_years: '1',
@@ -18,54 +16,59 @@ const defaultSettings: Record<string, string> = {
   warn_days_orange: '3',
 };
 
-function readSettings(): Record<string, string> {
-  try {
-    if (fs.existsSync(settingsFilePath)) {
-      const content = fs.readFileSync(settingsFilePath, 'utf-8');
-      return { ...defaultSettings, ...JSON.parse(content) };
-    }
-  } catch (e) {
-    console.error('Settings read error:', e);
-  }
-  return defaultSettings;
-}
-
-function writeSettings(data: Record<string, string>) {
-  try {
-    fs.writeFileSync(settingsFilePath, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (e) {
-    console.error('Settings write error:', e);
-  }
-}
-
 export async function GET() {
   try {
-    const settings = readSettings();
-    return NextResponse.json(settings);
+    const dbSettings = await prisma.systemSetting.findMany();
+    const result: Record<string, string> = { ...defaultSettings };
+    for (const item of dbSettings) {
+      result[item.key] = item.value;
+    }
+    return NextResponse.json(result);
   } catch (error) {
     console.error('Settings GET error:', error);
-    return NextResponse.json({ error: 'Ayarlar alınamadı.' }, { status: 500 });
+    return NextResponse.json(defaultSettings);
   }
 }
 
 export async function PUT(req: Request) {
   try {
-    const body = await req.json();
-    const current = readSettings();
-    const updated = { ...current, ...body };
+    const currentUser = await getSessionUser();
+    if (currentUser && currentUser.role === 'STAFF') {
+      return NextResponse.json(
+        { error: 'Çalışanların (STAFF) şirket adını ve sistem ayarlarını değiştirme yetkisi yoktur!' },
+        { status: 403 }
+      );
+    }
 
-    writeSettings(updated);
+    const body = await req.json();
+
+    for (const [key, value] of Object.entries(body)) {
+      if (typeof value === 'string' || typeof value === 'number') {
+        await prisma.systemSetting.upsert({
+          where: { key },
+          update: { value: String(value) },
+          create: { key, value: String(value) },
+        });
+      }
+    }
 
     await logAudit({
-      userName: 'Yönetici',
+      userName: currentUser?.name || 'Yönetici',
+      userRole: currentUser?.role || 'ADMIN',
       action: 'UPDATE_SETTINGS',
       target: 'Sistem Parametreleri',
-      description: 'Sistem parametreleri güncellendi.',
+      description: `Şirket ve sistem parametreleri güncellendi (Firma Adı: ${body.company_name || 'Değiştirilmedi'}).`,
     });
 
-    return NextResponse.json({ success: true, settings: updated });
-  } catch (error) {
+    const updated = await prisma.systemSetting.findMany();
+    const result: Record<string, string> = { ...defaultSettings };
+    for (const item of updated) {
+      result[item.key] = item.value;
+    }
+
+    return NextResponse.json({ success: true, settings: result });
+  } catch (error: any) {
     console.error('Settings PUT error:', error);
-    return NextResponse.json({ error: 'Ayarlar güncellenemedi.' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Ayarlar güncellenemedi.' }, { status: 500 });
   }
 }

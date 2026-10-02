@@ -19,7 +19,7 @@ export async function GET(req: Request) {
       where.owner = ownerFilter;
     }
 
-    const [vehicles, allOwners] = await Promise.all([
+    const [vehicles, allOwners, companySetting] = await Promise.all([
       prisma.vehicle.findMany({
         where,
         include: {
@@ -47,7 +47,12 @@ export async function GET(req: Request) {
         select: { owner: true },
         distinct: ['owner'],
       }),
+      prisma.systemSetting.findUnique({
+        where: { key: 'company_name' },
+      }),
     ]);
+
+    const companyName = companySetting?.value || 'Filo & Rent a Car';
 
     const ownersList = Array.from(new Set(allOwners.map((o) => o.owner))).filter(Boolean);
 
@@ -109,7 +114,8 @@ export async function GET(req: Request) {
           v.plate,
           activeRental.startDate,
           activeRental.endDate,
-          diffDays
+          diffDays,
+          companyName
         );
 
         upcomingReturns.push({
@@ -134,6 +140,7 @@ export async function GET(req: Request) {
             left: activeRental.photoLeft,
           },
           deliveryAccessories: activeRental.deliveryAccessories,
+          extensionCount: activeRental.extensionCount || 0,
           diffDays,
           statusText,
           badgeType,

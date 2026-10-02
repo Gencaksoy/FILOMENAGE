@@ -47,7 +47,13 @@ export function Modal({
   }[maxWidth];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+    <div
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 pt-safe pb-safe"
+      style={{
+        paddingTop: 'max(env(safe-area-inset-top, 0px), 16px)',
+        paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 16px)',
+      }}
+    >
       <div
         className={`relative w-full ${maxWidthClass} bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden transform transition-all animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col`}
       >

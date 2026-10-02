@@ -69,9 +69,13 @@ export function Sidebar({ isOpen, onClose, unreadCount = 0, userRole = 'ADMIN', 
 
       {/* Sidebar container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-40 w-64 bg-slate-900 text-slate-300 flex flex-col transition-transform duration-200 ease-in-out border-r border-slate-800 pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] ${
+        className={`fixed top-0 bottom-0 left-0 z-40 w-64 bg-slate-900 text-slate-300 flex flex-col transition-transform duration-200 ease-in-out border-r border-slate-800 pt-safe pb-safe ${
           isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         }`}
+        style={{
+          paddingTop: 'max(env(safe-area-inset-top, 0px), 0px)',
+          paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0px)',
+        }}
       >
         {/* Brand header */}
         <div className="h-16 flex items-center justify-between px-5 bg-slate-950/70 border-b border-slate-800">

@@ -54,6 +54,7 @@ export async function POST(req: Request) {
         originalCost: inputCost,
         currency,
         station: station?.trim() || 'Auto Centar Beograd',
+        paidBy: body.paidBy?.trim() || vehicle.owner || 'Atilla',
         notes: notes?.trim() || null,
       },
       include: { vehicle: true },
@@ -64,7 +65,7 @@ export async function POST(req: Request) {
       userRole: currentUser?.role || 'ADMIN',
       action: 'CREATE_INSPECTION',
       target: vehicle.plate,
-      description: `${vehicle.plate} için ${insp.station} yıllık muayene kaydı oluşturuldu (Maliyet: ${costEur} €). Sonraki muayene: ${nextInspDate.toISOString().slice(0, 10)}.`,
+      description: `${vehicle.plate} muayene kaydı oluşturuldu (${costEur} €, Ödeyen: ${insp.paidBy}, Sahibi: ${vehicle.owner}, İstasyon: ${insp.station}).`,
     });
 
     return NextResponse.json(insp, { status: 201 });

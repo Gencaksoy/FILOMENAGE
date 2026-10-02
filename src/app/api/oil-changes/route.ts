@@ -92,6 +92,7 @@ export async function POST(req: Request) {
           currency,
           exchangeRate: EUR_TO_RSD_RATE,
           serviceName: serviceName?.trim() || null,
+          paidBy: body.paidBy?.trim() || vehicle.owner || 'Atilla',
           notes: notes?.trim() || null,
         },
         include: { vehicle: true },
@@ -109,7 +110,7 @@ export async function POST(req: Request) {
       userRole: currentUser?.role || 'ADMIN',
       action: 'OIL_CHANGE',
       target: vehicle.plate,
-      description: `${vehicle.plate} aracına ${costEur} € (${Math.round(costEur * EUR_TO_RSD_RATE)} RSD) tutarında ${record.oilType} motor yağı değişimi yapıldı (Servis: ${record.serviceName || 'Belirtilmedi'}).`,
+      description: `${vehicle.plate} motor yağı değişimi yapıldı (${costEur} €, Ödeyen: ${record.paidBy}, Sahibi: ${vehicle.owner}, Servis: ${record.serviceName || 'Belirtilmedi'}).`,
     });
 
     return NextResponse.json(record, { status: 201 });

@@ -125,6 +125,7 @@ export async function POST(req: Request) {
         exchangeRate: EUR_TO_RSD_RATE,
         description: description.trim(),
         serviceName: serviceName?.trim() || null,
+        paidBy: body.paidBy?.trim() || vehicle.owner || 'Atilla',
         notes: notes?.trim() || null,
         parts: {
           create: partsData,
@@ -149,7 +150,7 @@ export async function POST(req: Request) {
       userRole: currentUser?.role || 'ADMIN',
       action: 'MAINTENANCE',
       target: vehicle.plate,
-      description: `${vehicle.plate} aracına ${totalCostEur} € (${Math.round(totalCostEur * EUR_TO_RSD_RATE)} RSD) tutarında bakım yapıldı (İşçilik: ${laborEur} €, Parça: ${partsTotalEur} €). Servis: ${serviceName || 'Genel'}.`,
+      description: `${vehicle.plate} aracına ${totalCostEur} € tutarında bakım yapıldı (Ödeyen: ${record.paidBy}, Sahibi: ${vehicle.owner}, İşçilik: ${laborEur} €, Parça: ${partsTotalEur} €). Servis: ${serviceName || 'Genel'}.`,
     });
 
     return NextResponse.json(record, { status: 201 });

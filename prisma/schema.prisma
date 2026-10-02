@@ -153,6 +153,8 @@ model Rental {
   returnAccessories     String?   // Teslim alınırken kontrol edilen aksesuarlar (JSON)
   sentToPostCheck       Boolean   @default(false) // Kiradan sonra genel bakıma/temizliğe gitti mi?
   returnInspectionNotes String?   // Hasar ve aksesuar kontrol notları
+  extensionCount        Int       @default(0) // Kaç kez süre uzatıldı
+  lastExtensionDays     Int?      // En son uzatılan gün sayısı
 
   notes                 String?
   createdAt             DateTime  @default(now())
@@ -175,6 +177,7 @@ model MaintenanceRecord {
   exchangeRate        Float    @default(117) // 1 EUR = 117 RSD
   description         String
   serviceName         String?
+  paidBy              String?  @default("Atilla") // Masrafı / Ödemeyi Yapan Ortak (Atilla, Onur, vb.)
   notes               String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
@@ -210,6 +213,7 @@ model OilChangeRecord {
   currency      String   @default("EUR")
   exchangeRate  Float    @default(117)
   serviceName   String?
+  paidBy        String?  @default("Atilla") // Masrafı / Ödemeyi Yapan Ortak (Atilla, Onur, vb.)
   notes         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -226,6 +230,7 @@ model InspectionRecord {
   originalCost       Float    @default(0)
   currency           String   @default("EUR")
   station            String   @default("Auto Centar Beograd")
+  paidBy             String?  @default("Atilla") // Masrafı / Ödemeyi Yapan Ortak (Atilla, Onur, vb.)
   notes              String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
@@ -271,4 +276,10 @@ model VehicleFault {
   updatedAt       DateTime  @updatedAt
 
   vehicle         Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+}
+
+model SystemSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }

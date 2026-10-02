@@ -87,7 +87,10 @@ export function Header({ onToggleSidebar, currentUser, unreadCount = 0 }: Header
   };
 
   return (
-    <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs pt-[env(safe-area-inset-top,0px)]">
+    <header
+      className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs pt-safe"
+      style={{ paddingTop: 'max(env(safe-area-inset-top, 0px), 0px)' }}
+    >
       <div className="h-16 px-4 sm:px-6 flex items-center justify-between">
         {/* Left side: Hamburger + Search */}
         <div className="flex items-center gap-3 flex-1 max-w-lg">

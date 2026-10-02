@@ -54,6 +54,7 @@ function MaintenancesContent() {
   const [maintParts, setMaintParts] = useState<PartItem[]>([
     { partName: '', partCode: '', changeDate: new Date().toISOString().slice(0, 10), cost: '' },
   ]);
+  const [maintPaidBy, setMaintPaidBy] = useState('Atilla');
   const [maintLoading, setMaintLoading] = useState(false);
   const [maintError, setMaintError] = useState<string | null>(null);
 
@@ -68,6 +69,7 @@ function MaintenancesContent() {
   const [oilFilter, setOilFilter] = useState(true);
   const [oilCost, setOilCost] = useState<number | string>(75);
   const [oilNotes, setOilNotes] = useState('');
+  const [oilPaidBy, setOilPaidBy] = useState('Atilla');
   const [oilLoading, setOilLoading] = useState(false);
   const [oilError, setOilError] = useState<string | null>(null);
 
@@ -146,6 +148,7 @@ function MaintenancesContent() {
           description: maintDesc,
           serviceName: resolvedService,
           parts: validParts,
+          paidBy: maintPaidBy,
         }),
       });
 
@@ -189,6 +192,7 @@ function MaintenancesContent() {
           filterChanged: oilFilter,
           cost: parseFloat(oilCost.toString()) || 0,
           notes: oilNotes,
+          paidBy: oilPaidBy,
         }),
       });
 
@@ -399,10 +403,22 @@ function MaintenancesContent() {
                           {m.vehicle.plate}
                         </Link>
                         <div>
-                          <div className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                          <div className="font-bold text-slate-800 text-xs flex items-center gap-1.5 flex-wrap">
                             <span>{m.vehicle.brand} {m.vehicle.model}</span>
                             <span className="text-xs px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-normal">
-                              {m.vehicle.owner}
+                              Araç: {m.vehicle.owner}
+                            </span>
+                            <span
+                              className={`text-xs px-2 py-0.5 rounded-md font-bold border ${
+                                m.paidBy && m.vehicle.owner && m.paidBy !== m.vehicle.owner
+                                  ? 'bg-amber-100 text-amber-950 border-amber-300'
+                                  : 'bg-slate-100 text-slate-700 border-slate-200'
+                              }`}
+                            >
+                              Ödeyen: <b>{m.paidBy || m.vehicle.owner || 'Atilla'}</b>
+                              {m.paidBy && m.vehicle.owner && m.paidBy !== m.vehicle.owner && (
+                                <span className="ml-1 text-[11px] text-amber-800 font-semibold">(Ortak Masrafı)</span>
+                              )}
                             </span>
                           </div>
                           <div className="text-xs text-slate-400">
@@ -489,6 +505,7 @@ function MaintenancesContent() {
                       <th className="py-3 px-4">Yağ Türü</th>
                       <th className="py-3 px-4">Filtre</th>
                       <th className="py-3 px-4">Servis</th>
+                      <th className="py-3 px-4">Ödeyen</th>
                       <th className="py-3 px-4">Maliyet</th>
                       <th className="py-3 px-4">Notlar</th>
                       <th className="py-3 px-4 text-right">Sisteme Giriş</th>
@@ -529,6 +546,20 @@ function MaintenancesContent() {
                         </td>
                         <td className="py-3.5 px-4 text-slate-700">
                           {o.serviceName || '-'}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded-md font-bold border ${
+                              o.paidBy && o.vehicle.owner && o.paidBy !== o.vehicle.owner
+                                ? 'bg-amber-100 text-amber-950 border-amber-300'
+                                : 'bg-slate-100 text-slate-700 border-slate-200'
+                            }`}
+                          >
+                            {o.paidBy || o.vehicle.owner || 'Atilla'}
+                            {o.paidBy && o.vehicle.owner && o.paidBy !== o.vehicle.owner && (
+                              <span className="ml-1 text-[11px] text-amber-800">🤝</span>
+                            )}
+                          </span>
                         </td>
                         <td className="py-3.5 px-4 font-black text-slate-900 font-mono">
                           {formatCurrency(o.cost, 'EUR')}
@@ -769,6 +800,39 @@ function MaintenancesContent() {
             </div>
           </div>
 
+          {/* Masrafı / Ödemeyi Yapan (Kim Ödedi?) */}
+          <div className="p-3 bg-amber-50/60 rounded-2xl border border-amber-200">
+            <label className="block text-xs font-bold text-amber-950 mb-1.5">
+              Ödemeyi Yapan (Masrafı Karşılayan Ortak) *
+            </label>
+            <div className="grid grid-cols-3 gap-2 mb-1.5">
+              {['Atilla', 'Onur', 'Ortak Kasa'].map((person) => (
+                <button
+                  key={person}
+                  type="button"
+                  onClick={() => setMaintPaidBy(person)}
+                  className={`py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                    maintPaidBy === person
+                      ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-xs'
+                      : 'bg-white text-slate-700 border-amber-200 hover:bg-amber-100/50'
+                  }`}
+                >
+                  {person}
+                </button>
+              ))}
+            </div>
+            <input
+              type="text"
+              value={maintPaidBy}
+              onChange={(e) => setMaintPaidBy(e.target.value)}
+              placeholder="Veya başka bir isim girin"
+              className="w-full px-2.5 py-1.5 text-xs border border-amber-300 rounded-xl bg-white text-slate-800"
+            />
+            <span className="text-[11px] text-amber-800 mt-1 block">
+              💡 Harcamayı kimin yaptığını seçerek ortaklar arası alacak/verecek takibini sağlayabilirsiniz.
+            </span>
+          </div>
+
           <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
             <button
               type="button"
@@ -915,6 +979,39 @@ function MaintenancesContent() {
               placeholder="Yağ markası, filtre kodu..."
               className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-emerald-500 focus:outline-hidden"
             />
+          </div>
+
+          {/* Masrafı / Ödemeyi Yapan (Kim Ödedi?) */}
+          <div className="p-3 bg-amber-50/60 rounded-2xl border border-amber-200">
+            <label className="block text-xs font-bold text-amber-950 mb-1.5">
+              Ödemeyi Yapan (Masrafı Karşılayan Ortak) *
+            </label>
+            <div className="grid grid-cols-3 gap-2 mb-1.5">
+              {['Atilla', 'Onur', 'Ortak Kasa'].map((person) => (
+                <button
+                  key={person}
+                  type="button"
+                  onClick={() => setOilPaidBy(person)}
+                  className={`py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                    oilPaidBy === person
+                      ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-xs'
+                      : 'bg-white text-slate-700 border-amber-200 hover:bg-amber-100/50'
+                  }`}
+                >
+                  {person}
+                </button>
+              ))}
+            </div>
+            <input
+              type="text"
+              value={oilPaidBy}
+              onChange={(e) => setOilPaidBy(e.target.value)}
+              placeholder="Veya başka bir isim girin"
+              className="w-full px-2.5 py-1.5 text-xs border border-amber-300 rounded-xl bg-white text-slate-800"
+            />
+            <span className="text-[11px] text-amber-800 mt-1 block">
+              💡 Harcamayı kimin yaptığını seçerek ortaklar arası alacak/verecek takibini sağlayabilirsiniz.
+            </span>
           </div>
 
           <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">

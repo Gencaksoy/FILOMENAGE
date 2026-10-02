@@ -62,6 +62,7 @@ export default function CustomersPage() {
   const [uploadDocTitle, setUploadDocTitle] = useState('');
   const [uploading, setUploading] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState('Filo Yönetim & Rent a Car');
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -70,6 +71,13 @@ export default function CustomersPage() {
         if (data?.user) setCurrentUser(data.user);
         else window.location.href = '/login';
       });
+
+    fetch('/api/settings')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.company_name) setCompanyName(data.company_name);
+      })
+      .catch(() => {});
 
     loadCustomers();
   }, []);
@@ -342,7 +350,9 @@ export default function CustomersPage() {
                             <span>Ara</span>
                           </a>
                           <a
-                            href={`https://wa.me/${(c.phone || '').replace(/[^0-9]/g, '')}`}
+                            href={`https://wa.me/${(c.phone || '').replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                              `Merhaba Sayın ${c.name}, ${companyName} firmasından ulaşıyoruz.`
+                            )}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-green-50 hover:bg-green-100 text-green-800 border border-green-200 text-xs font-bold transition-colors cursor-pointer"

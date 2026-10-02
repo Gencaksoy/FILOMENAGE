@@ -55,7 +55,8 @@ export function generateWhatsAppReminderUrl(
   plate: string,
   startDate?: string | Date,
   endDate?: string | Date,
-  daysLeft: number = 3
+  daysLeft: number = 3,
+  companyName: string = 'Filo Yönetim'
 ): string {
   // Clean phone number: remove spaces, +, -, parentheses
   let cleanPhone = (phone || '').replace(/[^0-9]/g, '');
@@ -66,14 +67,18 @@ export function generateWhatsAppReminderUrl(
 
   let message = '';
   if (daysLeft < 0) {
-    message = `Sayın ${customerName}, ${plate} plakalı kiralık aracınızın teslim süresi ${Math.abs(daysLeft)} gün önce (${endStr}) dolmuştur. Lütfen aracı teslim etmek veya sözleşmeyi uzatmak için ivedilikle bizimle iletişime geçiniz.`;
-  } else if (daysLeft === 0) {
-    message = `Sayın ${customerName}, ${plate} plakalı kiralık aracımızın kira süresi BUGÜN (${endStr}) dolmaktadır. Teslimat için gün içerisinde ofisimize bekleriz.`;
+    message = `Sayın ${customerName}, ${plate} plakalı kiralık aracınızın teslim süresi ${Math.abs(daysLeft)} gün önce (${endStr}) dolmuştur. Lütfen aracı teslim etmek veya sözleşmeyi uzatmak için ivedilikle bizimle iletişime geçiniz. - ${companyName}`;
+  } else if (diffDaysMessage(daysLeft)) {
+    message = `Sayın ${customerName}, ${plate} plakalı kiralık aracımızın kira süresi BUGÜN (${endStr}) dolmaktadır. Teslimat için gün içerisinde ofisimize bekleriz. - ${companyName}`;
   } else {
-    message = `Sayın ${customerName}, ${startStr ? startStr + ' tarihinde teslim aldığınız ' : ''}${plate} plakalı aracımızın kira süresi ${daysLeft} gün sonra (${endStr}) dolacaktır. Hatırlatmak ister, iyi günler dileriz. - Belgrad Filo & Rent a Car`;
+    message = `Sayın ${customerName}, ${startStr ? startStr + ' tarihinde teslim aldığınız ' : ''}${plate} plakalı aracımızın kira süresi ${daysLeft} gün sonra (${endStr}) dolacaktır. Hatırlatmak ister, iyi günler dileriz. - ${companyName}`;
   }
 
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+}
+
+function diffDaysMessage(daysLeft: number) {
+  return daysLeft === 0;
 }
 
 export const VEHICLE_STATUS_MAP: Record<string, { label: string; bg: string; text: string }> = {
