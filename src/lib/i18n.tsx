@@ -154,6 +154,184 @@ export interface Translations {
   dash_btn_return: string;
   dash_btn_remind: string;
   dash_loading_portal: string;
+
+  // Common UI
+  common_all: string;
+  common_search: string;
+  common_filter: string;
+  common_save: string;
+  common_saving: string;
+  common_cancel: string;
+  common_edit: string;
+  common_delete: string;
+  common_actions: string;
+  common_details: string;
+  common_status: string;
+  common_plate: string;
+  common_vehicle: string;
+  common_customer: string;
+  common_phone: string;
+  common_date: string;
+  common_amount: string;
+  common_notes: string;
+  common_close: string;
+  common_loading: string;
+  common_success: string;
+  common_error: string;
+  common_no_data: string;
+  common_all_owners: string;
+  common_total: string;
+  common_currency_eur: string;
+  common_currency_rsd: string;
+
+  // Parking Tickets
+  parking_title: string;
+  parking_subtitle: string;
+  parking_scan_all: string;
+  parking_scanning: string;
+  parking_tab_all: string;
+  parking_tab_unpaid: string;
+  parking_tab_paid: string;
+  parking_kpi_total: string;
+  parking_kpi_unpaid: string;
+  parking_kpi_notified: string;
+  parking_kpi_waiting: string;
+  parking_kpi_bot: string;
+  parking_kpi_bot_status: string;
+  parking_kpi_bot_desc: string;
+  parking_search_placeholder: string;
+  parking_col_ticket_no: string;
+  parking_col_plate: string;
+  parking_col_location: string;
+  parking_col_amount: string;
+  parking_col_status: string;
+  parking_col_customer: string;
+  parking_col_actions: string;
+  parking_notify_wa: string;
+  parking_notified: string;
+  parking_mark_paid: string;
+  parking_upload_receipt: string;
+  parking_status_paid: string;
+  parking_status_unpaid: string;
+  parking_early_discount: string;
+  parking_no_tickets: string;
+
+  // Vehicles Module
+  veh_title: string;
+  veh_subtitle: string;
+  veh_add_new: string;
+  veh_tab_all: string;
+  veh_tab_rented: string;
+  veh_tab_available: string;
+  veh_tab_returning_soon: string;
+  veh_tab_reg_expiring: string;
+  veh_tab_faults: string;
+  veh_search_placeholder: string;
+  veh_card_daily: string;
+  veh_card_monthly: string;
+  veh_card_km: string;
+  veh_card_fuel: string;
+  veh_card_reg_expiry: string;
+  veh_card_owner: string;
+  veh_btn_details: string;
+  veh_btn_rent: string;
+  veh_btn_make_available: string;
+  veh_btn_service: string;
+  veh_no_vehicles: string;
+  veh_modal_add_title: string;
+  veh_modal_plate: string;
+  veh_modal_brand: string;
+  veh_modal_model: string;
+  veh_modal_year: string;
+  veh_modal_color: string;
+  veh_modal_fuel_type: string;
+  veh_modal_km: string;
+  veh_modal_reg_expiry: string;
+  veh_modal_purchase_price: string;
+  veh_modal_initial_expense: string;
+  veh_modal_daily_price: string;
+  veh_modal_monthly_price: string;
+  veh_modal_owner: string;
+
+  // Maintenances Module
+  maint_title: string;
+  maint_subtitle: string;
+  maint_tab_services: string;
+  maint_tab_oil: string;
+  maint_btn_new_service: string;
+  maint_btn_new_oil: string;
+  maint_kpi_total_services: string;
+  maint_kpi_total_cost: string;
+  maint_kpi_oil_due: string;
+  maint_kpi_oil_overdue: string;
+  maint_col_date: string;
+  maint_col_vehicle: string;
+  maint_col_km: string;
+  maint_col_cost: string;
+  maint_col_shop: string;
+  maint_col_parts: string;
+  maint_oil_last_km: string;
+  maint_oil_current_km: string;
+  maint_oil_remaining: string;
+  maint_oil_status_ok: string;
+  maint_oil_status_warn: string;
+  maint_oil_status_critical: string;
+
+  // Inspections Module
+  insp_title: string;
+  insp_subtitle: string;
+  insp_btn_new: string;
+  insp_kpi_total: string;
+  insp_kpi_cost: string;
+  insp_kpi_expiring_soon: string;
+  insp_kpi_expired: string;
+  insp_col_expiry: string;
+  insp_col_station: string;
+  insp_status_valid: string;
+  insp_status_expiring: string;
+  insp_status_expired: string;
+
+  // Customers Module
+  cust_title: string;
+  cust_subtitle: string;
+  cust_btn_new: string;
+  cust_search_placeholder: string;
+  cust_col_name: string;
+  cust_col_contact: string;
+  cust_col_docs: string;
+  cust_col_rentals: string;
+  cust_col_active_car: string;
+  cust_no_active_rental: string;
+
+  // Users Module
+  users_title: string;
+  users_subtitle: string;
+  users_btn_new: string;
+  users_role_admin: string;
+  users_role_staff: string;
+  users_col_name: string;
+  users_col_email: string;
+  users_col_role: string;
+  users_col_created: string;
+  users_btn_edit: string;
+
+  // Settings Module
+  sett_title: string;
+  sett_subtitle: string;
+  sett_general_title: string;
+  sett_company_name: string;
+  sett_phone: string;
+  sett_email: string;
+  sett_currency: string;
+  sett_security_title: string;
+  sett_current_pwd: string;
+  sett_new_pwd: string;
+  sett_confirm_pwd: string;
+  sett_btn_save: string;
+
+  // Audit Logs Module
+  audit_title: string;
+  audit_subtitle: string;
 }
 
 const translations: Record<Language, Translations> = {
@@ -299,6 +477,184 @@ const translations: Record<Language, Translations> = {
     dash_btn_return: 'Teslim Al',
     dash_btn_remind: 'Hatırlat',
     dash_loading_portal: 'Filo Yönetim Portalı Açılıyor...',
+
+    // Common UI
+    common_all: 'Tümü',
+    common_search: 'Ara',
+    common_filter: 'Filtrele',
+    common_save: 'Kaydet',
+    common_saving: 'Kaydediliyor...',
+    common_cancel: 'İptal',
+    common_edit: 'Düzenle',
+    common_delete: 'Sil',
+    common_actions: 'İşlemler',
+    common_details: 'Detay',
+    common_status: 'Durum',
+    common_plate: 'Plaka',
+    common_vehicle: 'Araç',
+    common_customer: 'Müşteri',
+    common_phone: 'Telefon',
+    common_date: 'Tarih',
+    common_amount: 'Tutar',
+    common_notes: 'Notlar',
+    common_close: 'Kapat',
+    common_loading: 'Yükleniyor...',
+    common_success: 'İşlem Başarılı',
+    common_error: 'Bir Hata Oluştu',
+    common_no_data: 'Kayıt bulunamadı',
+    common_all_owners: 'Tüm Ortaklar / Sahipler',
+    common_total: 'Toplam',
+    common_currency_eur: '€ (EUR)',
+    common_currency_rsd: 'RSD (Dinar)',
+
+    // Parking Tickets
+    parking_title: 'Belgrad Park Cezaları (Parking Servis eDPK)',
+    parking_subtitle: 'Belgrade Parking Servis sisteminden otomatik taranır, cezalar ve ihlaller anında tespit edilir.',
+    parking_scan_all: 'Tüm Araçları Şimdi Tara',
+    parking_scanning: 'Tüm Araçlar Taranıyor...',
+    parking_tab_all: 'Tümü',
+    parking_tab_unpaid: 'Ödenmemiş',
+    parking_tab_paid: 'Ödenmiş',
+    parking_kpi_total: 'Toplam Ceza',
+    parking_kpi_unpaid: 'Ödenmemiş Borç',
+    parking_kpi_notified: 'Müşteri Bildirimi',
+    parking_kpi_waiting: 'müşteri bekliyor',
+    parking_kpi_bot: 'Arka Plan Botu',
+    parking_kpi_bot_status: 'Aktif (1-2 Saatlik)',
+    parking_kpi_bot_desc: 'Parking Servis eDPK API bağlantısı devrede',
+    parking_search_placeholder: 'Ceza no, plaka, sokak veya müşteri ara...',
+    parking_col_ticket_no: 'Ceza No & Tarih',
+    parking_col_plate: 'Araç & Plaka',
+    parking_col_location: 'Konum & Bölge',
+    parking_col_amount: 'Ceza Tutarı',
+    parking_col_status: 'Durum',
+    parking_col_customer: 'Müşteri & İletişim',
+    parking_col_actions: 'İşlemler',
+    parking_notify_wa: 'WhatsApp ile Bildir',
+    parking_notified: 'Bildirildi',
+    parking_mark_paid: 'Ödendi Olarak İşaretle',
+    parking_upload_receipt: 'Makbuz / Fiş Yükle',
+    parking_status_paid: 'Ödendi',
+    parking_status_unpaid: 'Ödenmemiş',
+    parking_early_discount: '20 gün içinde %50 indirimli',
+    parking_no_tickets: 'Kayıtlı park cezası bulunmamaktadır.',
+
+    // Vehicles Module
+    veh_title: 'Filo Araçları ve Envanter Takibi',
+    veh_subtitle: 'Filo envanterindeki araçlar, Registracija muayene takvimi, yakıt tüketimi ve kiralama durumu',
+    veh_add_new: 'Yeni Araç Ekle',
+    veh_tab_all: 'Tüm Araçlar',
+    veh_tab_rented: 'Kirada',
+    veh_tab_available: 'Boşta (Hazır)',
+    veh_tab_returning_soon: '1 Hafta İçinde Dönecek',
+    veh_tab_reg_expiring: 'Registracija Yaklaşan (30 Gün)',
+    veh_tab_faults: 'Arızalı / Servis Bekleyen',
+    veh_search_placeholder: 'Plaka, marka, model veya şasi no ara...',
+    veh_card_daily: 'Günlük',
+    veh_card_monthly: 'Aylık',
+    veh_card_km: 'Kilometre',
+    veh_card_fuel: 'Yakıt',
+    veh_card_reg_expiry: 'Registracija Bitiş',
+    veh_card_owner: 'Sahip / Ortak',
+    veh_btn_details: 'Detay Gör',
+    veh_btn_rent: 'Kirala',
+    veh_btn_make_available: 'Boşa Çıkar',
+    veh_btn_service: 'Bakım Girişi',
+    veh_no_vehicles: 'Kriterlere uygun araç bulunamadı.',
+    veh_modal_add_title: 'Filoya Yeni Araç Ekle',
+    veh_modal_plate: 'Plaka (örn: BG-123-AB)',
+    veh_modal_brand: 'Marka',
+    veh_modal_model: 'Model',
+    veh_modal_year: 'Model Yılı',
+    veh_modal_color: 'Renk',
+    veh_modal_fuel_type: 'Yakıt Türü',
+    veh_modal_km: 'Mevcut KM',
+    veh_modal_reg_expiry: 'Registracija (Muayene) Bitiş',
+    veh_modal_purchase_price: 'Satın Alma Maliyeti (€)',
+    veh_modal_initial_expense: 'İlk Masraflar (€)',
+    veh_modal_daily_price: 'Günlük Kira Fiyatı (€)',
+    veh_modal_monthly_price: 'Aylık Kira Fiyatı (€)',
+    veh_modal_owner: 'Araç Sahibi / Ortak',
+
+    // Maintenances Module
+    maint_title: 'Bakım & Motor Yağı Takibi',
+    maint_subtitle: 'Periyodik bakımlar, parça değişimleri ve 10.000 KM yağ kontrolleri',
+    maint_tab_services: 'Genel Bakım & Onarımlar',
+    maint_tab_oil: 'Motor Yağı Takibi (10.000 KM)',
+    maint_btn_new_service: 'Yeni Bakım Kaydı',
+    maint_btn_new_oil: 'Yeni Yağ Değişimi',
+    maint_kpi_total_services: 'Toplam Bakım',
+    maint_kpi_total_cost: 'Toplam Servis Masrafı',
+    maint_kpi_oil_due: 'Yağ Değişimi Yaklaşan',
+    maint_kpi_oil_overdue: 'KM Aşılan Araçlar',
+    maint_col_date: 'Tarih',
+    maint_col_vehicle: 'Araç & Plaka',
+    maint_col_km: 'İşlem KM',
+    maint_col_cost: 'Masraf',
+    maint_col_shop: 'Servis / Usta',
+    maint_col_parts: 'Değişen Parçalar',
+    maint_oil_last_km: 'Son Yağ Değişimi',
+    maint_oil_current_km: 'Güncel KM',
+    maint_oil_remaining: 'Kalan KM',
+    maint_oil_status_ok: 'İyi Durumda',
+    maint_oil_status_warn: 'Yaklaşıyor (<1.000 KM)',
+    maint_oil_status_critical: 'ACİL DEĞİŞİM GEREKLİ',
+
+    // Inspections Module
+    insp_title: 'Yıllık Muayene & Registracija',
+    insp_subtitle: 'Sırbistan yıllık registracija ve teknik muayene takvimi',
+    insp_btn_new: 'Yeni Muayene Kaydı',
+    insp_kpi_total: 'Kayıtlı Muayene',
+    insp_kpi_cost: 'Toplam Registracija Masrafı',
+    insp_kpi_expiring_soon: '30 Gün Kalanlar',
+    insp_kpi_expired: 'Süresi Dolanlar',
+    insp_col_expiry: 'Geçerlilik Bitiş',
+    insp_col_station: 'Muayene İstasyonu',
+    insp_status_valid: 'Geçerli',
+    insp_status_expiring: 'Süresi Yaklaşıyor',
+    insp_status_expired: 'SÜRESİ DOLDU',
+
+    // Customers Module
+    cust_title: 'Müşteriler & Kiralama Belgeleri',
+    cust_subtitle: 'Müşteri profilleri, pasaport, ehliyet ve sözleşme belgeleri',
+    cust_btn_new: 'Yeni Müşteri Ekle',
+    cust_search_placeholder: 'İsim, telefon, e-posta veya kimlik no ara...',
+    cust_col_name: 'Müşteri Adı',
+    cust_col_contact: 'İletişim',
+    cust_col_docs: 'Yüklenen Belgeler',
+    cust_col_rentals: 'Kiralama Geçmişi',
+    cust_col_active_car: 'Kullandığı Araç',
+    cust_no_active_rental: 'Aktif kiralama yok',
+
+    // Users Module
+    users_title: 'Kullanıcı & Personel Yönetimi',
+    users_subtitle: 'Filonuzdaki yönetici ve çalışan hesapları, erişim yetkileri',
+    users_btn_new: 'Yeni Kullanıcı Ekle',
+    users_role_admin: 'Filo Yöneticisi (ADMIN)',
+    users_role_staff: 'Personel (STAFF)',
+    users_col_name: 'Ad Soyad',
+    users_col_email: 'E-posta',
+    users_col_role: 'Yetki Rolü',
+    users_col_created: 'Kayıt Tarihi',
+    users_btn_edit: 'Düzenle / Şifre Sıfırla',
+
+    // Settings Module
+    sett_title: 'Sistem & Filo Ayarları',
+    sett_subtitle: 'Filo parametreleri, WhatsApp bildirimleri ve güvenlik ayarları',
+    sett_general_title: 'Genel Filo Bilgileri',
+    sett_company_name: 'Filo / Şirket Adı',
+    sett_phone: 'İletişim & WhatsApp Numarası',
+    sett_email: 'Operasyon E-posta Adresi',
+    sett_currency: 'Varsayılan Para Birimi',
+    sett_security_title: 'Şifre Değiştir',
+    sett_current_pwd: 'Mevcut Şifre',
+    sett_new_pwd: 'Yeni Şifre',
+    sett_confirm_pwd: 'Yeni Şifre Tekrar',
+    sett_btn_save: 'Ayarları Kaydet',
+
+    // Audit Logs Module
+    audit_title: 'Denetim & İşlem Geçmişi (Audit Logs)',
+    audit_subtitle: 'Sistemdeki tüm araç, bakım, ceza ve kullanıcı işlemleri kayıt altındadır',
   },
 
   en: {
@@ -443,6 +799,184 @@ const translations: Record<Language, Translations> = {
     dash_btn_return: 'Return',
     dash_btn_remind: 'Remind',
     dash_loading_portal: 'Opening Fleet Management Portal...',
+
+    // Common UI
+    common_all: 'All',
+    common_search: 'Search',
+    common_filter: 'Filter',
+    common_save: 'Save',
+    common_saving: 'Saving...',
+    common_cancel: 'Cancel',
+    common_edit: 'Edit',
+    common_delete: 'Delete',
+    common_actions: 'Actions',
+    common_details: 'Details',
+    common_status: 'Status',
+    common_plate: 'License Plate',
+    common_vehicle: 'Vehicle',
+    common_customer: 'Customer',
+    common_phone: 'Phone',
+    common_date: 'Date',
+    common_amount: 'Amount',
+    common_notes: 'Notes',
+    common_close: 'Close',
+    common_loading: 'Loading...',
+    common_success: 'Operation Successful',
+    common_error: 'An Error Occurred',
+    common_no_data: 'No records found',
+    common_all_owners: 'All Partners / Owners',
+    common_total: 'Total',
+    common_currency_eur: '€ (EUR)',
+    common_currency_rsd: 'RSD (Dinar)',
+
+    // Parking Tickets
+    parking_title: 'Belgrade Parking Tickets (Parking Servis eDPK)',
+    parking_subtitle: 'Automatically scanned from Belgrade Parking Servis, detects violations instantly.',
+    parking_scan_all: 'Scan All Vehicles Now',
+    parking_scanning: 'Scanning All Vehicles...',
+    parking_tab_all: 'All',
+    parking_tab_unpaid: 'Unpaid',
+    parking_tab_paid: 'Paid',
+    parking_kpi_total: 'Total Tickets',
+    parking_kpi_unpaid: 'Unpaid Fines',
+    parking_kpi_notified: 'Customer Notified',
+    parking_kpi_waiting: 'customers waiting',
+    parking_kpi_bot: 'Background Scanner',
+    parking_kpi_bot_status: 'Active (Every 1-2 Hours)',
+    parking_kpi_bot_desc: 'Parking Servis eDPK API link is active',
+    parking_search_placeholder: 'Search ticket no, plate, street or customer...',
+    parking_col_ticket_no: 'Ticket No & Date',
+    parking_col_plate: 'Vehicle & Plate',
+    parking_col_location: 'Location & Zone',
+    parking_col_amount: 'Fine Amount',
+    parking_col_status: 'Status',
+    parking_col_customer: 'Customer & Contact',
+    parking_col_actions: 'Actions',
+    parking_notify_wa: 'Notify via WhatsApp',
+    parking_notified: 'Notified',
+    parking_mark_paid: 'Mark as Paid',
+    parking_upload_receipt: 'Upload Receipt',
+    parking_status_paid: 'Paid',
+    parking_status_unpaid: 'Unpaid',
+    parking_early_discount: '50% discount within 20 days',
+    parking_no_tickets: 'No parking tickets recorded.',
+
+    // Vehicles Module
+    veh_title: 'Fleet Vehicles & Inventory Tracking',
+    veh_subtitle: 'Vehicles in fleet inventory, registration calendar, fuel consumption, and rental status',
+    veh_add_new: 'Add New Vehicle',
+    veh_tab_all: 'All Vehicles',
+    veh_tab_rented: 'Rented',
+    veh_tab_available: 'Available (Ready)',
+    veh_tab_returning_soon: 'Returning in 1 Week',
+    veh_tab_reg_expiring: 'Registration Expiring (30 Days)',
+    veh_tab_faults: 'Faults / Needs Service',
+    veh_search_placeholder: 'Search plate, brand, model or VIN...',
+    veh_card_daily: 'Daily',
+    veh_card_monthly: 'Monthly',
+    veh_card_km: 'Mileage',
+    veh_card_fuel: 'Fuel',
+    veh_card_reg_expiry: 'Reg. Expiry',
+    veh_card_owner: 'Owner / Partner',
+    veh_btn_details: 'View Details',
+    veh_btn_rent: 'Rent',
+    veh_btn_make_available: 'Make Available',
+    veh_btn_service: 'Log Service',
+    veh_no_vehicles: 'No vehicles match criteria.',
+    veh_modal_add_title: 'Add New Vehicle to Fleet',
+    veh_modal_plate: 'Plate (e.g. BG-123-AB)',
+    veh_modal_brand: 'Brand',
+    veh_modal_model: 'Model',
+    veh_modal_year: 'Model Year',
+    veh_modal_color: 'Color',
+    veh_modal_fuel_type: 'Fuel Type',
+    veh_modal_km: 'Current KM',
+    veh_modal_reg_expiry: 'Registration Expiry Date',
+    veh_modal_purchase_price: 'Purchase Cost (€)',
+    veh_modal_initial_expense: 'Initial Setup Expenses (€)',
+    veh_modal_daily_price: 'Daily Rental Rate (€)',
+    veh_modal_monthly_price: 'Monthly Rental Rate (€)',
+    veh_modal_owner: 'Vehicle Owner / Partner',
+
+    // Maintenances Module
+    maint_title: 'Maintenance & Engine Oil Tracking',
+    maint_subtitle: 'Periodic service, parts replacement, and 10,000 KM oil checks',
+    maint_tab_services: 'General Maintenance & Repairs',
+    maint_tab_oil: 'Engine Oil Tracking (10,000 KM)',
+    maint_btn_new_service: 'New Service Record',
+    maint_btn_new_oil: 'New Oil Change',
+    maint_kpi_total_services: 'Total Services',
+    maint_kpi_total_cost: 'Total Service Cost',
+    maint_kpi_oil_due: 'Oil Change Due',
+    maint_kpi_oil_overdue: 'Overdue Oil Changes',
+    maint_col_date: 'Date',
+    maint_col_vehicle: 'Vehicle & Plate',
+    maint_col_km: 'Service KM',
+    maint_col_cost: 'Cost',
+    maint_col_shop: 'Service Shop / Mechanic',
+    maint_col_parts: 'Replaced Parts',
+    maint_oil_last_km: 'Last Oil Change',
+    maint_oil_current_km: 'Current KM',
+    maint_oil_remaining: 'KM Remaining',
+    maint_oil_status_ok: 'Good Condition',
+    maint_oil_status_warn: 'Due Soon (<1,000 KM)',
+    maint_oil_status_critical: 'URGENT CHANGE NEEDED',
+
+    // Inspections Module
+    insp_title: 'Annual Inspection & Registration',
+    insp_subtitle: 'Serbia annual vehicle registration and inspection schedule',
+    insp_btn_new: 'New Inspection Record',
+    insp_kpi_total: 'Total Inspections',
+    insp_kpi_cost: 'Total Reg. Expense',
+    insp_kpi_expiring_soon: 'Expiring in 30 Days',
+    insp_kpi_expired: 'Expired',
+    insp_col_expiry: 'Expiry Date',
+    insp_col_station: 'Inspection Station',
+    insp_status_valid: 'Valid',
+    insp_status_expiring: 'Expiring Soon',
+    insp_status_expired: 'EXPIRED',
+
+    // Customers Module
+    cust_title: 'Customers & Rental Documents',
+    cust_subtitle: 'Customer profiles, passports, driving licenses, and rental agreements',
+    cust_btn_new: 'Add Customer',
+    cust_search_placeholder: 'Search name, phone, email or ID...',
+    cust_col_name: 'Customer Name',
+    cust_col_contact: 'Contact',
+    cust_col_docs: 'Uploaded Documents',
+    cust_col_rentals: 'Rental History',
+    cust_col_active_car: 'Active Vehicle',
+    cust_no_active_rental: 'No active rental',
+
+    // Users Module
+    users_title: 'User & Staff Management',
+    users_subtitle: 'Manager and staff accounts in your fleet, access permissions',
+    users_btn_new: 'Add New User',
+    users_role_admin: 'Fleet Manager (ADMIN)',
+    users_role_staff: 'Staff (STAFF)',
+    users_col_name: 'Full Name',
+    users_col_email: 'Email',
+    users_col_role: 'Role',
+    users_col_created: 'Created Date',
+    users_btn_edit: 'Edit / Reset Password',
+
+    // Settings Module
+    sett_title: 'System & Fleet Settings',
+    sett_subtitle: 'Fleet parameters, WhatsApp notifications, and security settings',
+    sett_general_title: 'General Fleet Info',
+    sett_company_name: 'Fleet / Company Name',
+    sett_phone: 'Contact & WhatsApp Number',
+    sett_email: 'Operations Email',
+    sett_currency: 'Default Currency',
+    sett_security_title: 'Change Password',
+    sett_current_pwd: 'Current Password',
+    sett_new_pwd: 'New Password',
+    sett_confirm_pwd: 'Confirm New Password',
+    sett_btn_save: 'Save Settings',
+
+    // Audit Logs Module
+    audit_title: 'Audit & Activity Logs',
+    audit_subtitle: 'All vehicle, maintenance, fine, and user actions are logged securely',
   },
 
   sr: {
@@ -587,6 +1121,184 @@ const translations: Record<Language, Translations> = {
     dash_btn_return: 'Preuzmi',
     dash_btn_remind: 'Podseti',
     dash_loading_portal: 'Otvaranje Portala za Upravljanje Flotom...',
+
+    // Common UI
+    common_all: 'Sve',
+    common_search: 'Pretraga',
+    common_filter: 'Filter',
+    common_save: 'Sačuvaj',
+    common_saving: 'Čuvanje...',
+    common_cancel: 'Otkaži',
+    common_edit: 'Izmeni',
+    common_delete: 'Obriši',
+    common_actions: 'Radnje',
+    common_details: 'Detalji',
+    common_status: 'Status',
+    common_plate: 'Registarska Oznaka',
+    common_vehicle: 'Vozilo',
+    common_customer: 'Klijent',
+    common_phone: 'Telefon',
+    common_date: 'Datum',
+    common_amount: 'Iznos',
+    common_notes: 'Beleške',
+    common_close: 'Zatvori',
+    common_loading: 'Učitavanje...',
+    common_success: 'Uspešno Izvršeno',
+    common_error: 'Došlo je do greške',
+    common_no_data: 'Nema pronađenih zapisa',
+    common_all_owners: 'Svi Partneri / Vlasnici',
+    common_total: 'Ukupno',
+    common_currency_eur: '€ (EUR)',
+    common_currency_rsd: 'RSD (Dinar)',
+
+    // Parking Tickets
+    parking_title: 'Parking Kazne Beograd (Parking Servis eDPK)',
+    parking_subtitle: 'Automatska provera iz sistema Parking Servis Beograd, prekršaji se odmah evidentiraju.',
+    parking_scan_all: 'Skeniraj Sva Vozila Sada',
+    parking_scanning: 'Skeniranje Svih Vozila...',
+    parking_tab_all: 'Sve',
+    parking_tab_unpaid: 'Neplaćeno',
+    parking_tab_paid: 'Plaćeno',
+    parking_kpi_total: 'Ukupno Kazni',
+    parking_kpi_unpaid: 'Neplaćeni Dug',
+    parking_kpi_notified: 'Obavešten Klijent',
+    parking_kpi_waiting: 'klijenata čeka',
+    parking_kpi_bot: 'Pozadinski Bot',
+    parking_kpi_bot_status: 'Aktivan (1-2 Sata)',
+    parking_kpi_bot_desc: 'Parking Servis eDPK API veza je aktivna',
+    parking_search_placeholder: 'Pretraga broja kazne, tablice, ulice ili klijenta...',
+    parking_col_ticket_no: 'Broj Kazne i Datum',
+    parking_col_plate: 'Vozilo i Tablica',
+    parking_col_location: 'Lokacija i Zona',
+    parking_col_amount: 'Iznos Kazne',
+    parking_col_status: 'Status',
+    parking_col_customer: 'Klijent i Kontakt',
+    parking_col_actions: 'Radnje',
+    parking_notify_wa: 'Obavesti preko WhatsApp-a',
+    parking_notified: 'Obavešten',
+    parking_mark_paid: 'Označi kao Plaćeno',
+    parking_upload_receipt: 'Učitaj Priznanicu',
+    parking_status_paid: 'Plaćeno',
+    parking_status_unpaid: 'Neplaćeno',
+    parking_early_discount: '50% popusta u roku od 20 dana',
+    parking_no_tickets: 'Nema evidentiranih parking kazni.',
+
+    // Vehicles Module
+    veh_title: 'Vozila Flote i Inventar',
+    veh_subtitle: 'Vozila flote, registracioni kalendar, potrošnja goriva i status iznajmljivanja',
+    veh_add_new: 'Dodaj Novo Vozilo',
+    veh_tab_all: 'Sva Vozila',
+    veh_tab_rented: 'U Najmu',
+    veh_tab_available: 'Slobodno (Spremno)',
+    veh_tab_returning_soon: 'Vraća se za 7 Dana',
+    veh_tab_reg_expiring: 'Ističe Registracija (30 Dana)',
+    veh_tab_faults: 'Sa Kvarom / Čeka Servis',
+    veh_search_placeholder: 'Pretraga po tablici, marki, modelu ili šasiji...',
+    veh_card_daily: 'Dnevno',
+    veh_card_monthly: 'Mesečno',
+    veh_card_km: 'Kilometraža',
+    veh_card_fuel: 'Gorivo',
+    veh_card_reg_expiry: 'Istek Registracije',
+    veh_card_owner: 'Vlasnik / Partner',
+    veh_btn_details: 'Pregled Vozila',
+    veh_btn_rent: 'Iznajmi',
+    veh_btn_make_available: 'Oslobodi Vozilo',
+    veh_btn_service: 'Unesi Servis',
+    veh_no_vehicles: 'Nema vozila koja odgovaraju kriterijumu.',
+    veh_modal_add_title: 'Dodavanje Novog Vozila u Flotu',
+    veh_modal_plate: 'Tablica (npr: BG-123-AB)',
+    veh_modal_brand: 'Marka',
+    veh_modal_model: 'Model',
+    veh_modal_year: 'Godište',
+    veh_modal_color: 'Boja',
+    veh_modal_fuel_type: 'Vrsta Goriva',
+    veh_modal_km: 'Trenutna Kilometraža',
+    veh_modal_reg_expiry: 'Datum Isteka Registracije',
+    veh_modal_purchase_price: 'Nabavna Cena (€)',
+    veh_modal_initial_expense: 'Početni Troškovi (€)',
+    veh_modal_daily_price: 'Dnevna Cena Najma (€)',
+    veh_modal_monthly_price: 'Mesečna Cena Najma (€)',
+    veh_modal_owner: 'Vlasnik / Partner',
+
+    // Maintenances Module
+    maint_title: 'Održavanje i Motorno Ulje',
+    maint_subtitle: 'Periodično servisiranje, zamena delova i kontrola ulja na 10.000 km',
+    maint_tab_services: 'Opšte Održavanje i Popravke',
+    maint_tab_oil: 'Praćenje Motornog Ulja (10.000 KM)',
+    maint_btn_new_service: 'Novi Servisni Zapis',
+    maint_btn_new_oil: 'Nova Zamena Ulja',
+    maint_kpi_total_services: 'Ukupno Servisa',
+    maint_kpi_total_cost: 'Ukupni Troškovi Servisa',
+    maint_kpi_oil_due: 'Uskoro Zamena Ulja',
+    maint_kpi_oil_overdue: 'Prekoračena Kilometraža',
+    maint_col_date: 'Datum',
+    maint_col_vehicle: 'Vozilo i Tablica',
+    maint_col_km: 'Servisna Kilometraža',
+    maint_col_cost: 'Trošak',
+    maint_col_shop: 'Servis / Majstor',
+    maint_col_parts: 'Zamenjeni Delovi',
+    maint_oil_last_km: 'Poslednja Zamena',
+    maint_oil_current_km: 'Trenutni KM',
+    maint_oil_remaining: 'Preostalo KM',
+    maint_oil_status_ok: 'U Redu',
+    maint_oil_status_warn: 'Uskoro (<1.000 KM)',
+    maint_oil_status_critical: 'HITNA ZAMENA POTREBNA',
+
+    // Inspections Module
+    insp_title: 'Tehnički Pregled i Registracija',
+    insp_subtitle: 'Praćenje godišnjeg tehničkog pregleda i registracije u Srbiji',
+    insp_btn_new: 'Novi Tehnički Pregled',
+    insp_kpi_total: 'Ukupno Pregleda',
+    insp_kpi_cost: 'Ukupni Trošak Registracije',
+    insp_kpi_expiring_soon: 'Ističe u 30 Dana',
+    insp_kpi_expired: 'Istekla Registracija',
+    insp_col_expiry: 'Istek Važenja',
+    insp_col_station: 'Tehnički Pregled Centar',
+    insp_status_valid: 'Važeća',
+    insp_status_expiring: 'Uskoro Ističe',
+    insp_status_expired: 'ISTEKLO',
+
+    // Customers Module
+    cust_title: 'Klijenti i Dokumenta o Najmu',
+    cust_subtitle: 'Profili klijenata, pasoši, vozačke dozvole i ugovori o najmu',
+    cust_btn_new: 'Dodaj Klijenta',
+    cust_search_placeholder: 'Pretraga imena, telefona, email-a ili broja lične karte...',
+    cust_col_name: 'Ime Klijenta',
+    cust_col_contact: 'Kontakt',
+    cust_col_docs: 'Učitana Dokumenta',
+    cust_col_rentals: 'Istorija Najmova',
+    cust_col_active_car: 'Aktivno Vozilo',
+    cust_no_active_rental: 'Nema aktivnog najma',
+
+    // Users Module
+    users_title: 'Upravljanje Korisnicima i Osobljem',
+    users_subtitle: 'Nalozi administratora i osoblja u vašoj floti, pristupna prava',
+    users_btn_new: 'Dodaj Novog Korisnika',
+    users_role_admin: 'Menadžer Flote (ADMIN)',
+    users_role_staff: 'Osoblje (STAFF)',
+    users_col_name: 'Ime i Prezime',
+    users_col_email: 'Email Adresa',
+    users_col_role: 'Uloga',
+    users_col_created: 'Datum Registracije',
+    users_btn_edit: 'Izmeni / Resetuj Lozinku',
+
+    // Settings Module
+    sett_title: 'Podešavanja Sistema i Flote',
+    sett_subtitle: 'Parametri flote, WhatsApp obaveštenja i bezbednosna podešavanja',
+    sett_general_title: 'Opšte Informacije o Floti',
+    sett_company_name: 'Naziv Flote / Firme',
+    sett_phone: 'Broj Telefona i WhatsApp-a',
+    sett_email: 'Email Operacija',
+    sett_currency: 'Podrazumevana Valuta',
+    sett_security_title: 'Promena Lozinke',
+    sett_current_pwd: 'Trenutna Lozinka',
+    sett_new_pwd: 'Nova Lozinka',
+    sett_confirm_pwd: 'Potvrda Nove Lozinke',
+    sett_btn_save: 'Sačuvaj Podešavanja',
+
+    // Audit Logs Module
+    audit_title: 'Evidencija Aktivnosti (Audit Logs)',
+    audit_subtitle: 'Sve radnje sa vozilima, servisima, kaznama i korisnicima se beleže',
   },
 };
 

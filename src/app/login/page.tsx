@@ -10,7 +10,7 @@ import { useLanguage } from '@/lib/i18n';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -63,10 +63,10 @@ export default function LoginPage() {
           </Link>
         </div>
         <h2 className="mt-5 text-center text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-          FİLO YÖNETİM
+          {language === 'sr' ? 'UPRAVLJANJE FLOTOM' : language === 'en' ? 'FLEET MANAGEMENT' : 'FİLO YÖNETİM'}
         </h2>
         <p className="mt-1.5 text-center text-sm text-slate-500 dark:text-slate-400">
-          Profesyonel Filo & Araç Takip Portalı
+          {language === 'sr' ? 'Profesionalni portal za praćenje i upravljanje flotom' : language === 'en' ? 'Professional Fleet & Vehicle Rental Portal' : 'Profesyonel Filo & Araç Takip Portalı'}
         </p>
       </div>
 
@@ -142,7 +142,7 @@ export default function LoginPage() {
 
           <div className="mt-4 text-center">
             <Link href="/" className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-              ← Tanıtım & Fiyatlandırma Sayfasına Dön
+              {language === 'sr' ? '← Nazad na početnu i cenovnik' : language === 'en' ? '← Back to Home & Pricing' : '← Tanıtım & Fiyatlandırma Sayfasına Dön'}
             </Link>
           </div>
         </div>

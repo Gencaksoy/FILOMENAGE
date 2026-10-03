@@ -14,8 +14,8 @@ export function ThemeToggle({ variant = 'default' }: { variant?: 'default' | 'co
       onClick={toggleTheme}
       className={`inline-flex items-center justify-center p-2 rounded-xl transition-all cursor-pointer border ${
         variant === 'landing'
-          ? 'bg-white/10 hover:bg-white/20 text-white border-white/20 shadow-xs backdrop-blur-xs'
-          : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-amber-400 border-slate-200 dark:border-slate-700 hover:border-amber-400 shadow-xs'
+          ? 'bg-slate-100/90 hover:bg-slate-200/90 text-slate-800 border-slate-300 dark:bg-white/10 dark:hover:bg-white/20 dark:text-amber-400 dark:border-white/20 shadow-xs backdrop-blur-xs'
+          : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-amber-400 border-slate-300 dark:border-slate-700 hover:border-amber-400 dark:hover:border-amber-400 shadow-xs'
       }`}
       title={isDark ? 'Açık Temaya Geç / Light Mode' : 'Koyu Temaya Geç / Dark Mode'}
       aria-label="Toggle Theme"

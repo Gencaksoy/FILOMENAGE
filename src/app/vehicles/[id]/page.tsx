@@ -54,6 +54,7 @@ import {
   generateParkingFineWhatsAppUrl,
 } from '@/lib/formatters';
 import { AuthUser } from '@/lib/auth-client';
+import { useLanguage } from '@/lib/i18n';
 
 interface PartItem {
   partName: string;
@@ -71,6 +72,7 @@ const DEFAULT_ACCESSORIES = [
 ];
 
 export default function VehicleDetailPage() {
+  const { t, language } = useLanguage();
   const params = useParams();
   const router = useRouter();
   const vehicleId = params.id as string;
@@ -942,11 +944,11 @@ export default function VehicleDetailPage() {
             className="text-slate-500 hover:text-amber-600 flex items-center gap-1 font-semibold"
           >
             <ArrowLeft className="w-4 h-4" />
-            Araçlar Listesi
+            {language === 'sr' ? 'Lista Vozila' : language === 'en' ? 'Vehicle List' : 'Araçlar Listesi'}
           </Link>
           <span className="text-slate-300">/</span>
           <span className="font-bold text-slate-900 font-mono text-sm">{vehicle.plate}</span>
-          <span className="text-slate-400">({vehicle.owner || (currentUser?.isPartnership ? 'Belirtilmedi' : (currentUser?.fleetName || 'Filo'))})</span>
+          <span className="text-slate-400">({vehicle.owner || (currentUser?.isPartnership ? (language === 'sr' ? 'Nije navedeno' : language === 'en' ? 'Unassigned' : 'Belirtilmedi') : (currentUser?.fleetName || (language === 'sr' ? 'Flota' : language === 'en' ? 'Fleet' : 'Filo')))})</span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -961,17 +963,17 @@ export default function VehicleDetailPage() {
                   setShowExtendModal(true);
                 }}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-md cursor-pointer transition-colors"
-                title="Kiralama süresini uzat"
+                title={language === 'sr' ? 'Produži ugovor o zakupu' : language === 'en' ? 'Extend rental period' : 'Kiralama süresini uzat'}
               >
                 <Clock className="w-4 h-4" />
-                Süre Uzat
+                {language === 'sr' ? 'Produži Rok' : language === 'en' ? 'Extend Rental' : 'Süre Uzat'}
               </button>
               <button
                 onClick={openReturnModal}
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow-md cursor-pointer transition-colors"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                Aracı Müşteriden İade Al
+                {language === 'sr' ? 'Preuzmi Vozilo' : language === 'en' ? 'Return Vehicle' : 'Aracı Müşteriden İade Al'}
               </button>
             </>
           ) : (
@@ -980,7 +982,7 @@ export default function VehicleDetailPage() {
               className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow-md cursor-pointer transition-colors"
             >
               <KeyRound className="w-4 h-4" />
-              Müşteriye Kirala
+              {language === 'sr' ? 'Iznajmi Klijentu' : language === 'en' ? 'Rent to Client' : 'Müşteriye Kirala'}
             </button>
           )}
 
@@ -990,7 +992,7 @@ export default function VehicleDetailPage() {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer transition-colors"
           >
             <Wrench className="w-4 h-4" />
-            + Bakım & Parça Gir
+            {language === 'sr' ? '+ Servis & Delovi' : language === 'en' ? '+ Service & Parts' : '+ Bakım & Parça Gir'}
           </button>
 
           {/* Action: Add Oil Change */}
@@ -1002,7 +1004,7 @@ export default function VehicleDetailPage() {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer transition-colors"
           >
             <Droplet className="w-4 h-4" />
-            + Motor Yağı
+            {language === 'sr' ? '+ Motorno Ulje' : language === 'en' ? '+ Engine Oil' : '+ Motor Yağı'}
           </button>
 
           {/* Edit Vehicle */}
@@ -1011,7 +1013,7 @@ export default function VehicleDetailPage() {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl cursor-pointer transition-colors"
           >
             <Edit className="w-4 h-4" />
-            Düzenle
+            {language === 'sr' ? 'Izmeni' : language === 'en' ? 'Edit' : 'Düzenle'}
           </button>
 
           {/* Action: Add Vehicle Fault */}
@@ -1026,7 +1028,7 @@ export default function VehicleDetailPage() {
             className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer transition-colors"
           >
             <AlertTriangle className="w-4 h-4" />
-            + Arıza Bildir
+            {language === 'sr' ? '+ Prijavi Kvar' : language === 'en' ? '+ Report Fault' : '+ Arıza Bildir'}
           </button>
 
           {/* Action: Belgrade Parking Servis Tara */}
@@ -1037,7 +1039,7 @@ export default function VehicleDetailPage() {
             title="Belgrade Parking Servis üzerinden eDPK ceza sorgulaması yap"
           >
             <RefreshCw className={`w-4 h-4 ${isScanningParking ? 'animate-spin' : ''}`} />
-            {isScanningParking ? 'Taranıyor...' : 'Park Cezası Sorgula'}
+            {isScanningParking ? (language === 'sr' ? 'Provera...' : language === 'en' ? 'Scanning...' : 'Taranıyor...') : (language === 'sr' ? 'Proveri Kazne' : language === 'en' ? 'Check Fines' : 'Park Cezası Sorgula')}
           </button>
 
           {/* Delete Vehicle (Hidden for Staff) */}
@@ -1045,10 +1047,10 @@ export default function VehicleDetailPage() {
             <button
               onClick={handleDeleteVehicle}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold rounded-xl cursor-pointer transition-colors"
-              title="Yalnızca Ortaklar/Yöneticiler silebilir"
+              title={language === 'sr' ? 'Samo administratori i ortaci mogu obrisati' : language === 'en' ? 'Only admins and partners can delete' : 'Yalnızca Ortaklar/Yöneticiler silebilir'}
             >
               <Trash2 className="w-4 h-4" />
-              Sil
+              {language === 'sr' ? 'Obriši' : language === 'en' ? 'Delete' : 'Sil'}
             </button>
           )}
         </div>
@@ -1764,7 +1766,7 @@ export default function VehicleDetailPage() {
                 : 'border-transparent text-slate-500 hover:text-slate-900'
             }`}
           >
-            Bakım ve Masraf Geçmişi ({maintenances?.length || 0})
+            {language === 'sr' ? 'Istorija Servisa' : language === 'en' ? 'Service History' : 'Bakım ve Masraf Geçmişi'} ({maintenances?.length || 0})
           </button>
           <button
             onClick={() => setActiveTab('oil')}
@@ -1774,7 +1776,7 @@ export default function VehicleDetailPage() {
                 : 'border-transparent text-slate-500 hover:text-slate-900'
             }`}
           >
-            Motor Yağı Değişimleri ({oilChanges?.length || 0})
+            {language === 'sr' ? 'Zamene Ulja' : language === 'en' ? 'Oil Changes' : 'Motor Yağı Değişimleri'} ({oilChanges?.length || 0})
           </button>
           <button
             onClick={() => setActiveTab('rentals')}
@@ -1784,7 +1786,7 @@ export default function VehicleDetailPage() {
                 : 'border-transparent text-slate-500 hover:text-slate-900'
             }`}
           >
-            Kiralama Geçmişi ({rentalHistory?.length || 0})
+            {language === 'sr' ? 'Istorija Najmova' : language === 'en' ? 'Rental History' : 'Kiralama Geçmişi'} ({rentalHistory?.length || 0})
           </button>
           <button
             onClick={() => setActiveTab('inspections')}
@@ -1794,7 +1796,7 @@ export default function VehicleDetailPage() {
                 : 'border-transparent text-slate-500 hover:text-slate-900'
             }`}
           >
-            Muayene Kayıtları ({inspections?.length || 0})
+            {language === 'sr' ? 'Tehnički Pregledi' : language === 'en' ? 'Inspections' : 'Muayene Kayıtları'} ({inspections?.length || 0})
           </button>
           <button
             onClick={() => setActiveTab('faults')}
@@ -1805,7 +1807,7 @@ export default function VehicleDetailPage() {
             }`}
           >
             <AlertTriangle className="w-3.5 h-3.5" />
-            <span>Arıza & Hasarlar ({data?.faults?.length || 0})</span>
+            <span>{language === 'sr' ? 'Kvarovi i Oštećenja' : language === 'en' ? 'Faults & Damage' : 'Arıza & Hasarlar'} ({data?.faults?.length || 0})</span>
             {data?.faults?.some((f: any) => f.status !== 'RESOLVED') && (
               <span className="px-1.5 py-0.5 rounded-full text-xs font-black bg-rose-500 text-white animate-pulse">
                 {data.faults.filter((f: any) => f.status !== 'RESOLVED').length}
@@ -1821,7 +1823,7 @@ export default function VehicleDetailPage() {
             }`}
           >
             <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-            <span>Park Cezaları ({vehicle.parkingTickets?.length || 0})</span>
+            <span>{language === 'sr' ? 'Parking Kazne' : language === 'en' ? 'Parking Fines' : 'Park Cezaları'} ({vehicle.parkingTickets?.length || 0})</span>
             {vehicle.parkingTickets?.some((t: any) => t.status === 'UNPAID') && (
               <span className="px-1.5 py-0.5 rounded-full text-xs font-black bg-rose-500 text-white animate-pulse">
                 {vehicle.parkingTickets.filter((t: any) => t.status === 'UNPAID').length}

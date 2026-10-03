@@ -311,16 +311,16 @@ export function Header({ onToggleSidebar, currentUser, unreadCount = 0 }: Header
           <div className="relative">
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 transition-colors"
+              className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
               <div className="w-8 h-8 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center font-black text-xs shadow-xs">
                 {currentUser?.name?.charAt(0) || 'Y'}
               </div>
               <div className="hidden sm:block text-left">
-                <div className="text-xs font-bold text-slate-800 leading-tight">
+                <div className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-tight">
                   {currentUser?.name || 'Yönetici'}
                 </div>
-                <div className="text-xs font-semibold text-amber-700">
+                <div className="text-xs font-semibold text-amber-700 dark:text-amber-400">
                   {currentUser?.role === 'SUPER_ADMIN' || currentUser?.email === 'akif@filoyonetim.com'
                     ? 'SaaS Sahibi & Yapımcısı'
                     : currentUser?.role === 'STAFF'

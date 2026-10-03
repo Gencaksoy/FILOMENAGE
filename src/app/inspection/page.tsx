@@ -20,8 +20,10 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Modal } from '@/components/ui/Modal';
 import { formatDate, formatDateTime, formatCurrency, formatRsd, EUR_TO_RSD_RATE } from '@/lib/formatters';
 import { AuthUser } from '@/lib/auth-client';
+import { useLanguage } from '@/lib/i18n';
 
 function InspectionContent() {
+  const { t, language } = useLanguage();
   const searchParams = useSearchParams();
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [inspections, setInspections] = useState<any[]>([]);
@@ -133,12 +135,12 @@ function InspectionContent() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2">
-            <FileCheck2 className="w-6 h-6 text-purple-600" />
-            Yıllık Muayene & Registracija Takvimi
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+            <FileCheck2 className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+            {t.insp_title}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500">
-            Sırbistan (Tehnički Pregled & Registracija) senede 1 kez zorunludur. Tescilsiz araç trafiğe çıkamaz!
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+            {t.insp_subtitle}
           </p>
         </div>
 
@@ -151,38 +153,50 @@ function InspectionContent() {
           className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-xs sm:text-sm font-bold rounded-xl shadow-md transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          Yeni Muayene Kaydet (+1 Yıl)
+          {t.insp_btn_new}
         </button>
       </div>
 
       {/* Info Notice */}
-      <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 rounded-2xl p-4 mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold shrink-0">
-            <ShieldAlert className="w-5 h-5 text-purple-700" />
+          <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/60 text-purple-700 dark:text-purple-300 flex items-center justify-center font-bold shrink-0">
+            <ShieldAlert className="w-5 h-5 text-purple-700 dark:text-purple-300" />
           </div>
           <div>
-            <div className="font-bold text-xs text-purple-950">Yıllık 1 Yıl Zorunlu Registracija Döngüsü</div>
-            <div className="text-xs text-purple-800">
-              Muayene tarihi girildiğinde bir sonraki muayene ve tescil bitişi tam 1 yıl sonrasına otomatik ayarlanır. 30 gün altına inen araçlar için uyarı verilir.
+            <div className="font-bold text-xs text-purple-950 dark:text-purple-200">
+              {language === 'sr' ? 'Obavezni Godišnji Ciklus Registracije (1 Godina)' : language === 'en' ? 'Mandatory Annual Registration Cycle (1 Year)' : 'Yıllık 1 Yıl Zorunlu Registracija Döngüsü'}
+            </div>
+            <div className="text-xs text-purple-800 dark:text-purple-300">
+              {language === 'sr'
+                ? 'Kada se unese datum pregleda, sledeći tehnički pregled i istek registracije se automatski postavljaju tačno 1 godinu kasnije. Upozorenje se aktivira za vozila ispod 30 dana.'
+                : language === 'en'
+                ? 'When an inspection date is entered, the next inspection and registration expiry are automatically set to exactly 1 year later. Warnings trigger below 30 days.'
+                : 'Muayene tarihi girildiğinde bir sonraki muayene ve tescil bitişi tam 1 yıl sonrasına otomatik ayarlanır. 30 gün altına inen araçlar için uyarı verilir.'}
             </div>
           </div>
         </div>
-        <span className="px-3 py-1 bg-white text-purple-900 rounded-xl font-bold text-xs border border-purple-200 shadow-2xs shrink-0 self-start sm:self-auto">
-          {inspections.length} Kayıtlı Muayene
+        <span className="px-3 py-1 bg-white dark:bg-slate-900 text-purple-900 dark:text-purple-300 rounded-xl font-bold text-xs border border-purple-200 dark:border-purple-800 shadow-2xs shrink-0 self-start sm:self-auto">
+          {language === 'sr' ? `${inspections.length} Registrovanih Pregleda` : language === 'en' ? `${inspections.length} Recorded Inspections` : `${inspections.length} Kayıtlı Muayene`}
         </span>
       </div>
 
       {/* Search & Partner Filter */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 p-4 mb-6 shadow-xs flex flex-col sm:flex-row gap-3">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 mb-6 shadow-xs flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Plaka (Örn: BG 123-AA), araç veya muayene istasyonu ara..."
-            className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-purple-500 focus:outline-hidden"
+            placeholder={
+              language === 'sr'
+                ? 'Pretraži tablicu (npr: BG 123-AA), vozilo ili stanicu tehničkog pregleda...'
+                : language === 'en'
+                ? 'Search plate (e.g. BG 123-AA), vehicle, or inspection station...'
+                : 'Plaka (Örn: BG 123-AA), araç veya muayene istasyonu ara...'
+            }
+            className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:bg-white dark:focus:bg-slate-900 focus:border-purple-500 focus:outline-hidden text-slate-800 dark:text-slate-100"
           />
         </div>
 
@@ -192,12 +206,12 @@ function InspectionContent() {
             <select
               value={ownerFilter}
               onChange={(e) => setOwnerFilter(e.target.value)}
-              className="px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700"
+              className="px-3 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-slate-200"
             >
-              <option value="ALL">Tüm Ortaklar</option>
+              <option value="ALL">{t.common_all_owners}</option>
               {(currentUser?.partners || []).map((p) => (
                 <option key={p} value={p}>
-                  {p}&apos;nın Araçları
+                  {language === 'sr' ? `Vozila partnera: ${p}` : language === 'en' ? `${p}'s Vehicles` : `${p}'nın Araçları`}
                 </option>
               ))}
             </select>
@@ -207,75 +221,79 @@ function InspectionContent() {
 
       {/* Table */}
       {loading ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center">
           <div className="w-8 h-8 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-xs text-slate-500">Muayeneler yükleniyor...</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{t.common_loading}</p>
         </div>
       ) : filteredInspections.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-          <FileCheck2 className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-sm font-bold text-slate-800">Muayene Kaydı Bulunamadı</h3>
-          <p className="text-xs text-slate-500 mt-1">Arama kriterlerine uygun muayene bulunamadı.</p>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center">
+          <FileCheck2 className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />
+          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+            {language === 'sr' ? 'Nisu pronađeni pregledi' : language === 'en' ? 'No inspection records found' : 'Muayene Kaydı Bulunamadı'}
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            {language === 'sr' ? 'Nema zapisa koji odgovaraju pretrazi.' : language === 'en' ? 'No records match your search criteria.' : 'Arama kriterlerine uygun muayene bulunamadı.'}
+          </p>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50/90 border-b border-slate-200 text-slate-500 font-bold uppercase text-xs tracking-wider">
+              <thead className="bg-slate-50/90 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase text-xs tracking-wider">
                 <tr>
-                  <th className="py-3 px-4">Araç & Plaka</th>
-                  <th className="py-3 px-4">{currentUser?.isPartnership ? 'Ortak' : 'Sahip / Şirket'}</th>
-                  <th className="py-3 px-4">İstasyon (Belgrad)</th>
-                  <th className="py-3 px-4">Son Muayene Tarihi</th>
-                  <th className="py-3 px-4">Gelecek Muayene (1 Yıl)</th>
-                  <th className="py-3 px-4">Kalan Süre & Durum</th>
-                  <th className="py-3 px-4">Muayene Ücreti</th>
-                  <th className="py-3 px-4 text-right">Sisteme Giriş Zamanı</th>
+                  <th className="py-3 px-4">{language === 'sr' ? 'Vozilo i Tablica' : language === 'en' ? 'Vehicle & Plate' : 'Araç & Plaka'}</th>
+                  <th className="py-3 px-4">{currentUser?.isPartnership ? (language === 'sr' ? 'Partner' : language === 'en' ? 'Partner' : 'Ortak') : (language === 'sr' ? 'Vlasnik' : language === 'en' ? 'Owner' : 'Sahip / Şirket')}</th>
+                  <th className="py-3 px-4">{language === 'sr' ? 'Stanica (Beograd)' : language === 'en' ? 'Station (Belgrade)' : 'İstasyon (Belgrad)'}</th>
+                  <th className="py-3 px-4">{language === 'sr' ? 'Datum Pregleda' : language === 'en' ? 'Last Inspection Date' : 'Son Muayene Tarihi'}</th>
+                  <th className="py-3 px-4">{language === 'sr' ? 'Sledeći Pregled (1 Godina)' : language === 'en' ? 'Next Inspection (1 Year)' : 'Gelecek Muayene (1 Yıl)'}</th>
+                  <th className="py-3 px-4">{language === 'sr' ? 'Preostalo Vreme i Status' : language === 'en' ? 'Remaining & Status' : 'Kalan Süre & Durum'}</th>
+                  <th className="py-3 px-4">{language === 'sr' ? 'Cena Pregleda' : language === 'en' ? 'Inspection Fee' : 'Muayene Ücreti'}</th>
+                  <th className="py-3 px-4 text-right">{language === 'sr' ? 'Datum Unosa' : language === 'en' ? 'Logged Date' : 'Sisteme Giriş Zamanı'}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {filteredInspections.map((i) => (
-                  <tr key={i.id} className="hover:bg-purple-50/30 transition-colors">
+                  <tr key={i.id} className="hover:bg-purple-50/30 dark:hover:bg-purple-950/20 transition-colors">
                     <td className="py-3.5 px-4">
                       <Link
                         href={`/vehicles/${i.vehicle.id}`}
-                        className="font-mono font-bold text-slate-900 hover:text-purple-600 block text-xs"
+                        className="font-mono font-bold text-slate-900 dark:text-slate-100 hover:text-purple-600 dark:hover:text-purple-400 block text-xs"
                       >
                         {i.vehicle.plate}
                       </Link>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
                         {i.vehicle.brand} {i.vehicle.model}
                       </div>
                     </td>
                     <td className="py-3.5 px-4">
-                      <span className="font-bold text-slate-700">{i.vehicle.owner || (currentUser?.isPartnership ? '-' : (currentUser?.fleetName || 'Filo'))}</span>
+                      <span className="font-bold text-slate-700 dark:text-slate-300">{i.vehicle.owner || (currentUser?.isPartnership ? '-' : (currentUser?.fleetName || 'Filo'))}</span>
                     </td>
-                    <td className="py-3.5 px-4 font-semibold text-slate-800">
+                    <td className="py-3.5 px-4 font-semibold text-slate-800 dark:text-slate-200">
                       {i.station}
                     </td>
-                    <td className="py-3.5 px-4 text-slate-600 font-mono">
+                    <td className="py-3.5 px-4 text-slate-600 dark:text-slate-300 font-mono">
                       {formatDate(i.inspectionDate)}
                     </td>
-                    <td className="py-3.5 px-4 font-bold text-purple-900 font-mono">
+                    <td className="py-3.5 px-4 font-bold text-purple-900 dark:text-purple-300 font-mono">
                       {formatDate(i.nextInspectionDate)}
                     </td>
                     <td className="py-3.5 px-4">
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold border ${
                           i.diffDays < 0
-                            ? 'bg-rose-50 text-rose-700 border-rose-200'
+                            ? 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800'
                             : i.diffDays <= 30
-                            ? 'bg-amber-50 text-amber-800 border-amber-200'
-                            : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                            ? 'bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-400 border-amber-200 dark:border-amber-800'
+                            : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
                         }`}
                       >
                         <Clock className="w-3 h-3 mr-1" />
                         {i.diffDays < 0
-                          ? `SÜRESİ GEÇTİ (${Math.abs(i.diffDays)} g)`
-                          : `${i.diffDays} gün kaldı`}
+                          ? (language === 'sr' ? `ISTEKAO (${Math.abs(i.diffDays)} d)` : language === 'en' ? `EXPIRED (${Math.abs(i.diffDays)} d)` : `SÜRESİ GEÇTİ (${Math.abs(i.diffDays)} g)`)
+                          : (language === 'sr' ? `Još ${i.diffDays} dana` : language === 'en' ? `${i.diffDays} days left` : `${i.diffDays} gün kaldı`)}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 font-black text-slate-900 text-xs font-mono">
+                    <td className="py-3.5 px-4 font-black text-slate-900 dark:text-slate-100 text-xs font-mono">
                       {formatCurrency(i.cost, 'EUR')}
                       {i.currency === 'RSD' && i.originalCost && (
                         <div className="text-xs text-slate-400 font-normal">
@@ -283,7 +301,7 @@ function InspectionContent() {
                         </div>
                       )}
                     </td>
-                    <td className="py-3.5 px-4 text-right font-mono text-xs text-slate-500">
+                    <td className="py-3.5 px-4 text-right font-mono text-xs text-slate-500 dark:text-slate-400">
                       {formatDateTime(i.createdAt)}
                     </td>
                   </tr>
@@ -298,8 +316,8 @@ function InspectionContent() {
       <Modal
         isOpen={isNewModalOpen}
         onClose={() => setIsNewModalOpen(false)}
-        title="Yeni Araç Muayenesi & Registracija Kaydet"
-        subtitle="1 Yıllık sonraki muayene tarihi ve araç tescili otomatik yenilenecektir"
+        title={language === 'sr' ? 'Novi Tehnički Pregled i Registracija' : language === 'en' ? 'Log Annual Vehicle Inspection' : 'Yeni Araç Muayenesi & Registracija Kaydet'}
+        subtitle={language === 'sr' ? 'Datum sledećeg pregleda i registracija vozila biće automatski produženi za 1 godinu' : language === 'en' ? 'The next inspection date and registration will automatically be renewed for 1 year' : '1 Yıllık sonraki muayene tarihi ve araç tescili otomatik yenilenecektir'}
         maxWidth="lg"
       >
         {formError && (
@@ -312,7 +330,9 @@ function InspectionContent() {
         <form onSubmit={handleCreateSubmit} className="space-y-4">
           {/* Currency Toggle */}
           <div className="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-            <span className="text-xs font-bold text-slate-800">Muayene Masraf Para Birimi</span>
+            <span className="text-xs font-bold text-slate-800">
+              {language === 'sr' ? 'Valuta Troška Pregleda' : language === 'en' ? 'Inspection Cost Currency' : 'Muayene Masraf Para Birimi'}
+            </span>
             <div className="flex items-center gap-1 bg-white p-1 rounded-lg border border-slate-200">
               <button
                 type="button"
@@ -336,17 +356,21 @@ function InspectionContent() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Araç Seçiniz *</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              {language === 'sr' ? 'Izaberite Vozilo *' : language === 'en' ? 'Select Vehicle *' : 'Araç Seçiniz *'}
+            </label>
             <select
               required
               value={formVehicleId}
               onChange={(e) => setFormVehicleId(e.target.value)}
               className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-purple-500 font-bold"
             >
-              <option value="">-- Araç Seçin --</option>
+              <option value="">
+                {language === 'sr' ? '-- Izaberite Vozilo --' : language === 'en' ? '-- Select Vehicle --' : '-- Araç Seçin --'}
+              </option>
               {vehicles.map((v) => (
                 <option key={v.id} value={v.id}>
-                  {v.plate} – {v.brand} {v.model} (Ortak: {v.owner})
+                  {v.plate} – {v.brand} {v.model} ({v.owner})
                 </option>
               ))}
             </select>
@@ -354,7 +378,9 @@ function InspectionContent() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Muayene Tarihi *</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                {language === 'sr' ? 'Datum Pregleda *' : language === 'en' ? 'Inspection Date *' : 'Muayene Tarihi *'}
+              </label>
               <input
                 type="date"
                 required
@@ -365,7 +391,7 @@ function InspectionContent() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Muayene Ücreti ({currency}) *
+                {language === 'sr' ? `Cena Pregleda (${currency}) *` : language === 'en' ? `Inspection Fee (${currency}) *` : `Muayene Ücreti (${currency}) *`}
               </label>
               <input
                 type="number"
@@ -378,7 +404,9 @@ function InspectionContent() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Muayene İstasyonu (Belgrad) *</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              {language === 'sr' ? 'Stanica Tehničkog Pregleda (Beograd) *' : language === 'en' ? 'Inspection Station (Belgrade) *' : 'Muayene İstasyonu (Belgrad) *'}
+            </label>
             <input
               type="text"
               required
@@ -390,7 +418,9 @@ function InspectionContent() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Notlar / Tescil Bilgisi</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              {language === 'sr' ? 'Beleške / Detalji Registracije' : language === 'en' ? 'Notes / Registration Details' : 'Notlar / Tescil Bilgisi'}
+            </label>
             <textarea
               rows={2}
               value={formNotes}
@@ -405,14 +435,16 @@ function InspectionContent() {
               onClick={() => setIsNewModalOpen(false)}
               className="px-4 py-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer"
             >
-              Vazgeç
+              {t.common_cancel}
             </button>
             <button
               type="submit"
               disabled={formLoading}
               className="px-5 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-500 rounded-xl shadow-md cursor-pointer transition-colors disabled:opacity-50"
             >
-              {formLoading ? 'Kaydediliyor...' : 'Muayeneyi Kaydet (+1 Yıl)'}
+              {formLoading
+                ? (language === 'sr' ? 'Čuvanje...' : language === 'en' ? 'Saving...' : 'Kaydediliyor...')
+                : (language === 'sr' ? 'Sačuvaj Pregled (+1 Godina)' : language === 'en' ? 'Save Inspection (+1 Year)' : 'Muayeneyi Kaydet (+1 Yıl)')}
             </button>
           </div>
         </form>

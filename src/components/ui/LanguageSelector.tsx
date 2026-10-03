@@ -32,10 +32,10 @@ export function LanguageSelector({ variant = 'default' }: { variant?: 'default' 
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
           variant === 'landing'
-            ? 'bg-white/10 hover:bg-white/20 text-white border-white/20 shadow-xs backdrop-blur-xs'
-            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-amber-400 dark:hover:border-amber-400 shadow-xs'
+            ? 'bg-slate-100/90 hover:bg-slate-200/90 text-slate-800 border-slate-300 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white dark:border-white/20 shadow-xs backdrop-blur-xs'
+            : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 border-slate-300 dark:border-slate-700 hover:border-amber-400 dark:hover:border-amber-400 shadow-xs'
         }`}
         title="Dil Seçimi / Language / Jezik"
       >

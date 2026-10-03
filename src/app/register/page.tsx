@@ -23,7 +23,7 @@ import { useLanguage } from '@/lib/i18n';
 function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -125,7 +125,11 @@ function RegisterForm() {
           {t.auth_register}
         </h2>
         <p className="mt-1 text-center text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-          SaaS yöneticiniz tarafından şirketiniz için tanımlanan lisans koduyla hemen hesabınızı oluşturun.
+          {language === 'sr'
+            ? 'Kreirajte nalog pomoću koda licence koji vam je dodelio SaaS menadžer.'
+            : language === 'en'
+            ? 'Create your account using the fleet license code provided by your SaaS manager.'
+            : 'SaaS yöneticiniz tarafından şirketiniz için tanımlanan lisans koduyla hemen hesabınızı oluşturun.'}
         </p>
       </div>
 
@@ -135,7 +139,12 @@ function RegisterForm() {
           <div className="mb-5 p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-300 text-xs flex items-start gap-2.5">
             <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <div className="leading-relaxed">
-              <span className="font-bold">{t.auth_fleet_code} Zorunludur:</span> Filolar ve lisanslar SaaS yöneticisi tarafından kurulur. Size iletilen benzersiz kod ile firmanıza atanmış araç ve modülleri yönetebilirsiniz.
+              <span className="font-bold">{t.auth_fleet_code}:</span>{' '}
+              {language === 'sr'
+                ? 'Flote i licence konfiguriše SaaS administrator. Sa jedinstvenim kodom koji vam je prosleđen možete upravljati vozilima i modulima.'
+                : language === 'en'
+                ? 'Fleets and subscriptions are managed by SaaS administrator. You can access assigned vehicles and modules with your unique code.'
+                : 'Filolar ve lisanslar SaaS yöneticisi tarafından kurulur. Size iletilen benzersiz kod ile firmanıza atanmış araç ve modülleri yönetebilirsiniz.'}
             </div>
           </div>
 
@@ -166,19 +175,23 @@ function RegisterForm() {
                   required
                   value={fleetCode}
                   onChange={(e) => setFleetCode(e.target.value.toUpperCase())}
-                  placeholder="Örn: FL-7085"
+                  placeholder={language === 'sr' ? 'Npr: FL-7085' : language === 'en' ? 'e.g. FL-7085' : 'Örn: FL-7085'}
                   className="w-full pl-10 pr-4 py-2.5 bg-amber-50/40 dark:bg-amber-950/20 border border-amber-300 dark:border-amber-700 focus:border-amber-500 text-slate-900 dark:text-slate-100 font-mono font-bold tracking-wider text-sm rounded-xl outline-hidden uppercase transition-all"
                 />
               </div>
               <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 block">
-                SaaS yetkilinizden aldığınız şirket filo kodu
+                {language === 'sr'
+                  ? 'Kod flote dobijen od SaaS menadžera (+381 617 027 504)'
+                  : language === 'en'
+                  ? 'Fleet license code obtained from SaaS manager (+381 617 027 504)'
+                  : 'SaaS yetkilinizden aldığınız şirket filo kodu (+381 617 027 504)'}
               </span>
             </div>
 
             {/* Ad Soyad */}
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                Ad Soyad (Yetkili) *
+                {language === 'sr' ? 'Ime i Prezime (Ovlašćeno lice) *' : language === 'en' ? 'Full Name (Authorized Manager) *' : 'Ad Soyad (Yetkili) *'}
               </label>
               <div className="relative">
                 <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -187,7 +200,7 @@ function RegisterForm() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Örn: Ahmet Yılmaz"
+                  placeholder={language === 'sr' ? 'Npr: Marko Petrović' : language === 'en' ? 'e.g. John Doe' : 'Örn: Ahmet Yılmaz'}
                   className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm rounded-xl outline-hidden transition-all focus:border-amber-500"
                 />
               </div>
@@ -269,7 +282,7 @@ function RegisterForm() {
             {/* Şifre Tekrar */}
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                {t.auth_password} (Tekrar) *
+                {t.auth_password} ({language === 'sr' ? 'Potvrda' : language === 'en' ? 'Confirm' : 'Tekrar'}) *
               </label>
               <div className="relative">
                 <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -279,7 +292,7 @@ function RegisterForm() {
                   minLength={6}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Şifrenizi onaylayın"
+                  placeholder={language === 'sr' ? 'Potvrdite vašu lozinku' : language === 'en' ? 'Confirm your password' : 'Şifrenizi onaylayın'}
                   className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 text-sm rounded-xl outline-hidden transition-all font-mono focus:border-amber-500"
                 />
               </div>
@@ -294,7 +307,13 @@ function RegisterForm() {
                 <span className="w-5 h-5 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin" />
               ) : (
                 <>
-                  <span>Filo Hesabını Oluştur & Başla</span>
+                  <span>
+                    {language === 'sr'
+                      ? 'Kreiraj Nalog Flote i Započni'
+                      : language === 'en'
+                      ? 'Create Fleet Account & Start'
+                      : 'Filo Hesabını Oluştur & Başla'}
+                  </span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
@@ -303,13 +322,15 @@ function RegisterForm() {
 
           <div className="mt-6 pt-5 border-t border-slate-100 dark:border-slate-800 flex flex-col items-center gap-3 text-xs">
             <div>
-              <span className="text-slate-500 dark:text-slate-400">Zaten bir hesabınız var mı? </span>
+              <span className="text-slate-500 dark:text-slate-400">
+                {language === 'sr' ? 'Već imate nalog? ' : language === 'en' ? 'Already have an account? ' : 'Zaten bir hesabınız var mı? '}
+              </span>
               <Link href="/login" className="font-bold text-amber-600 dark:text-amber-400 hover:underline">
                 {t.auth_login}
               </Link>
             </div>
             <Link href="/" className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-              ← Tanıtım & Fiyatlandırma Sayfasına Dön
+              {language === 'sr' ? '← Nazad na početnu i cenovnik' : language === 'en' ? '← Back to Home & Pricing' : '← Tanıtım & Fiyatlandırma Sayfasına Dön'}
             </Link>
           </div>
         </div>

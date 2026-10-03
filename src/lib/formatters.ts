@@ -152,9 +152,15 @@ export function getVehicleStatusLabel(status: string, lang: 'tr' | 'en' | 'sr' =
     case 'AVAILABLE':
       return lang === 'sr' ? 'Slobodno (Spremno)' : lang === 'en' ? 'Available' : 'Boşta (Hazır)';
     case 'RENTED':
-      return lang === 'sr' ? 'U Zakupu (Kirada)' : lang === 'en' ? 'Rented' : 'Müşteride (Kirada)';
+      return lang === 'sr' ? 'U Najmu (Kirada)' : lang === 'en' ? 'Rented' : 'Kirada';
     case 'MAINTENANCE':
+    case 'IN_SERVICE':
       return lang === 'sr' ? 'U Servisu' : lang === 'en' ? 'In Maintenance' : 'Serviste';
+    case 'FAULT':
+    case 'DAMAGED':
+      return lang === 'sr' ? 'Sa Kvarom' : lang === 'en' ? 'Defective' : 'Arızalı';
+    case 'INSPECTION':
+      return lang === 'sr' ? 'Na Tehničkom' : lang === 'en' ? 'In Inspection' : 'Muayenede';
     case 'POST_RENTAL_CHECK':
       return lang === 'sr' ? 'Kontrola nakon Zakupa' : lang === 'en' ? 'Post-Rental Check' : 'Kira Sonu Kontrolü';
     default:
