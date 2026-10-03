@@ -296,6 +296,27 @@ export async function POST(req: Request) {
       assignedFleetId = primaryFleet?.id || null;
     }
 
+    // Vehicle Quota Check (Araç Sınırı / Kotası Denetimi)
+    if (!isSuper && assignedFleetId) {
+      const fleet = await prisma.fleet.findUnique({
+        where: { id: assignedFleetId },
+        select: { maxVehicles: true, name: true, code: true },
+      });
+      const maxLimit = fleet?.maxVehicles ?? 20;
+      const currentCount = await prisma.vehicle.count({
+        where: { fleetId: assignedFleetId, isDeleted: false },
+      });
+
+      if (currentCount >= maxLimit) {
+        return NextResponse.json(
+          {
+            error: `Araç kotası dolu! Filonuz için tanımlanan maksimum araç sınırına (${maxLimit} araç) ulaşıldı. Mevcut araç sayısı: ${currentCount}. Daha fazla araç eklemek için SaaS yöneticisi (+381 617 027 504) ile iletişime geçerek paketinizi yükseltiniz.`,
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     const vehicle = await prisma.vehicle.create({
       data: {
         plate,

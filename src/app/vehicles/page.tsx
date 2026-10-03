@@ -22,6 +22,8 @@ import {
   Sparkles,
   FileCheck2,
   ShieldAlert,
+  PhoneCall,
+  MessageSquare,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Modal } from '@/components/ui/Modal';
@@ -52,8 +54,24 @@ function VehiclesContent() {
 
   // New Vehicle Modal state
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
+  const [isQuotaModalOpen, setIsQuotaModalOpen] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const formatRemainingRental = (days: number | null, lang: 'tr' | 'en' | 'sr') => {
+    if (days === null) return '-';
+    if (days < 0) {
+      const d = Math.abs(days);
+      return lang === 'sr' ? `Kasni ${d} d.` : lang === 'en' ? `${d}d overdue` : `${d} gün gecikti`;
+    }
+    if (days === 0) {
+      return lang === 'sr' ? 'Danas se vraća' : lang === 'en' ? 'Due today' : 'Bugün teslim';
+    }
+    if (days === 1) {
+      return lang === 'sr' ? 'Sutra se vraća' : lang === 'en' ? 'Due tomorrow' : 'Yarın teslim';
+    }
+    return lang === 'sr' ? `Još ${days} dana` : lang === 'en' ? `${days} days left` : `${days} gün kaldı`;
+  };
 
   const oneYearLater = new Date();
   oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
@@ -247,6 +265,14 @@ function VehiclesContent() {
     return matchesSearch && matchesStatus && matchesOwner;
   });
 
+  const isSuper =
+    currentUser?.role === 'SUPER_ADMIN' ||
+    currentUser?.email === 'akif@filoyonetim.com' ||
+    currentUser?.email === 'gencaksoy@outlook.com';
+
+  const maxVehiclesLimit = currentUser?.maxVehicles ?? 20;
+  const isQuotaFull = !isSuper && totalCount >= maxVehiclesLimit;
+
   return (
     <AppLayout currentUser={currentUser} requiredFeature="vehicles">
       {/* Header & Actions */}
@@ -256,28 +282,56 @@ function VehiclesContent() {
             <Car className="w-6 h-6 text-amber-500" />
             {t.veh_title}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-300 font-medium">
             {t.veh_subtitle}
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            const isPartnership = currentUser?.isPartnership ?? false;
-            const partners = currentUser?.partners || [];
-            const defaultOwner = isPartnership ? (partners[0] || '') : (currentUser?.fleetName || '');
-            setFormData({
-              ...initialForm,
-              owner: defaultOwner,
-            });
-            setFormError(null);
-            setIsNewModalOpen(true);
-          }}
-          className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs sm:text-sm font-bold rounded-xl shadow-md shadow-amber-500/20 transition-all cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          {t.veh_add_new}
-        </button>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Quota Limit Badge */}
+          <div
+            className={`px-3 py-2 rounded-xl text-xs font-bold border flex items-center gap-2 ${
+              isQuotaFull
+                ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800 shadow-xs'
+                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 shadow-xs'
+            }`}
+            title={language === 'sr' ? `Trenutno: ${totalCount} / Limit: ${maxVehiclesLimit}` : language === 'en' ? `Current: ${totalCount} / Limit: ${maxVehiclesLimit}` : `Mevcut: ${totalCount} / Limit: ${maxVehiclesLimit}`}
+          >
+            <span className="text-[11px] uppercase tracking-wider">{language === 'sr' ? 'Kvota Flote:' : language === 'en' ? 'Fleet Quota:' : 'Araç Kotası:'}</span>
+            <span className="font-mono font-black">{totalCount} / {isSuper ? '∞' : maxVehiclesLimit}</span>
+            {isQuotaFull && (
+              <span className="px-1.5 py-0.5 rounded text-[10px] bg-rose-600 text-white font-extrabold uppercase animate-pulse">
+                {language === 'sr' ? 'PUNO' : language === 'en' ? 'FULL' : 'DOLU'}
+              </span>
+            )}
+          </div>
+
+          <button
+            onClick={() => {
+              if (isQuotaFull) {
+                setIsQuotaModalOpen(true);
+                return;
+              }
+              const isPartnership = currentUser?.isPartnership ?? false;
+              const partners = currentUser?.partners || [];
+              const defaultOwner = isPartnership ? (partners[0] || '') : (currentUser?.fleetName || '');
+              setFormData({
+                ...initialForm,
+                owner: defaultOwner,
+              });
+              setFormError(null);
+              setIsNewModalOpen(true);
+            }}
+            className={`inline-flex items-center gap-1.5 px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl shadow-md transition-all cursor-pointer ${
+              isQuotaFull
+                ? 'bg-amber-500/80 hover:bg-amber-500 text-slate-950 shadow-amber-500/10'
+                : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20'
+            }`}
+          >
+            <Plus className="w-4 h-4" />
+            {t.veh_add_new}
+          </button>
+        </div>
       </div>
 
       {/* Category / Status Tabs (Hızlı Sekmeler) */}
@@ -490,7 +544,7 @@ function VehiclesContent() {
                   <th className="py-3 px-4">{t.veh_card_fuel}</th>
                   <th className="py-3 px-4">{t.dash_col_regi}</th>
                   <th className="py-3 px-4">{t.common_status}</th>
-                  <th className="py-3 px-4">{t.cust_col_active_car}</th>
+                  <th className="py-3 px-4">{language === 'sr' ? 'Klijent / Vozač' : language === 'en' ? 'Client / Driver' : 'Müşteri / Sürücü'}</th>
                   <th className="py-3 px-4">{language === 'sr' ? 'Preostalo Vreme' : language === 'en' ? 'Remaining Time' : 'Kalan Süre'}</th>
                   <th className="py-3 px-4">{language === 'sr' ? 'Poslednji Servis' : language === 'en' ? 'Last Service' : 'Son Bakım & Masraf'}</th>
                   <th className="py-3 px-4 text-right">{t.common_actions}</th>
@@ -680,7 +734,7 @@ function VehiclesContent() {
                             <Link
                               href={`/customers?search=${encodeURIComponent(v.activeRental.customerName)}`}
                               className="font-bold text-slate-900 dark:text-white hover:text-amber-600 dark:hover:text-amber-400 hover:underline flex items-center gap-1 group/c"
-                              title={`${v.activeRental.customerName} müşterisinin detayına git`}
+                              title={language === 'sr' ? `Otvori profil klijenta ${v.activeRental.customerName}` : language === 'en' ? `View profile of ${v.activeRental.customerName}` : `${v.activeRental.customerName} müşterisinin detayına git`}
                             >
                               <span>{v.activeRental.customerName}</span>
                               <span className="text-[10px] text-amber-600 opacity-0 group-hover/c:opacity-100 transition-opacity">↗</span>
@@ -714,7 +768,7 @@ function VehiclesContent() {
                             }`}
                           >
                             <Clock className="w-3 h-3 mr-1" />
-                            {v.activeRental.remainingText}
+                            {formatRemainingRental(v.activeRental.remainingDays, language)}
                           </span>
                         ) : (
                           <span className="text-slate-400">-</span>
@@ -1072,6 +1126,78 @@ function VehiclesContent() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Quota Full Warning Modal */}
+      <Modal
+        isOpen={isQuotaModalOpen}
+        onClose={() => setIsQuotaModalOpen(false)}
+        title={language === 'sr' ? 'Dostignut Limit Vozila Flote' : language === 'en' ? 'Fleet Vehicle Quota Full' : 'Araç Kotası Doldu'}
+        subtitle={language === 'sr' ? `Vaša flota ima definisan limit od ${maxVehiclesLimit} vozila.` : language === 'en' ? `Your fleet has a maximum quota limit of ${maxVehiclesLimit} vehicles.` : `Filonuz için tanımlanan maksimum araç kotası: ${maxVehiclesLimit} araç.`}
+        maxWidth="lg"
+      >
+        <div className="space-y-4 py-2">
+          <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-950 dark:text-rose-200 flex items-start gap-3">
+            <ShieldAlert className="w-6 h-6 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+            <div className="text-xs sm:text-sm leading-relaxed">
+              <div className="font-bold text-rose-900 dark:text-rose-100 mb-1">
+                {language === 'sr'
+                  ? `Dostigli ste limit flote (${totalCount} / ${maxVehiclesLimit} vozila)`
+                  : language === 'en'
+                  ? `You have reached the fleet quota (${totalCount} / ${maxVehiclesLimit} vehicles)`
+                  : `Araç limitine ulaştınız (${totalCount} / ${maxVehiclesLimit} araç)`}
+              </div>
+              <p className="text-rose-800/90 dark:text-rose-300/90">
+                {language === 'sr'
+                  ? 'SaaS Super Administrator je postavio ovaj limit za vašu firmu. Da biste dodali nova vozila u sistem, potrebno je da nadogradite paket ili kontaktirate menadžera sistema.'
+                  : language === 'en'
+                  ? 'SaaS Super Administrator has set this limit for your fleet. To add more vehicles, please upgrade your fleet package or contact the system manager.'
+                  : 'SaaS Süper Yöneticisi filonuz için bu araç limitini tanımlamıştır. Sisteme yeni araç eklemek için lütfen paket yükseltme talebinde bulunun veya sistem yöneticisiyle iletişime geçin.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                {language === 'sr' ? 'Kontakt SaaS Menadžera / WhatsApp:' : language === 'en' ? 'SaaS Manager Contact / WhatsApp:' : 'SaaS Yöneticisi İletişim / WhatsApp:'}
+              </div>
+              <div className="text-sm font-black font-mono text-slate-900 dark:text-white mt-0.5">
+                +381 617 027 504
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <a
+                href="https://wa.me/381617027504?text=Merhaba%2C%20filo%20ara%C3%A7%20kotam%C4%B1z%20doldu.%20Yeni%20ara%C3%A7%20eklemek%20i%C3%A7in%20limit%20art%C4%B1r%C4%B1m%C4%B1%20talep%20ediyoruz."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
+              >
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span>WhatsApp</span>
+              </a>
+
+              <a
+                href="tel:+381617027504"
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white rounded-xl text-xs font-bold shadow-xs transition-colors cursor-pointer"
+              >
+                <PhoneCall className="w-3.5 h-3.5" />
+                <span>{language === 'sr' ? 'Pozovi' : language === 'en' ? 'Call' : 'Ara'}</span>
+              </a>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <button
+              type="button"
+              onClick={() => setIsQuotaModalOpen(false)}
+              className="px-5 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl cursor-pointer"
+            >
+              {t.common_close}
+            </button>
+          </div>
+        </div>
       </Modal>
     </AppLayout>
   );

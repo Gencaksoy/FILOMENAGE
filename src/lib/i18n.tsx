@@ -1315,24 +1315,49 @@ const LanguageContext = createContext<LanguageContextType>({
 });
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>('tr');
+  const [language, setLanguageState] = useState<Language>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('filo_language') as Language;
+        if (saved === 'tr' || saved === 'en' || saved === 'sr') {
+          return saved;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return 'tr';
+  });
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('filo_language') as Language;
-      if (saved === 'tr' || saved === 'en' || saved === 'sr') {
-        setLanguageState(saved);
+    const handleSync = () => {
+      try {
+        const saved = localStorage.getItem('filo_language') as Language;
+        if (saved && (saved === 'tr' || saved === 'en' || saved === 'sr')) {
+          setLanguageState(saved);
+          document.documentElement.lang = saved;
+        }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
-    }
+    };
+
+    handleSync();
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('filo_language_change', handleSync);
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('filo_language_change', handleSync);
+    };
   }, []);
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
     try {
       localStorage.setItem('filo_language', lang);
+      document.cookie = `filo_language=${lang}; path=/; max-age=31536000; SameSite=Lax`;
       document.documentElement.lang = lang;
+      window.dispatchEvent(new Event('filo_language_change'));
     } catch {
       // ignore
     }

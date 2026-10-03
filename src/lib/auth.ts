@@ -37,6 +37,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
             isPartnership: true,
             partners: true,
             features: true,
+            maxVehicles: true,
           },
         },
       },
@@ -77,6 +78,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
       isPartnership: dbUser.fleet?.isPartnership ?? false,
       partners: parsedPartners,
       features: parsedFeatures,
+      maxVehicles: dbUser.fleet?.maxVehicles ?? 20,
     };
   } catch {
     return null;

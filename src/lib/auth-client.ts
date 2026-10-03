@@ -12,6 +12,7 @@ export interface AuthUser {
   isPartnership?: boolean;
   partners?: string[];
   features?: Record<string, boolean>;
+  maxVehicles?: number;
 }
 
 export const DEFAULT_FEATURES: Record<string, boolean> = {

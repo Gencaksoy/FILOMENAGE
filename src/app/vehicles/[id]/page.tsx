@@ -2028,11 +2028,13 @@ export default function VehicleDetailPage() {
                                   : 'bg-slate-100 text-slate-700'
                               }`}
                             >
-                              {r.status === 'ACTIVE' ? 'Aktif' : 'Tamamlandı'}
+                              {r.status === 'ACTIVE'
+                                ? (language === 'sr' ? 'Aktivan' : language === 'en' ? 'Active' : 'Aktif')
+                                : (language === 'sr' ? 'Završeno' : language === 'en' ? 'Completed' : 'Tamamlandı')}
                             </span>
                           </td>
                           <td className="py-2.5 px-3 font-mono text-xs">
-                            {r.startKm ? formatKm(r.startKm) : '-'} / {r.returnKm ? formatKm(r.returnKm) : 'Müşteride'}
+                            {r.startKm ? formatKm(r.startKm) : '-'} / {r.returnKm ? formatKm(r.returnKm) : (language === 'sr' ? 'Kod klijenta' : language === 'en' ? 'With client' : 'Müşteride')}
                           </td>
                           <td className="py-2.5 px-3 text-right">
                             <button
@@ -2040,7 +2042,7 @@ export default function VehicleDetailPage() {
                               className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg cursor-pointer transition-colors"
                             >
                               <Camera className="w-3 h-3 text-amber-600" />
-                              Fotoğraflar
+                              {language === 'sr' ? 'Fotografije' : language === 'en' ? 'Photos' : 'Fotoğraflar'}
                             </button>
                           </td>
                         </tr>
