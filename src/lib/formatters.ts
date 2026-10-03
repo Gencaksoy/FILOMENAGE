@@ -1,52 +1,87 @@
 export const EUR_TO_RSD_RATE = 117; // 1 EUR = 117 RSD sabit kur
+export const SERBIA_TIMEZONE = 'Europe/Belgrade'; // Sırbistan saat dilimi (CET/CEST)
 
 export function formatDate(date: string | Date | null | undefined): string {
   if (!date) return '-';
   const d = new Date(date);
   if (isNaN(d.getTime())) return '-';
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const year = d.getFullYear();
-  return `${day}.${month}.${year}`;
+  try {
+    const parts = new Intl.DateTimeFormat('sr-Latn-RS', {
+      timeZone: SERBIA_TIMEZONE,
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).formatToParts(d);
+    const day = parts.find((p) => p.type === 'day')?.value || String(d.getDate()).padStart(2, '0');
+    const month = parts.find((p) => p.type === 'month')?.value || String(d.getMonth() + 1).padStart(2, '0');
+    const year = parts.find((p) => p.type === 'year')?.value || String(d.getFullYear());
+    return `${day}.${month}.${year}`;
+  } catch {
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}.${month}.${year}`;
+  }
 }
 
 export function formatDateTime(date: string | Date | null | undefined): string {
   if (!date) return '-';
   const d = new Date(date);
   if (isNaN(d.getTime())) return '-';
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const year = d.getFullYear();
-  const hours = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  return `${day}.${month}.${year} ${hours}:${minutes}`;
+  try {
+    const parts = new Intl.DateTimeFormat('sr-Latn-RS', {
+      timeZone: SERBIA_TIMEZONE,
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).formatToParts(d);
+    const day = parts.find((p) => p.type === 'day')?.value || String(d.getDate()).padStart(2, '0');
+    const month = parts.find((p) => p.type === 'month')?.value || String(d.getMonth() + 1).padStart(2, '0');
+    const year = parts.find((p) => p.type === 'year')?.value || String(d.getFullYear());
+    const hour = parts.find((p) => p.type === 'hour')?.value || String(d.getHours()).padStart(2, '0');
+    const minute = parts.find((p) => p.type === 'minute')?.value || String(d.getMinutes()).padStart(2, '0');
+    return `${day}.${month}.${year} ${hour}:${minute}`;
+  } catch {
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    return `${day}.${month}.${year} ${hours}:${minutes}`;
+  }
 }
 
 export function formatCurrency(amount: number | null | undefined, currency: string = '€'): string {
-  if (amount === null || amount === undefined) return `0 ${currency}`;
+  if (amount === null || amount === undefined || isNaN(Number(amount))) return `0 ${currency}`;
+  const num = Number(amount);
   const symbol = currency === 'EUR' ? '€' : currency === 'RSD' ? 'RSD' : currency;
   return `${new Intl.NumberFormat('de-DE', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
-  }).format(amount)} ${symbol}`;
+  }).format(num)} ${symbol}`;
 }
 
 export function formatRsd(amount: number | null | undefined): string {
-  if (amount === null || amount === undefined) return '0 RSD';
-  return `${new Intl.NumberFormat('de-DE', { maximumFractionDigits: 0 }).format(amount)} RSD`;
+  if (amount === null || amount === undefined || isNaN(Number(amount))) return '0 RSD';
+  return `${new Intl.NumberFormat('de-DE', { maximumFractionDigits: 0 }).format(Number(amount))} RSD`;
 }
 
 export function formatKm(km: number | null | undefined): string {
-  if (km === null || km === undefined) return '0 KM';
-  return `${new Intl.NumberFormat('de-DE').format(km)} KM`;
+  if (km === null || km === undefined || isNaN(Number(km))) return '0 KM';
+  return `${new Intl.NumberFormat('de-DE').format(Number(km))} KM`;
 }
 
 export function rsdToEur(rsd: number): number {
-  return Math.round((rsd / EUR_TO_RSD_RATE) * 100) / 100;
+  if (!rsd || isNaN(rsd)) return 0;
+  return Math.round((Number(rsd) / EUR_TO_RSD_RATE) * 100) / 100;
 }
 
 export function eurToRsd(eur: number): number {
-  return Math.round(eur * EUR_TO_RSD_RATE);
+  if (!eur || isNaN(eur)) return 0;
+  return Math.round(Number(eur) * EUR_TO_RSD_RATE);
 }
 
 export function getCompanyNameForOwner(owner?: string | null, fallback: string = 'Filo Yönetim'): string {
@@ -111,6 +146,22 @@ export const VEHICLE_STATUS_MAP: Record<string, { label: string; bg: string; tex
     text: 'text-purple-700',
   },
 };
+
+export function getVehicleStatusLabel(status: string, lang: 'tr' | 'en' | 'sr' = 'tr'): string {
+  switch (status) {
+    case 'AVAILABLE':
+      return lang === 'sr' ? 'Slobodno (Spremno)' : lang === 'en' ? 'Available' : 'Boşta (Hazır)';
+    case 'RENTED':
+      return lang === 'sr' ? 'U Zakupu (Kirada)' : lang === 'en' ? 'Rented' : 'Müşteride (Kirada)';
+    case 'MAINTENANCE':
+      return lang === 'sr' ? 'U Servisu' : lang === 'en' ? 'In Maintenance' : 'Serviste';
+    case 'POST_RENTAL_CHECK':
+      return lang === 'sr' ? 'Kontrola nakon Zakupa' : lang === 'en' ? 'Post-Rental Check' : 'Kira Sonu Kontrolü';
+    default:
+      return status;
+  }
+}
+
 
 export function generateParkingFineWhatsAppUrl(
   customerPhone?: string | null,

@@ -35,7 +35,7 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose, unreadCount = 0, userRole, currentUser: propUser }: SidebarProps) {
   const pathname = usePathname();
   const { user: authUser } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   // Prefer propUser, fallback to cached authUser so there is NEVER a null flash on navigation
   const currentUser = propUser || authUser;
@@ -201,11 +201,14 @@ export function Sidebar({ isOpen, onClose, unreadCount = 0, userRole, currentUse
                 <span className="font-bold text-white block truncate">
                   {currentUser?.fleetName || 'Beograd Operasyon'}
                 </span>
-                <span className="text-[10px] text-slate-400 font-mono">1 EUR = 117 RSD</span>
+                <span className="text-[10px] text-amber-400 font-mono font-semibold">
+                  {language === 'sr' ? 'Kod Flote: ' : language === 'en' ? 'Fleet Code: ' : 'Filo Kodu: '}
+                  <span className="text-white font-bold">{currentUser?.fleetCode || '-'}</span>
+                </span>
               </div>
             </div>
             {currentUser?.fleetCode && (
-              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-mono font-bold bg-amber-400/10 text-amber-300 border border-amber-400/20 shrink-0">
+              <span className="px-1.5 py-0.5 rounded-md text-[9px] font-mono font-black bg-amber-400/15 text-amber-300 border border-amber-400/30 shrink-0">
                 {currentUser.fleetCode}
               </span>
             )}

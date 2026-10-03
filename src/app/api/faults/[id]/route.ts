@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { logAudit } from '@/lib/audit';
 import { getSessionUser } from '@/lib/auth';
 
+import { EUR_TO_RSD_RATE } from '@/lib/formatters';
+
 export const dynamic = 'force-dynamic';
 
 // GET /api/faults/[id]
@@ -58,8 +60,18 @@ export async function PUT(
     if (title !== undefined) updateData.title = title.trim();
     if (description !== undefined) updateData.description = description?.trim() || null;
     if (severity !== undefined) updateData.severity = severity;
-    if (cost !== undefined) updateData.cost = cost !== null ? parseFloat(cost) : null;
     if (currency !== undefined) updateData.currency = currency;
+    if (cost !== undefined) {
+      if (cost === null || cost === '') {
+        updateData.cost = null;
+      } else {
+        const rawCost = parseFloat(cost) || 0;
+        const effCurrency = currency || existing.currency || 'EUR';
+        updateData.cost = effCurrency === 'RSD'
+          ? Math.round((rawCost / EUR_TO_RSD_RATE) * 100) / 100
+          : rawCost;
+      }
+    }
 
     if (status === 'RESOLVED') {
       updateData.resolvedDate = new Date();

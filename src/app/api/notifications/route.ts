@@ -36,7 +36,6 @@ async function syncLiveNotifications(targetFleetId?: string | null) {
             fleetId: vFleetId,
             type: 'DANGER',
             title: { contains: 'Gecikti' },
-            isRead: false,
           },
         });
 
@@ -62,7 +61,6 @@ async function syncLiveNotifications(targetFleetId?: string | null) {
             fleetId: vFleetId,
             type: 'WARNING',
             title: { contains: 'Araç İadesi' },
-            isRead: false,
           },
         });
 
@@ -105,7 +103,6 @@ async function syncLiveNotifications(targetFleetId?: string | null) {
           targetPlate: ticket.plate,
           fleetId: tFleetId,
           title: { contains: 'Park Cezası' },
-          isRead: false,
         },
       });
 
@@ -156,7 +153,6 @@ async function syncLiveNotifications(targetFleetId?: string | null) {
             targetPlate: v.plate,
             fleetId: vFleetId,
             title: { contains: 'Registracija' },
-            isRead: false,
           },
         });
 
@@ -201,7 +197,6 @@ async function syncLiveNotifications(targetFleetId?: string | null) {
             targetPlate: insp.vehicle.plate,
             fleetId: vFleetId,
             title: { contains: 'Muayene' },
-            isRead: false,
           },
         });
 
@@ -244,7 +239,6 @@ async function syncLiveNotifications(targetFleetId?: string | null) {
           targetPlate: fault.vehicle.plate,
           fleetId: vFleetId,
           title: { contains: 'Arızası' },
-          isRead: false,
         },
       });
 
@@ -328,5 +322,38 @@ export async function PUT(req: Request) {
   } catch (error) {
     console.error('Notifications PUT error:', error);
     return NextResponse.json({ error: 'Güncellenemedi.' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const currentUser = await getCurrentUser();
+    const isSuper =
+      currentUser &&
+      (currentUser.role === 'SUPER_ADMIN' ||
+        currentUser.email === 'akif@filoyonetim.com' ||
+        currentUser.email === 'gencaksoy@outlook.com');
+
+    const fleetCondition = !isSuper && currentUser?.fleetId ? { fleetId: currentUser.fleetId } : {};
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+    const clearAll = searchParams.get('clearAll') === 'true';
+
+    if (clearAll) {
+      await prisma.notification.deleteMany({
+        where: fleetCondition,
+      });
+      return NextResponse.json({ success: true, message: 'Tüm bildirimler temizlendi.' });
+    } else if (id) {
+      await prisma.notification.deleteMany({
+        where: { id, ...fleetCondition },
+      });
+      return NextResponse.json({ success: true, message: 'Bildirim silindi.' });
+    }
+
+    return NextResponse.json({ error: 'Geçersiz istek.' }, { status: 400 });
+  } catch (error) {
+    console.error('Notifications DELETE error:', error);
+    return NextResponse.json({ error: 'Bildirim silinemedi.' }, { status: 500 });
   }
 }

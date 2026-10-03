@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 const defaultSettings: Record<string, string> = {
   company_name: 'Filo Yönetim & Rent a Car',
-  company_phone: '+381 11 123 4567',
+  company_phone: '+381 617 027 504',
   company_email: 'operasyon@filoyonetim.com',
   default_currency: 'EUR',
   maintenance_interval_months: '1',

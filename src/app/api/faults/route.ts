@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { logAudit } from '@/lib/audit';
 import { getSessionUser } from '@/lib/auth';
 
+import { EUR_TO_RSD_RATE } from '@/lib/formatters';
+
 export const dynamic = 'force-dynamic';
 
 // GET /api/faults - List faults
@@ -90,7 +92,11 @@ export async function POST(req: Request) {
         severity: severity || 'MEDIUM',
         status: 'OPEN',
         reportedBy: reportedBy?.trim() || currentUser?.name || 'Belirtilmedi',
-        cost: cost ? parseFloat(cost) : null,
+        cost: cost
+          ? currency === 'RSD'
+            ? Math.round(((parseFloat(cost) || 0) / EUR_TO_RSD_RATE) * 100) / 100
+            : parseFloat(cost) || 0
+          : null,
         currency: currency || 'EUR',
         reportedDate: new Date(),
       },

@@ -6,6 +6,7 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { AuthUser, isSuperAdmin } from '@/lib/auth-client';
 import { useAuth } from '@/lib/auth-context';
+import { useLanguage } from '@/lib/i18n';
 import { triggerNotificationAlertOnce } from '@/lib/soundAlert';
 import {
   ShieldAlert,
@@ -48,6 +49,7 @@ export function AppLayout({
   adminOnly = false,
   superAdminOnly = false,
 }: AppLayoutProps) {
+  const { t, language } = useLanguage();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [liveUnreadCount, setLiveUnreadCount] = useState<number>(initialUnreadCount);
   const chimeTriggeredRef = useRef(false);
@@ -185,20 +187,20 @@ export function AppLayout({
 
                 <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
                   <a
-                    href="tel:+381111234567"
-                    className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white hover:bg-slate-50 text-rose-900 border border-rose-300 rounded-xl text-xs font-bold transition-all shadow-xs"
+                    href="tel:+381617027504"
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-rose-900 dark:text-rose-200 border border-rose-300 dark:border-rose-800 rounded-xl text-xs font-bold transition-all shadow-xs"
                   >
                     <PhoneCall className="w-4 h-4 text-rose-600" />
-                    <span>Yetkiliyi Ara</span>
+                    <span>{language === 'sr' ? 'Pozovite Podršku' : language === 'en' ? 'Call Support' : 'Yetkiliyi Ara'}</span>
                   </a>
                   <a
-                    href="https://wa.me/381659988771?text=Merhaba,%20filo%20lisans%20yenileme%20hakkında%20bilgi%20almak%20istiyorum."
+                    href="https://wa.me/381617027504?text=Merhaba,%20filo%20lisans%20yenileme%20hakkında%20bilgi%20almak%20istiyorum."
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition-all shadow-md"
                   >
                     <MessageSquare className="w-4 h-4" />
-                    <span>Ödemeyi Yenile (WhatsApp)</span>
+                    <span>{language === 'sr' ? 'Obnovi Licencu (WhatsApp)' : language === 'en' ? 'Renew License (WhatsApp)' : 'Ödemeyi Yenile (WhatsApp)'}</span>
                   </a>
                 </div>
               </div>
@@ -207,53 +209,54 @@ export function AppLayout({
 
           {/* Sayfa Erişim Engeli & Modül Kapalı Ekranı */}
           {accessDeniedReason ? (
-            <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-6 sm:p-12 bg-white rounded-3xl border border-slate-200 shadow-sm animate-in fade-in">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-rose-50 border-2 border-rose-200 text-rose-600 flex items-center justify-center mb-6 shadow-inner">
+            <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-6 sm:p-12 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm animate-in fade-in">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-3xl bg-rose-50 dark:bg-rose-950/40 border-2 border-rose-200 dark:border-rose-900 text-rose-600 flex items-center justify-center mb-6 shadow-inner">
                 {accessDeniedReason.type === 'featureDisabled' ? (
-                  <Lock className="w-8 h-8 sm:w-10 sm:h-10 text-amber-600" />
+                  <Lock className="w-8 h-8 sm:w-10 sm:h-10 text-amber-600 dark:text-amber-400" />
                 ) : (
-                  <ShieldAlert className="w-8 h-8 sm:w-10 sm:h-10 text-rose-600" />
+                  <ShieldAlert className="w-8 h-8 sm:w-10 sm:h-10 text-rose-600 dark:text-rose-400" />
                 )}
               </div>
 
               {accessDeniedReason.featureTitle && (
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200 mb-3">
-                  <Lock className="w-3 h-3 text-amber-600" />
-                  <span>Modül: {accessDeniedReason.featureTitle}</span>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 mb-3">
+                  <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                  <span>{language === 'sr' ? 'Modul: ' : language === 'en' ? 'Module: ' : 'Modül: '}{accessDeniedReason.featureTitle}</span>
                 </div>
               )}
 
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight max-w-xl">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight max-w-xl">
                 {accessDeniedReason.title}
               </h1>
 
-              <p className="mt-3 text-xs sm:text-sm text-slate-600 max-w-lg leading-relaxed">
+              <p className="mt-3 text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-lg leading-relaxed">
                 {accessDeniedReason.description}
               </p>
 
               {currentUser?.fleetCode && (
-                <div className="mt-4 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-600">
-                  Filo: <span className="font-bold text-slate-900">{currentUser.fleetName}</span> ({currentUser.fleetCode})
+                <div className="mt-4 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-mono text-slate-600 dark:text-slate-300">
+                  {language === 'sr' ? 'Flota: ' : language === 'en' ? 'Fleet: ' : 'Filo: '}
+                  <span className="font-bold text-slate-900 dark:text-white">{currentUser.fleetName}</span> ({currentUser.fleetCode})
                 </div>
               )}
 
               <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                 <Link
                   href="/"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-sm"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs sm:text-sm font-bold rounded-xl transition-all shadow-sm"
                 >
                   <Home className="w-4 h-4" />
-                  <span>Dashboard&apos;a Dön</span>
+                  <span>{language === 'sr' ? 'Nazad na Kontrolnu tablu' : language === 'en' ? 'Back to Dashboard' : 'Dashboard\'a Dön'}</span>
                 </Link>
 
                 <a
-                  href="https://wa.me/381659988771?text=Merhaba,%20filo%20modül%20erişimi%20ve%20yetkilendirme%20hakkında%20bilgi%20almak%20istiyorum."
+                  href="https://wa.me/381617027504?text=Merhaba,%20filo%20modül%20erişimi%20ve%20yetkilendirme%20hakkında%20bilgi%20almak%20istiyorum."
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs sm:text-sm font-bold rounded-xl transition-all shadow-sm"
                 >
                   <MessageSquare className="w-4 h-4" />
-                  <span>SaaS Yöneticisine Ulaş (WhatsApp)</span>
+                  <span>{language === 'sr' ? 'Kontaktirajte Nas (WhatsApp)' : language === 'en' ? 'Contact Us (WhatsApp)' : 'Bizimle İletişime Geçin (WhatsApp)'}</span>
                 </a>
               </div>
             </div>
