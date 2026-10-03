@@ -15,7 +15,7 @@ import {
 import { AppLayout } from '@/components/layout/AppLayout';
 import { formatDate, formatDateTime } from '@/lib/formatters';
 import { exportToExcel, exportToCSV } from '@/lib/exportExcel';
-import { AuthUser } from '@/lib/auth';
+import { AuthUser } from '@/lib/auth-client';
 
 function formatFriendlyAudit(log: any): { actionTitle: string; friendlyDesc: string; badgeStyle: string } {
   const action = (log.action || '').toUpperCase();
@@ -198,7 +198,7 @@ export default function AuditLogsPage() {
   };
 
   return (
-    <AppLayout currentUser={currentUser}>
+    <AppLayout currentUser={currentUser} requiredFeature="auditLogs" adminOnly={true}>
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2">

@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: 'class',
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -9,6 +10,24 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        pine: {
+          50: "#f0f7f7",
+          100: "#d9eded",
+          200: "#b3dbdb",
+          300: "#80c2c2",
+          400: "#3d9e9e",
+          500: "#006666",
+          600: "#004d4d",
+          700: "#003838", // Filorapor primary deep pine
+          800: "#002828",
+          900: "#001a1a",
+          950: "#000f0f",
+        },
+        chartreuse: {
+          400: "#d4d14b",
+          500: "#c5c23d", // Filorapor warm lime accent
+          600: "#aba82a",
+        },
         navy: {
           50: "#f0f4f9",
           100: "#dbe4f0",

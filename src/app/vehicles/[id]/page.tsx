@@ -53,7 +53,7 @@ import {
   EUR_TO_RSD_RATE,
   generateParkingFineWhatsAppUrl,
 } from '@/lib/formatters';
-import { AuthUser } from '@/lib/auth';
+import { AuthUser } from '@/lib/auth-client';
 
 interface PartItem {
   partName: string;
@@ -933,7 +933,7 @@ export default function VehicleDetailPage() {
   }
 
   return (
-    <AppLayout currentUser={currentUser}>
+    <AppLayout currentUser={currentUser} requiredFeature="vehicles">
       {/* Top Breadcrumb & Action Buttons */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-2 text-xs">

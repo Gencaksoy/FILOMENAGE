@@ -8,12 +8,15 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request) {
   try {
     const currentUser = await getSessionUser();
-    const isStaff = currentUser?.role === 'STAFF';
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Oturum açmanız gerekmektedir.' }, { status: 401 });
+    }
+
+    const isStaff = currentUser.role === 'STAFF';
     const isSuper =
-      currentUser &&
-      (currentUser.role === 'SUPER_ADMIN' ||
-        currentUser.email === 'akif@filoyonetim.com' ||
-        currentUser.email === 'gencaksoy@outlook.com');
+      currentUser.role === 'SUPER_ADMIN' ||
+      currentUser.email === 'akif@filoyonetim.com' ||
+      currentUser.email === 'gencaksoy@outlook.com';
 
     const { searchParams } = new URL(req.url);
     const ownerFilter = searchParams.get('owner') || 'ALL';
@@ -22,7 +25,10 @@ export async function GET(req: Request) {
     const conditions: any[] = [{ isDeleted: false }];
 
     // Filo İzolasyonu (Multi-tenancy):
-    if (!isSuper && currentUser?.fleetId) {
+    if (!isSuper) {
+      if (!currentUser.fleetId) {
+        return NextResponse.json({ error: 'Bağlı bir filo bulunamadı.' }, { status: 403 });
+      }
       conditions.push({ fleetId: currentUser.fleetId });
     }
 
@@ -33,7 +39,7 @@ export async function GET(req: Request) {
     const where = { AND: conditions };
 
     const ownersConditions: any[] = [{ isDeleted: false }];
-    if (!isSuper && currentUser?.fleetId) {
+    if (!isSuper && currentUser.fleetId) {
       ownersConditions.push({ fleetId: currentUser.fleetId });
     }
     const ownersWhere = { AND: ownersConditions };

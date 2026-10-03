@@ -19,7 +19,7 @@ import {
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Modal } from '@/components/ui/Modal';
 import { formatDate, formatDateTime, formatCurrency, formatRsd, EUR_TO_RSD_RATE } from '@/lib/formatters';
-import { AuthUser } from '@/lib/auth';
+import { AuthUser } from '@/lib/auth-client';
 
 function InspectionContent() {
   const searchParams = useSearchParams();
@@ -129,7 +129,7 @@ function InspectionContent() {
   });
 
   return (
-    <AppLayout currentUser={currentUser}>
+    <AppLayout currentUser={currentUser} requiredFeature="inspection">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>

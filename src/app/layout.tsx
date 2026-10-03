@@ -36,6 +36,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { ClientProviders } from '@/components/providers/ClientProviders';
+
 export default function RootLayout({
   children,
 }: {
@@ -56,9 +58,11 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Filo Yönetim" />
       </head>
-      <body className="antialiased font-sans bg-slate-50 text-slate-900 selection:bg-amber-500 selection:text-slate-950">
-        {children}
-        <IosInstallPrompt />
+      <body className="antialiased font-sans bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-amber-500 selection:text-slate-950 transition-colors">
+        <ClientProviders>
+          {children}
+          <IosInstallPrompt />
+        </ClientProviders>
       </body>
     </html>
   );

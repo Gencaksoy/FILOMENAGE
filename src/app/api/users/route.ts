@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
+import { validatePassword, validateRealisticEmail } from '@/lib/validation';
+import { verifyEmailDomainDns } from '@/lib/dns-check';
 
 export async function GET() {
   try {
@@ -10,7 +12,14 @@ export async function GET() {
       return NextResponse.json({ error: 'Oturum açmanız gerekmektedir.' }, { status: 401 });
     }
 
-    const isSuper = currentUser.role === 'SUPER_ADMIN' || currentUser.email === 'akif@filoyonetim.com';
+    const isSuper =
+      currentUser.role === 'SUPER_ADMIN' ||
+      currentUser.email === 'akif@filoyonetim.com' ||
+      currentUser.email === 'gencaksoy@outlook.com';
+
+    if (currentUser.role === 'STAFF') {
+      return NextResponse.json({ error: 'Personel (STAFF) hesaplarının kullanıcı listesine erişim yetkisi yoktur.' }, { status: 403 });
+    }
 
     const where: any = {};
     if (!isSuper) {
@@ -65,7 +74,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Ad Soyad, E-posta ve Şifre zorunludur.' }, { status: 400 });
     }
 
+    const pwdCheck = validatePassword(password);
+    if (!pwdCheck.isValid) {
+      return NextResponse.json({ error: pwdCheck.errors.join(' ') }, { status: 400 });
+    }
+
     const cleanEmail = email.toLowerCase().trim();
+
+    const emailCheck = validateRealisticEmail(cleanEmail);
+    if (!emailCheck.isValid) {
+      return NextResponse.json({ error: emailCheck.error || 'Geçersiz veya sahte e-posta adresi.' }, { status: 400 });
+    }
+
+    const dnsCheck = await verifyEmailDomainDns(cleanEmail);
+    if (!dnsCheck.valid) {
+      return NextResponse.json({ error: dnsCheck.reason || 'E-posta alan adına ait geçerli bir posta sunucusu bulunamadı.' }, { status: 400 });
+    }
 
     const existing = await prisma.user.findUnique({
       where: { email: cleanEmail },

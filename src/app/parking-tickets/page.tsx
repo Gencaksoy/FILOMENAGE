@@ -25,7 +25,7 @@ import {
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Modal } from '@/components/ui/Modal';
 import { formatDate, generateParkingFineWhatsAppUrl } from '@/lib/formatters';
-import { AuthUser } from '@/lib/auth';
+import { AuthUser } from '@/lib/auth-client';
 
 function ParkingTicketsContent() {
   const searchParams = useSearchParams();
@@ -225,7 +225,7 @@ function ParkingTicketsContent() {
   };
 
   return (
-    <AppLayout currentUser={currentUser}>
+    <AppLayout currentUser={currentUser} requiredFeature="parkingTickets">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

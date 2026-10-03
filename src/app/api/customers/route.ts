@@ -8,17 +8,27 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request) {
   try {
     const currentUser = await getSessionUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Oturum açmanız gerekmektedir.' }, { status: 401 });
+    }
+
     const isSuper =
-      currentUser &&
-      (currentUser.role === 'SUPER_ADMIN' ||
-        currentUser.email === 'akif@filoyonetim.com' ||
-        currentUser.email === 'gencaksoy@outlook.com');
+      currentUser.role === 'SUPER_ADMIN' ||
+      currentUser.email === 'akif@filoyonetim.com' ||
+      currentUser.email === 'gencaksoy@outlook.com';
+
+    if (!isSuper && currentUser.features?.customers === false) {
+      return NextResponse.json({ error: 'Müşteri yönetimi özelliği filonuz için devre dışıdır.' }, { status: 403 });
+    }
 
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search')?.trim() || '';
 
     const conditions: any[] = [{ isDeleted: false }];
-    if (!isSuper && currentUser?.fleetId) {
+    if (!isSuper) {
+      if (!currentUser.fleetId) {
+        return NextResponse.json({ error: 'Bağlı bir filo bulunamadı.' }, { status: 403 });
+      }
       conditions.push({
         fleetId: currentUser.fleetId,
       });
@@ -109,7 +119,20 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const currentUser = await getSessionUser();
-    if (currentUser?.fleetStatus && currentUser.fleetStatus !== 'ACTIVE' && currentUser.role !== 'SUPER_ADMIN') {
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Oturum açmanız gerekmektedir.' }, { status: 401 });
+    }
+
+    const isSuper =
+      currentUser.role === 'SUPER_ADMIN' ||
+      currentUser.email === 'akif@filoyonetim.com' ||
+      currentUser.email === 'gencaksoy@outlook.com';
+
+    if (!isSuper && currentUser.features?.customers === false) {
+      return NextResponse.json({ error: 'Müşteri ekleme özelliği filonuz için devre dışıdır.' }, { status: 403 });
+    }
+
+    if (currentUser.fleetStatus && currentUser.fleetStatus !== 'ACTIVE' && !isSuper) {
       return NextResponse.json(
         { error: 'Filonuz askıya alınmıştır. Müşteri eklemek için lütfen lisans / abonelik ödemenizi yenileyiniz.' },
         { status: 403 }

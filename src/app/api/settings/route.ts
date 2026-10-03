@@ -18,6 +18,14 @@ const defaultSettings: Record<string, string> = {
 
 export async function GET() {
   try {
+    const currentUser = await getSessionUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Oturum açmanız gerekmektedir.' }, { status: 401 });
+    }
+    if (currentUser.role === 'STAFF') {
+      return NextResponse.json({ error: 'Personel (STAFF) hesaplarının sistem ayarlarına erişim yetkisi yoktur.' }, { status: 403 });
+    }
+
     const dbSettings = await prisma.systemSetting.findMany();
     const result: Record<string, string> = { ...defaultSettings };
     for (const item of dbSettings) {
@@ -33,7 +41,10 @@ export async function GET() {
 export async function PUT(req: Request) {
   try {
     const currentUser = await getSessionUser();
-    if (currentUser && currentUser.role === 'STAFF') {
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Oturum açmanız gerekmektedir.' }, { status: 401 });
+    }
+    if (currentUser.role === 'STAFF') {
       return NextResponse.json(
         { error: 'Çalışanların (STAFF) şirket adını ve sistem ayarlarını değiştirme yetkisi yoktur!' },
         { status: 403 }

@@ -21,7 +21,7 @@ import {
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Modal } from '@/components/ui/Modal';
 import { formatDate, formatDateTime, formatCurrency, formatKm, EUR_TO_RSD_RATE, formatRsd } from '@/lib/formatters';
-import { AuthUser } from '@/lib/auth';
+import { AuthUser } from '@/lib/auth-client';
 
 interface PartItem {
   partName: string;
@@ -270,7 +270,7 @@ function MaintenancesContent() {
   const grandTotalCost = totalMaintCost + totalOilCost;
 
   return (
-    <AppLayout currentUser={currentUser}>
+    <AppLayout currentUser={currentUser} requiredFeature={['maintenance', 'oilChange']}>
       {/* Top Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>

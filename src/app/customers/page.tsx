@@ -29,7 +29,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Modal } from '@/components/ui/Modal';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { formatDate } from '@/lib/formatters';
-import { AuthUser } from '@/lib/auth';
+import { AuthUser } from '@/lib/auth-client';
 
 function CustomersContent() {
   const searchParams = useSearchParams();
@@ -258,7 +258,7 @@ function CustomersContent() {
   });
 
   return (
-    <AppLayout currentUser={currentUser}>
+    <AppLayout currentUser={currentUser} requiredFeature="customers">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>

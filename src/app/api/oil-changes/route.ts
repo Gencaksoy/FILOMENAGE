@@ -9,18 +9,28 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request) {
   try {
     const currentUser = await getSessionUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Oturum açmanız gerekmektedir.' }, { status: 401 });
+    }
+
     const isSuper =
-      currentUser &&
-      (currentUser.role === 'SUPER_ADMIN' ||
-        currentUser.email === 'akif@filoyonetim.com' ||
-        currentUser.email === 'gencaksoy@outlook.com');
+      currentUser.role === 'SUPER_ADMIN' ||
+      currentUser.email === 'akif@filoyonetim.com' ||
+      currentUser.email === 'gencaksoy@outlook.com';
+
+    if (!isSuper && currentUser.features?.oilChange === false && currentUser.features?.maintenance === false) {
+      return NextResponse.json({ error: 'Motor yağı takip modülü filonuz için devre dışıdır.' }, { status: 403 });
+    }
 
     const { searchParams } = new URL(req.url);
     const vehicleId = searchParams.get('vehicleId');
 
     const conditions: any[] = [];
     if (vehicleId) conditions.push({ vehicleId });
-    if (!isSuper && currentUser?.fleetId) {
+    if (!isSuper) {
+      if (!currentUser.fleetId) {
+        return NextResponse.json({ error: 'Bağlı bir filo bulunamadı.' }, { status: 403 });
+      }
       conditions.push({
         vehicle: {
           fleetId: currentUser.fleetId,
@@ -48,6 +58,19 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const currentUser = await getSessionUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Oturum açmanız gerekmektedir.' }, { status: 401 });
+    }
+
+    const isSuper =
+      currentUser.role === 'SUPER_ADMIN' ||
+      currentUser.email === 'akif@filoyonetim.com' ||
+      currentUser.email === 'gencaksoy@outlook.com';
+
+    if (!isSuper && currentUser.features?.oilChange === false) {
+      return NextResponse.json({ error: 'Motor yağı ekleme özelliği filonuz için devre dışıdır.' }, { status: 403 });
+    }
+
     const body = await req.json();
     const {
       vehicleId,

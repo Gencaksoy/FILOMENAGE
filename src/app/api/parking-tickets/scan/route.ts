@@ -12,6 +12,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Oturum açmanız gerekmektedir.' }, { status: 401 });
     }
 
+    const isSuper =
+      currentUser.role === 'SUPER_ADMIN' ||
+      currentUser.email === 'akif@filoyonetim.com' ||
+      currentUser.email === 'gencaksoy@outlook.com';
+
+    if (!isSuper && currentUser.features?.parkingTickets === false) {
+      return NextResponse.json({ error: 'Park cezaları (eDPK) modülü filonuz için devre dışıdır.' }, { status: 403 });
+    }
+
     const body = await req.json().catch(() => ({}));
     const { vehicleId } = body;
 

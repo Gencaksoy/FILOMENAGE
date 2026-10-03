@@ -32,13 +32,15 @@ import {
   Search,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { LandingPage } from '@/components/landing/LandingPage';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { formatDate, formatCurrency, formatKm, formatRsd, EUR_TO_RSD_RATE, VEHICLE_STATUS_MAP } from '@/lib/formatters';
 import { useRouter } from 'next/navigation';
-import { AuthUser } from '@/lib/auth';
+import { AuthUser } from '@/lib/auth-client';
 
 export default function DashboardPage() {
   const router = useRouter();
+  const [authState, setAuthState] = useState<'checking' | 'authenticated' | 'unauthenticated'>('checking');
   const [user, setUser] = useState<AuthUser | null>(null);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -122,25 +124,31 @@ export default function DashboardPage() {
 
   const fetchData = async (owner: string = selectedOwner) => {
     try {
-      const [meRes, dashRes] = await Promise.all([
-        fetch('/api/auth/me'),
-        fetch(`/api/dashboard?owner=${encodeURIComponent(owner)}`),
-      ]);
-
-      if (meRes.ok) {
-        const u = await meRes.json();
-        setUser(u.user);
-      } else {
-        window.location.href = '/login';
+      setLoading(true);
+      const meRes = await fetch('/api/auth/me');
+      if (!meRes.ok) {
+        setAuthState('unauthenticated');
+        setLoading(false);
+        return;
+      }
+      const u = await meRes.json();
+      if (!u.user) {
+        setAuthState('unauthenticated');
+        setLoading(false);
         return;
       }
 
+      setUser(u.user);
+      setAuthState('authenticated');
+
+      const dashRes = await fetch(`/api/dashboard?owner=${encodeURIComponent(owner)}`);
       if (dashRes.ok) {
         const dashData = await dashRes.json();
         setData(dashData);
       }
     } catch (err) {
       console.error('Veri yükleme hatası:', err);
+      setAuthState('unauthenticated');
     } finally {
       setLoading(false);
     }
@@ -482,6 +490,22 @@ export default function DashboardPage() {
   const formDiscountVal = parseFloat(String(rentDiscount)) || 0;
   const formFinalPrice = Math.max(0, formBasePrice - formDiscountVal);
 
+  if (authState === 'unauthenticated') {
+    return <LandingPage />;
+  }
+
+  if (authState === 'checking' || loading || !data) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+        <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 p-2 flex items-center justify-center shadow-xl mb-4 animate-pulse">
+          <img src="/icon.png" alt="Filo Yönetim" className="w-full h-full object-contain" />
+        </div>
+        <div className="w-6 h-6 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin mb-3" />
+        <span className="text-xs font-bold text-slate-400">Filo Yönetim Portalı Açılıyor...</span>
+      </div>
+    );
+  }
+
   return (
     <AppLayout currentUser={user}>
       {/* Top Banner & Quick Switch */}
@@ -509,20 +533,24 @@ export default function DashboardPage() {
 
           {/* Quick action buttons */}
           <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-            <button
-              onClick={openRentModal}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer"
-            >
-              <KeyRound className="w-4 h-4" />
-              Araç Kirala
-            </button>
-            <button
-              onClick={() => openOilModal()}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold border border-slate-700 transition-all cursor-pointer"
-            >
-              <Droplet className="w-4 h-4" />
-              Yağ Değişimi
-            </button>
+            {user?.features?.rentals !== false && (
+              <button
+                onClick={openRentModal}
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-bold shadow-xs transition-all cursor-pointer"
+              >
+                <KeyRound className="w-4 h-4" />
+                Araç Kirala
+              </button>
+            )}
+            {(user?.features?.oilChange !== false || user?.features?.maintenance !== false) && (
+              <button
+                onClick={() => openOilModal()}
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold border border-slate-700 transition-all cursor-pointer"
+              >
+                <Droplet className="w-4 h-4" />
+                Yağ Değişimi
+              </button>
+            )}
           </div>
         </div>
 
@@ -571,7 +599,7 @@ export default function DashboardPage() {
       </div>
 
       {/* CRITICAL ALERTS: Zorunlu Registracija Bitiş Uyarıları (Register olmadan trafiğe çıkamaz!) */}
-      {registrationAlerts.length > 0 && (
+      {user?.features?.inspection !== false && registrationAlerts.length > 0 && (
         <div className="mb-5 bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-slate-900">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2">
@@ -625,7 +653,7 @@ export default function DashboardPage() {
       )}
 
       {/* BELGRAD PARK CEZASI (eDPK) ALERTI */}
-      {data?.parkingStats?.unpaidCount > 0 && (
+      {user?.features?.parkingTickets !== false && data?.parkingStats?.unpaidCount > 0 && (
         <div className="mb-5 bg-rose-500/10 border border-rose-500/30 rounded-2xl p-4 text-slate-900">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -658,7 +686,7 @@ export default function DashboardPage() {
       )}
 
       {/* AKTİF ARAÇ ARIZALARI & HASAR BİLDİRİMLERİ (DÜZELTİLDİYE ÇEVİRME) */}
-      {activeFaults.length > 0 && (
+      {user?.features?.faults !== false && activeFaults.length > 0 && (
         <div className="mb-5 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-slate-900">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2">
@@ -738,90 +766,96 @@ export default function DashboardPage() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
-        {/* 1. Aktif Kirada */}
-        <Link
-          href="/vehicles?status=RENTED"
-          className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs hover:border-amber-400 hover:shadow-md transition-all group cursor-pointer block"
-        >
-          <div className="flex items-center justify-between text-amber-600 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-amber-600">Kirada</span>
-            <KeyRound className="w-4 h-4 transition-transform group-hover:scale-110" />
-          </div>
-          <div className="text-2xl font-extrabold text-slate-900 group-hover:text-amber-600">{kpi.rentedVehicles}</div>
-          <div className="text-xs text-slate-500 mt-1 flex items-center justify-between">
-            <span>Müşteride çalışan</span>
-            <span className="text-xs font-bold text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity">Listele →</span>
-          </div>
-        </Link>
+      {user?.features?.vehicles !== false && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
+          {/* 1. Aktif Kirada */}
+          {user?.features?.rentals !== false && (
+            <Link
+              href="/vehicles?status=RENTED"
+              className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs hover:border-amber-400 hover:shadow-md transition-all group cursor-pointer block"
+            >
+              <div className="flex items-center justify-between text-amber-600 mb-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-amber-600">Kirada</span>
+                <KeyRound className="w-4 h-4 transition-transform group-hover:scale-110" />
+              </div>
+              <div className="text-2xl font-extrabold text-slate-900 group-hover:text-amber-600">{kpi.rentedVehicles}</div>
+              <div className="text-xs text-slate-500 mt-1 flex items-center justify-between">
+                <span>Müşteride çalışan</span>
+                <span className="text-xs font-bold text-amber-600 opacity-0 group-hover:opacity-100 transition-opacity">Listele →</span>
+              </div>
+            </Link>
+          )}
 
-        {/* 2. Boşta (Hazır) */}
-        <Link
-          href="/vehicles?status=AVAILABLE"
-          className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs hover:border-emerald-400 hover:shadow-md transition-all group cursor-pointer block"
-        >
-          <div className="flex items-center justify-between text-emerald-600 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-emerald-600">Boşta (Hazır)</span>
-            <CheckCircle2 className="w-4 h-4 transition-transform group-hover:scale-110" />
-          </div>
-          <div className="text-2xl font-extrabold text-emerald-600">{kpi.availableVehicles}</div>
-          <div className="text-xs text-slate-500 mt-1 flex items-center justify-between">
-            <span>Kiralanmaya hazır</span>
-            <span className="text-xs font-bold text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">Listele →</span>
-          </div>
-        </Link>
+          {/* 2. Boşta (Hazır) */}
+          <Link
+            href="/vehicles?status=AVAILABLE"
+            className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs hover:border-emerald-400 hover:shadow-md transition-all group cursor-pointer block"
+          >
+            <div className="flex items-center justify-between text-emerald-600 mb-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-emerald-600">Boşta (Hazır)</span>
+              <CheckCircle2 className="w-4 h-4 transition-transform group-hover:scale-110" />
+            </div>
+            <div className="text-2xl font-extrabold text-emerald-600">{kpi.availableVehicles}</div>
+            <div className="text-xs text-slate-500 mt-1 flex items-center justify-between">
+              <span>Kiralanmaya hazır</span>
+              <span className="text-xs font-bold text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity">Listele →</span>
+            </div>
+          </Link>
 
-        {/* 3. Kiradan Sonra Bakım */}
-        <Link
-          href="/vehicles?status=POST_RENTAL_CHECK"
-          className="bg-white p-4 rounded-2xl border border-purple-200 shadow-xs hover:border-purple-400 hover:shadow-md transition-all group cursor-pointer block"
-        >
-          <div className="flex items-center justify-between text-purple-600 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-purple-700">Kira Sonrası Kontrol</span>
-            <Sparkles className="w-4 h-4 transition-transform group-hover:scale-110" />
-          </div>
-          <div className="text-2xl font-extrabold text-purple-700">{kpi.postRentalCheckVehicles}</div>
-          <div className="text-xs text-purple-600 mt-1 flex items-center justify-between">
-            <span>Yıkama & kontrol</span>
-            <span className="text-xs font-bold text-purple-700 opacity-0 group-hover:opacity-100 transition-opacity">Listele →</span>
-          </div>
-        </Link>
+          {/* 3. Kiradan Sonra Bakım */}
+          <Link
+            href="/vehicles?status=POST_RENTAL_CHECK"
+            className="bg-white p-4 rounded-2xl border border-purple-200 shadow-xs hover:border-purple-400 hover:shadow-md transition-all group cursor-pointer block"
+          >
+            <div className="flex items-center justify-between text-purple-600 mb-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-purple-700">Kira Sonrası Kontrol</span>
+              <Sparkles className="w-4 h-4 transition-transform group-hover:scale-110" />
+            </div>
+            <div className="text-2xl font-extrabold text-purple-700">{kpi.postRentalCheckVehicles}</div>
+            <div className="text-xs text-purple-600 mt-1 flex items-center justify-between">
+              <span>Yıkama & kontrol</span>
+              <span className="text-xs font-bold text-purple-700 opacity-0 group-hover:opacity-100 transition-opacity">Listele →</span>
+            </div>
+          </Link>
 
-        {/* 4. Serviste / Bakımda */}
-        <Link
-          href="/vehicles?status=MAINTENANCE"
-          className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs hover:border-rose-400 hover:shadow-md transition-all group cursor-pointer block"
-        >
-          <div className="flex items-center justify-between text-rose-600 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-rose-600">Serviste</span>
-            <Wrench className="w-4 h-4 transition-transform group-hover:scale-110" />
-          </div>
-          <div className="text-2xl font-extrabold text-rose-600">{kpi.maintenanceVehicles}</div>
-          <div className="text-xs text-slate-500 mt-1 flex items-center justify-between">
-            <span>Tamir & bakımda</span>
-            <span className="text-xs font-bold text-rose-600 opacity-0 group-hover:opacity-100 transition-opacity">Listele →</span>
-          </div>
-        </Link>
+          {/* 4. Serviste / Bakımda */}
+          <Link
+            href="/vehicles?status=MAINTENANCE"
+            className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs hover:border-rose-400 hover:shadow-md transition-all group cursor-pointer block"
+          >
+            <div className="flex items-center justify-between text-rose-600 mb-1">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-rose-600">Serviste</span>
+              <Wrench className="w-4 h-4 transition-transform group-hover:scale-110" />
+            </div>
+            <div className="text-2xl font-extrabold text-rose-600">{kpi.maintenanceVehicles}</div>
+            <div className="text-xs text-slate-500 mt-1 flex items-center justify-between">
+              <span>Tamir & bakımda</span>
+              <span className="text-xs font-bold text-rose-600 opacity-0 group-hover:opacity-100 transition-opacity">Listele →</span>
+            </div>
+          </Link>
 
-        {/* 5. 1 Hafta Sonra Boşa Çıkacak */}
-        <Link
-          href="/vehicles?status=RETURNING_SOON"
-          className="bg-white p-4 rounded-2xl border border-blue-200 shadow-xs col-span-2 sm:col-span-1 hover:border-blue-400 hover:shadow-md transition-all group cursor-pointer block"
-        >
-          <div className="flex items-center justify-between text-blue-600 mb-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-blue-700">1 Hafta İçinde Dönecek</span>
-            <Clock className="w-4 h-4 transition-transform group-hover:scale-110" />
-          </div>
-          <div className="text-2xl font-extrabold text-blue-700">{forecast.returnsNext7DaysCount}</div>
-          <div className="text-xs text-blue-600 mt-1 flex items-center justify-between">
-            <span>Gelecek 7 günde iade</span>
-            <span className="text-xs font-bold text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">Listele →</span>
-          </div>
-        </Link>
-      </div>
+          {/* 5. 1 Hafta Sonra Boşa Çıkacak */}
+          {user?.features?.rentals !== false && (
+            <Link
+              href="/vehicles?status=RETURNING_SOON"
+              className="bg-white p-4 rounded-2xl border border-blue-200 shadow-xs col-span-2 sm:col-span-1 hover:border-blue-400 hover:shadow-md transition-all group cursor-pointer block"
+            >
+              <div className="flex items-center justify-between text-blue-600 mb-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-blue-700">1 Hafta İçinde Dönecek</span>
+                <Clock className="w-4 h-4 transition-transform group-hover:scale-110" />
+              </div>
+              <div className="text-2xl font-extrabold text-blue-700">{forecast.returnsNext7DaysCount}</div>
+              <div className="text-xs text-blue-600 mt-1 flex items-center justify-between">
+                <span>Gelecek 7 günde iade</span>
+                <span className="text-xs font-bold text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">Listele →</span>
+              </div>
+            </Link>
+          )}
+        </div>
+      )}
 
       {/* FİLO İSTATİSTİKLERİ, ARAÇ BAŞINA MASRAF & ARIZA ANALİTİĞİ (YALNIZCA ADMIN / ORTAKLAR GÖRÜR) */}
-      {!isStaff && fleetFinancials && (
+      {!isStaff && user?.features?.finance !== false && fleetFinancials && (
         <div className="mb-6 bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-xs space-y-6">
           {/* 1. Üst Başlık & Özet Barı */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
@@ -1271,165 +1305,167 @@ export default function DashboardPage() {
       )}
 
       {/* YAKLAŞAN GERİ ALIMLAR & 3 GÜN WHATSAPP HATIRLATMA PANELİ */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs mb-5">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-100">
-          <div>
-            <h2 className="text-sm font-black text-slate-900 uppercase tracking-wide flex items-center gap-2">
-              <Clock className="w-4 h-4 text-amber-500" />
-              Araç Geri Alımları & WhatsApp İade Hatırlatmaları
-            </h2>
-            <p className="text-xs text-slate-500">
-              Kira süresi dolan veya 3 gün kalan müşterilere tek tıkla WhatsApp bildirimi gönderin
-            </p>
+      {user?.features?.rentals !== false && (
+        <div className="bg-white rounded-3xl border border-slate-200/90 p-4 sm:p-5 shadow-xs mb-5">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-slate-100">
+            <div>
+              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wide flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-500" />
+                Araç Geri Alımları & WhatsApp İade Hatırlatmaları
+              </h2>
+              <p className="text-xs text-slate-500">
+                Kira süresi dolan veya 3 gün kalan müşterilere tek tıkla WhatsApp bildirimi gönderin
+              </p>
+            </div>
           </div>
-        </div>
 
-        {upcomingReturns.length === 0 ? (
-          <div className="py-8 text-center text-xs text-slate-400">
-            Şu anda aktif kirada araç bulunmuyor.
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {upcomingReturns.map((item: any) => (
-              <div
-                key={item.rentalId}
-                className={`p-3.5 sm:p-4 rounded-2xl border transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-3 ${
-                  item.badgeType === 'DANGER'
-                    ? 'bg-rose-50/50 border-rose-200'
-                    : item.diffDays <= 3
-                    ? 'bg-amber-50/50 border-amber-200'
-                    : 'bg-white border-slate-200'
-                }`}
-              >
-                <div className="flex items-start gap-3 flex-1">
-                  <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold shrink-0 ${
-                      item.badgeType === 'DANGER'
-                        ? 'bg-rose-100 text-rose-700'
-                        : 'bg-amber-100 text-amber-800'
-                    }`}
-                  >
-                    <Car className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Link
-                        href={`/vehicles/${item.vehicleId}`}
-                        className="font-mono font-black text-sm text-slate-900 hover:text-amber-600"
-                      >
-                        {item.plate}
-                      </Link>
-                      <span className="text-xs font-bold text-slate-700">
-                        {item.brand} {item.model}
-                      </span>
-                      <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-slate-100 text-slate-700">
-                        Sahip: {item.owner}
-                      </span>
+          {upcomingReturns.length === 0 ? (
+            <div className="py-8 text-center text-xs text-slate-400">
+              Şu anda aktif kirada araç bulunmuyor.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {upcomingReturns.map((item: any) => (
+                <div
+                  key={item.rentalId}
+                  className={`p-3.5 sm:p-4 rounded-2xl border transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-3 ${
+                    item.badgeType === 'DANGER'
+                      ? 'bg-rose-50/50 border-rose-200'
+                      : item.diffDays <= 3
+                      ? 'bg-amber-50/50 border-amber-200'
+                      : 'bg-white border-slate-200'
+                  }`}
+                >
+                  <div className="flex items-start gap-3 flex-1">
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold shrink-0 ${
+                        item.badgeType === 'DANGER'
+                          ? 'bg-rose-100 text-rose-700'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}
+                    >
+                      <Car className="w-5 h-5" />
                     </div>
-
-                    <div className="text-xs text-slate-600 mt-1 flex flex-wrap items-center gap-2">
-                      <span>
-                        Müşteri:{' '}
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
                         <Link
-                          href={`/customers?search=${encodeURIComponent(item.customerName)}`}
-                          className="font-bold text-slate-900 hover:text-amber-600 hover:underline inline-flex items-center gap-0.5"
-                          title="Müşteri sayfasına git"
+                          href={`/vehicles/${item.vehicleId}`}
+                          className="font-mono font-black text-sm text-slate-900 hover:text-amber-600"
                         >
-                          {item.customerName}
-                          <span className="text-[10px] text-amber-600">↗</span>
+                          {item.plate}
                         </Link>
-                      </span>
-                      <span>•</span>
-                      <span className="font-mono flex items-center gap-1">
-                        <Phone className="w-3 h-3 text-slate-400" />
-                        {item.customerPhone}
-                      </span>
-                      <span>•</span>
-                      <span>İade Tarihi: <b className="font-mono">{formatDate(item.endDate)}</b></span>
-                    </div>
-
-                    <div className="mt-1 flex items-center gap-2">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-black ${
-                          item.badgeType === 'DANGER'
-                            ? 'bg-rose-600 text-white'
-                            : item.diffDays <= 3
-                            ? 'bg-amber-500 text-slate-950'
-                            : 'bg-slate-100 text-slate-700'
-                        }`}
-                      >
-                        {item.statusText}
-                      </span>
-
-                      {item.extensionCount > 0 && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                          🔄 {item.extensionCount} Kez Uzatıldı
+                        <span className="text-xs font-bold text-slate-700">
+                          {item.brand} {item.model}
                         </span>
-                      )}
+                        <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-slate-100 text-slate-700">
+                          Sahip: {item.owner}
+                        </span>
+                      </div>
 
-                      {/* Teslimat Fotoğraflarını İncele */}
-                      {item.photos?.front && (
-                        <button
-                          type="button"
-                          onClick={() => setShowDeliveryPhotosModal(item)}
-                          className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 cursor-pointer"
+                      <div className="text-xs text-slate-600 mt-1 flex flex-wrap items-center gap-2">
+                        <span>
+                          Müşteri:{' '}
+                          <Link
+                            href={`/customers?search=${encodeURIComponent(item.customerName)}`}
+                            className="font-bold text-slate-900 hover:text-amber-600 hover:underline inline-flex items-center gap-0.5"
+                            title="Müşteri sayfasına git"
+                          >
+                            {item.customerName}
+                            <span className="text-[10px] text-amber-600">↗</span>
+                          </Link>
+                        </span>
+                        <span>•</span>
+                        <span className="font-mono flex items-center gap-1">
+                          <Phone className="w-3 h-3 text-slate-400" />
+                          {item.customerPhone}
+                        </span>
+                        <span>•</span>
+                        <span>İade Tarihi: <b className="font-mono">{formatDate(item.endDate)}</b></span>
+                      </div>
+
+                      <div className="mt-1 flex items-center gap-2">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-black ${
+                            item.badgeType === 'DANGER'
+                              ? 'bg-rose-600 text-white'
+                              : item.diffDays <= 3
+                              ? 'bg-amber-500 text-slate-950'
+                              : 'bg-slate-100 text-slate-700'
+                          }`}
                         >
-                          <Camera className="w-3.5 h-3.5" />
-                          4 Teslimat Fotoğrafı
-                        </button>
-                      )}
+                          {item.statusText}
+                        </span>
+
+                        {item.extensionCount > 0 && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            🔄 {item.extensionCount} Kez Uzatıldı
+                          </span>
+                        )}
+
+                        {/* Teslimat Fotoğraflarını İncele */}
+                        {item.photos?.front && (
+                          <button
+                            type="button"
+                            onClick={() => setShowDeliveryPhotosModal(item)}
+                            className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-800 cursor-pointer"
+                          >
+                            <Camera className="w-3.5 h-3.5" />
+                            4 Teslimat Fotoğrafı
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
+
+                  {/* Actions: WhatsApp Link + Süre Uzat + Return Car Button */}
+                  <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+                    {/* WhatsApp Reminder Button */}
+                    <a
+                      href={item.whatsAppUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                      title="Müşteriye WhatsApp ile iade hatırlatma mesajı gönder"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      WhatsApp ile Hatırlat
+                    </a>
+
+                    {/* Süre Uzat Button */}
+                    <button
+                      onClick={() => {
+                        setExtendingRental(item);
+                        setExtendDays(30);
+                        setExtendAmount(item.monthlyRate || 350);
+                        setExtendIsPaid(true);
+                        setExtendNotes('');
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                      title="Kiralama süresini uzat"
+                    >
+                      <Clock className="w-4 h-4" />
+                      Süre Uzat
+                    </button>
+
+                    {/* Aracı Teslim Al */}
+                    <button
+                      onClick={() => {
+                        setReturningRental(item);
+                        setReturnKm('');
+                        setSentToPostCheck(true);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                    >
+                      <CheckSquare className="w-4 h-4" />
+                      Aracı Teslim Al
+                    </button>
+                  </div>
                 </div>
-
-                {/* Actions: WhatsApp Link + Süre Uzat + Return Car Button */}
-                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
-                  {/* WhatsApp Reminder Button */}
-                  <a
-                    href={item.whatsAppUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
-                    title="Müşteriye WhatsApp ile iade hatırlatma mesajı gönder"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    WhatsApp ile Hatırlat
-                  </a>
-
-                  {/* Süre Uzat Button */}
-                  <button
-                    onClick={() => {
-                      setExtendingRental(item);
-                      setExtendDays(30);
-                      setExtendAmount(item.monthlyRate || 350);
-                      setExtendIsPaid(true);
-                      setExtendNotes('');
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
-                    title="Kiralama süresini uzat"
-                  >
-                    <Clock className="w-4 h-4" />
-                    Süre Uzat
-                  </button>
-
-                  {/* Aracı Teslim Al */}
-                  <button
-                    onClick={() => {
-                      setReturningRental(item);
-                      setReturnKm('');
-                      setSentToPostCheck(true);
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
-                  >
-                    <CheckSquare className="w-4 h-4" />
-                    Aracı Teslim Al
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* MODAL: KİRALAMA SÜRESİ UZATMA (Varsayılan 30 Gün + Tutar + Ödeme Durumu) */}
       {extendingRental && (

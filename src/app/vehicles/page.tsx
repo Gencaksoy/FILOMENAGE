@@ -26,7 +26,7 @@ import {
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Modal } from '@/components/ui/Modal';
 import { formatDate, formatKm, formatCurrency } from '@/lib/formatters';
-import { AuthUser } from '@/lib/auth';
+import { AuthUser } from '@/lib/auth-client';
 
 const ACCESSORY_OPTIONS = [
   'Telefon Tutucu',
@@ -246,7 +246,7 @@ function VehiclesContent() {
   });
 
   return (
-    <AppLayout currentUser={currentUser}>
+    <AppLayout currentUser={currentUser} requiredFeature="vehicles">
       {/* Header & Actions */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>

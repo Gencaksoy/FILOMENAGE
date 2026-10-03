@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Settings, Save, Building, BellRing, Check, ShieldAlert, Lock, KeyRound } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { AuthUser } from '@/lib/auth';
+import { AuthUser } from '@/lib/auth-client';
 
 export default function SettingsPage() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
@@ -114,7 +114,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <AppLayout currentUser={currentUser}>
+    <AppLayout currentUser={currentUser} adminOnly={true}>
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2">

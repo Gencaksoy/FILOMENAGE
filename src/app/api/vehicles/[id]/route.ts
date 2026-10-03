@@ -10,6 +10,20 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const currentUser = await getSessionUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Oturum açmanız gerekmektedir.' }, { status: 401 });
+    }
+
+    const isSuper =
+      currentUser.role === 'SUPER_ADMIN' ||
+      currentUser.email === 'akif@filoyonetim.com' ||
+      currentUser.email === 'gencaksoy@outlook.com';
+
+    if (!isSuper && currentUser.features?.vehicles === false) {
+      return NextResponse.json({ error: 'Araç yönetimi özelliği filonuz için devre dışıdır.' }, { status: 403 });
+    }
+
     const vehicle = await prisma.vehicle.findUnique({
       where: { id: params.id },
       include: {
@@ -53,6 +67,10 @@ export async function GET(
 
     if (!vehicle || vehicle.isDeleted) {
       return NextResponse.json({ error: 'Araç bulunamadı.' }, { status: 404 });
+    }
+
+    if (!isSuper && vehicle.fleetId && currentUser.fleetId && vehicle.fleetId !== currentUser.fleetId) {
+      return NextResponse.json({ error: 'Bu araca erişim yetkiniz bulunmamaktadır.' }, { status: 403 });
     }
 
     const now = new Date();

@@ -9,11 +9,18 @@ export async function GET(req: Request) {
   initBackgroundWorker();
   try {
     const currentUser = await getSessionUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Oturum açmanız gerekmektedir.' }, { status: 401 });
+    }
+
     const isSuper =
-      currentUser &&
-      (currentUser.role === 'SUPER_ADMIN' ||
-        currentUser.email === 'akif@filoyonetim.com' ||
-        currentUser.email === 'gencaksoy@outlook.com');
+      currentUser.role === 'SUPER_ADMIN' ||
+      currentUser.email === 'akif@filoyonetim.com' ||
+      currentUser.email === 'gencaksoy@outlook.com';
+
+    if (!isSuper && currentUser.features?.parkingTickets === false) {
+      return NextResponse.json({ error: 'Park cezaları (eDPK) modülü filonuz için devre dışıdır.' }, { status: 403 });
+    }
 
     const { searchParams } = new URL(req.url);
     const status = searchParams.get('status') || 'ALL';
@@ -23,7 +30,10 @@ export async function GET(req: Request) {
     const conditions: any[] = [];
 
     // Multi-tenant filo filtrelemesi
-    if (!isSuper && currentUser?.fleetId) {
+    if (!isSuper) {
+      if (!currentUser.fleetId) {
+        return NextResponse.json({ error: 'Bağlı bir filo bulunamadı.' }, { status: 403 });
+      }
       conditions.push({
         OR: [
           { vehicle: { fleetId: currentUser.fleetId } },

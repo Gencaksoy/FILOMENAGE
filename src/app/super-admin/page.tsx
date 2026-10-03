@@ -41,7 +41,7 @@ import {
 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { formatDate } from '@/lib/formatters';
-import { AuthUser } from '@/lib/auth';
+import { AuthUser } from '@/lib/auth-client';
 
 const AVAILABLE_MODULES = [
   { key: 'vehicles', label: 'Araç Yönetimi & Envanter', icon: Car, desc: 'Araç listesi, envanter ve plaka kayıtları' },

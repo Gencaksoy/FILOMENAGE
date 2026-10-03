@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Bell, CheckCheck, AlertTriangle, AlertCircle, Info, CheckCircle2 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { formatDate, formatDateTime } from '@/lib/formatters';
-import { AuthUser } from '@/lib/auth';
+import { AuthUser } from '@/lib/auth-client';
 
 export default function NotificationsPage() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);

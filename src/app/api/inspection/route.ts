@@ -9,14 +9,24 @@ export const dynamic = 'force-dynamic';
 export async function GET(req: Request) {
   try {
     const currentUser = await getSessionUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Oturum açmanız gerekmektedir.' }, { status: 401 });
+    }
+
     const isSuper =
-      currentUser &&
-      (currentUser.role === 'SUPER_ADMIN' ||
-        currentUser.email === 'akif@filoyonetim.com' ||
-        currentUser.email === 'gencaksoy@outlook.com');
+      currentUser.role === 'SUPER_ADMIN' ||
+      currentUser.email === 'akif@filoyonetim.com' ||
+      currentUser.email === 'gencaksoy@outlook.com';
+
+    if (!isSuper && currentUser.features?.inspection === false) {
+      return NextResponse.json({ error: 'Registracija ve muayene modülü filonuz için devre dışıdır.' }, { status: 403 });
+    }
 
     const where: any = {};
-    if (!isSuper && currentUser?.fleetId) {
+    if (!isSuper) {
+      if (!currentUser.fleetId) {
+        return NextResponse.json({ error: 'Bağlı bir filo bulunamadı.' }, { status: 403 });
+      }
       where.vehicle = {
         fleetId: currentUser.fleetId,
       };
@@ -37,6 +47,19 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   try {
     const currentUser = await getSessionUser();
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Oturum açmanız gerekmektedir.' }, { status: 401 });
+    }
+
+    const isSuper =
+      currentUser.role === 'SUPER_ADMIN' ||
+      currentUser.email === 'akif@filoyonetim.com' ||
+      currentUser.email === 'gencaksoy@outlook.com';
+
+    if (!isSuper && currentUser.features?.inspection === false) {
+      return NextResponse.json({ error: 'Muayene kaydı ekleme özelliği filonuz için devre dışıdır.' }, { status: 403 });
+    }
+
     const body = await req.json();
     const { vehicleId, inspectionDate, cost, currency = 'EUR', station, notes } = body;
 

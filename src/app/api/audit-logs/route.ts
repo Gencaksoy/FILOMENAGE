@@ -16,6 +16,14 @@ export async function GET(req: Request) {
       currentUser.email === 'akif@filoyonetim.com' ||
       currentUser.email === 'gencaksoy@outlook.com';
 
+    if (currentUser.role === 'STAFF') {
+      return NextResponse.json({ error: 'Personel (STAFF) hesaplarının işlem geçmişi kayıtlarına erişim yetkisi yoktur.' }, { status: 403 });
+    }
+
+    if (!isSuper && currentUser.features?.auditLogs === false) {
+      return NextResponse.json({ error: 'İşlem geçmişi (audit) modülü filonuz için devre dışıdır.' }, { status: 403 });
+    }
+
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search')?.trim() || '';
     const fleetIdFilter = searchParams.get('fleetId')?.trim();

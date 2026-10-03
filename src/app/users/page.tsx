@@ -21,7 +21,8 @@ import {
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Modal } from '@/components/ui/Modal';
 import { formatDate } from '@/lib/formatters';
-import { AuthUser } from '@/lib/auth';
+import { AuthUser } from '@/lib/auth-client';
+import { validatePassword, validateRealisticEmail } from '@/lib/validation';
 
 export default function UsersPage() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
@@ -151,6 +152,20 @@ export default function UsersPage() {
     setIsSubmitting(true);
     setErrorMsg(null);
 
+    const emailCheck = validateRealisticEmail(newEmail);
+    if (!emailCheck.isValid) {
+      setErrorMsg(emailCheck.error || 'Geçersiz e-posta adresi.');
+      setIsSubmitting(false);
+      return;
+    }
+
+    const pwdCheck = validatePassword(newPassword);
+    if (!pwdCheck.isValid) {
+      setErrorMsg(pwdCheck.errors.join(' '));
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const res = await fetch('/api/users', {
         method: 'POST',
@@ -213,7 +228,7 @@ export default function UsersPage() {
   };
 
   return (
-    <AppLayout currentUser={currentUser}>
+    <AppLayout currentUser={currentUser} adminOnly={true}>
       {/* Header and Add User Button */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
         <div>
@@ -450,6 +465,20 @@ export default function UsersPage() {
                 className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-amber-500 font-medium"
               />
             </div>
+            {newEmail && !validateRealisticEmail(newEmail).isValid && (
+              <p className="text-[11px] text-rose-600 mt-1">
+                ⚠️ {validateRealisticEmail(newEmail).error}
+              </p>
+            )}
+            {newEmail && validateRealisticEmail(newEmail).suggestion && (
+              <button
+                type="button"
+                onClick={() => setNewEmail(validateRealisticEmail(newEmail).suggestion!)}
+                className="text-[11px] text-amber-600 hover:underline mt-1 block text-left"
+              >
+                💡 Bunu mu demek istediniz: <b>{validateRealisticEmail(newEmail).suggestion}</b>?
+              </button>
+            )}
           </div>
 
           <div>
@@ -461,12 +490,30 @@ export default function UsersPage() {
               <input
                 type="password"
                 required
+                minLength={6}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="En az 6 karakter (büyük/küçük harf & rakam)"
                 className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-amber-500 font-mono"
               />
             </div>
+            {newPassword && (
+              <div className="mt-2 p-2 bg-slate-50 rounded-xl border border-slate-200 text-[11px] space-y-1">
+                <div className="font-bold text-slate-700">Şifre Kriterleri:</div>
+                <div className={`flex items-center gap-1.5 ${newPassword.length >= 6 ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
+                  <span>{newPassword.length >= 6 ? '✓' : '○'}</span> En az 6 karakter
+                </div>
+                <div className={`flex items-center gap-1.5 ${/[A-Z]/.test(newPassword) ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
+                  <span>{/[A-Z]/.test(newPassword) ? '✓' : '○'}</span> En az 1 büyük harf (A-Z)
+                </div>
+                <div className={`flex items-center gap-1.5 ${/[a-z]/.test(newPassword) ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
+                  <span>{/[a-z]/.test(newPassword) ? '✓' : '○'}</span> En az 1 küçük harf (a-z)
+                </div>
+                <div className={`flex items-center gap-1.5 ${/[0-9]/.test(newPassword) ? 'text-emerald-600 font-bold' : 'text-slate-400'}`}>
+                  <span>{/[0-9]/.test(newPassword) ? '✓' : '○'}</span> En az 1 rakam (0-9)
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
