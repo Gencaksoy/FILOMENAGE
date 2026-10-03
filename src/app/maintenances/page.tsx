@@ -23,6 +23,8 @@ import { Modal } from '@/components/ui/Modal';
 import { formatDate, formatDateTime, formatCurrency, formatKm, EUR_TO_RSD_RATE, formatRsd } from '@/lib/formatters';
 import { AuthUser } from '@/lib/auth-client';
 import { useLanguage } from '@/lib/i18n';
+import { useToast } from '@/components/ui/Toast';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 
 interface PartItem {
   partName: string;
@@ -33,6 +35,7 @@ interface PartItem {
 
 function MaintenancesContent() {
   const { t, language } = useLanguage();
+  const { toast } = useToast();
   const searchParams = useSearchParams();
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [activeTab, setActiveTab] = useState<'maintenances' | 'oil'>('maintenances');
@@ -175,8 +178,16 @@ function MaintenancesContent() {
       setMaintLaborCost('');
       setMaintParts([{ partName: '', partCode: '', changeDate: new Date().toISOString().slice(0, 10), cost: '' }]);
       await loadData();
+      toast.success(
+        language === 'sr'
+          ? 'Servisni zapis je uspešno dodat.'
+          : language === 'en'
+          ? 'Maintenance record saved.'
+          : 'Bakım kaydı başarıyla eklendi.'
+      );
     } catch (err: any) {
       setMaintError(err.message);
+      toast.error(err.message || (language === 'sr' ? 'Greška pri čuvanju servisa.' : language === 'en' ? 'Failed to save maintenance.' : 'Bakım kaydedilemedi.'));
     } finally {
       setMaintLoading(false);
     }
@@ -186,7 +197,9 @@ function MaintenancesContent() {
   const handleOilSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!oilVehicleId) {
-      setOilError('Lütfen araç seçiniz.');
+      const msg = language === 'sr' ? 'Izaberite vozilo.' : language === 'en' ? 'Please select a vehicle.' : 'Lütfen araç seçiniz.';
+      setOilError(msg);
+      toast.warning(msg);
       return;
     }
 
@@ -217,8 +230,16 @@ function MaintenancesContent() {
       setIsNewOilOpen(false);
       setOilNotes('');
       await loadData();
+      toast.success(
+        language === 'sr'
+          ? 'Zamena ulja je uspešno zabeležena.'
+          : language === 'en'
+          ? 'Oil change recorded successfully.'
+          : 'Motor yağı değişimi başarıyla kaydedildi.'
+      );
     } catch (err: any) {
       setOilError(err.message);
+      toast.error(err.message || (language === 'sr' ? 'Greška pri čuvanju zamene ulja.' : language === 'en' ? 'Failed to save oil change.' : 'Motor yağı kaydı kaydedilemedi.'));
     } finally {
       setOilLoading(false);
     }
@@ -416,9 +437,8 @@ function MaintenancesContent() {
         {activeTab === 'maintenances' && (
           <div>
             {loading ? (
-              <div className="p-12 text-center">
-                <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                <p className="text-xs text-slate-500 dark:text-slate-400">{t.common_loading}</p>
+              <div className="p-4">
+                <TableSkeleton rows={4} cols={5} />
               </div>
             ) : filteredMaintenances.length === 0 ? (
               <div className="p-12 text-center">
@@ -526,9 +546,8 @@ function MaintenancesContent() {
         {activeTab === 'oil' && (
           <div>
             {loading ? (
-              <div className="p-12 text-center">
-                <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                <p className="text-xs text-slate-500 dark:text-slate-400">{t.common_loading}</p>
+              <div className="p-4">
+                <TableSkeleton rows={4} cols={5} />
               </div>
             ) : filteredOilChanges.length === 0 ? (
               <div className="p-12 text-center">

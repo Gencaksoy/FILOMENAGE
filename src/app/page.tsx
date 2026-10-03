@@ -38,6 +38,8 @@ import { formatDate, formatCurrency, formatKm, formatRsd, EUR_TO_RSD_RATE, VEHIC
 import { useRouter } from 'next/navigation';
 import { AuthUser } from '@/lib/auth-client';
 import { useAuth } from '@/lib/auth-context';
+import { useToast } from '@/components/ui/Toast';
+import { KpiSkeleton } from '@/components/ui/Skeleton';
 import { useLanguage } from '@/lib/i18n';
 
 function getUpcomingStatusLabel(diffDays: number, lang: 'tr' | 'en' | 'sr') {
@@ -63,6 +65,7 @@ function getUpcomingStatusLabel(diffDays: number, lang: 'tr' | 'en' | 'sr') {
 export default function DashboardPage() {
   const router = useRouter();
   const { t, language } = useLanguage();
+  const toast = useToast();
   const { user: authUser, loading: authLoading } = useAuth();
   const [user, setUser] = useState<AuthUser | null>(authUser);
   const [data, setData] = useState<any>(null);
@@ -291,13 +294,21 @@ export default function DashboardPage() {
         setReturnKm('');
         setReturnNotes('');
         await fetchData(selectedOwner, true);
+        toast.success(
+          language === 'sr'
+            ? 'Vozilo je uspešno vraćeno i operativni status je ažuriran.'
+            : language === 'en'
+            ? 'Vehicle returned successfully and status updated.'
+            : 'Araç başarıyla teslim alındı ve operasyon güncellendi.',
+          language === 'sr' ? 'Uspešno vraćeno' : language === 'en' ? 'Returned' : 'Teslim Alındı'
+        );
       } else {
         const err = await res.json();
-        alert(err.error || 'İade işlemi yapılamadı');
+        toast.error(err.error || 'İade işlemi yapılamadı', 'İşlem Başarısız');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert('İade işlemi sırasında hata oluştu.');
+      toast.error(e?.message || 'İade işlemi sırasında hata oluştu.', 'Hata');
     } finally {
       setIsSubmittingReturn(false);
     }
@@ -307,7 +318,7 @@ export default function DashboardPage() {
   const handleRentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedVehicleId) {
-      alert('Lütfen araç seçiniz.');
+      toast.warning('Lütfen kiralanacak aracı seçiniz.', 'Eksik Seçim');
       return;
     }
 
@@ -318,7 +329,7 @@ export default function DashboardPage() {
       // Eğer "Yeni Müşteri Ekle" modundaysa önce müşteriyi oluştur
       if (rentCustomerMode === 'new') {
         if (!newCustName || !newCustPhone) {
-          alert('Lütfen yeni müşteri adı ve telefonunu giriniz.');
+          toast.warning('Lütfen yeni müşteri adı ve telefonunu giriniz.', 'Eksik Bilgi');
           setIsSubmittingRent(false);
           return;
         }
@@ -343,7 +354,7 @@ export default function DashboardPage() {
         customerId = newCust.id;
       } else {
         if (!customerId) {
-          alert('Lütfen kayıtlı bir müşteri seçiniz.');
+          toast.warning('Lütfen kayıtlı bir müşteri seçiniz.', 'Eksik Müşteri');
           setIsSubmittingRent(false);
           return;
         }
@@ -377,12 +388,20 @@ export default function DashboardPage() {
         setNewCustIdNo('');
         setRentNotes('');
         await fetchData(selectedOwner, true);
+        toast.success(
+          language === 'sr'
+            ? 'Vozilo je uspešno iznajmljeno i ugovor je aktivan.'
+            : language === 'en'
+            ? 'Vehicle rented successfully and agreement started.'
+            : 'Araç başarıyla kiralandı ve sözleşme başlatıldı.',
+          language === 'sr' ? 'Uspešno' : language === 'en' ? 'Success' : 'Kiralama Başlatıldı'
+        );
       } else {
         const err = await res.json();
-        alert(err.error || 'Kiralama başlatılamadı');
+        toast.error(err.error || 'Kiralama başlatılamadı', 'Kiralama Hatası');
       }
     } catch (e: any) {
-      alert(e.message || 'Kiralama başlatılamadı');
+      toast.error(e.message || 'Kiralama başlatılamadı', 'Hata');
     } finally {
       setIsSubmittingRent(false);
     }
@@ -392,7 +411,7 @@ export default function DashboardPage() {
   const handleOilSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!oilVehicleId) {
-      alert('Lütfen araç seçiniz.');
+      toast.warning('Lütfen araç seçiniz.', 'Eksik Seçim');
       return;
     }
     setIsSubmittingOil(true);
@@ -417,12 +436,21 @@ export default function DashboardPage() {
         setShowOilModal(false);
         setOilNotes('');
         await fetchData(selectedOwner, true);
+        toast.success(
+          language === 'sr'
+            ? 'Zamena ulja i servisa uspešno zabeležena.'
+            : language === 'en'
+            ? 'Oil change and maintenance successfully recorded.'
+            : 'Motor yağı ve bakım kaydı başarıyla eklendi.',
+          language === 'sr' ? 'Servis sačuvan' : language === 'en' ? 'Saved' : 'Bakım Kaydedildi'
+        );
       } else {
         const err = await res.json();
-        alert(err.error || 'Yağ değişimi eklenemedi');
+        toast.error(err.error || 'Yağ değişimi eklenemedi', 'Kayıt Hatası');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      toast.error(e?.message || 'Yağ değişimi kaydedilirken hata oluştu.', 'Hata');
     } finally {
       setIsSubmittingOil(false);
     }
@@ -449,13 +477,21 @@ export default function DashboardPage() {
         setExtendingRental(null);
         setExtendNotes('');
         await fetchData(selectedOwner, true);
+        toast.success(
+          language === 'sr'
+            ? 'Ugovor o zakupu je uspešno produžen.'
+            : language === 'en'
+            ? 'Rental duration extended successfully.'
+            : 'Araç kiralama süresi başarıyla uzatıldı.',
+          language === 'sr' ? 'Produženo' : language === 'en' ? 'Extended' : 'Süre Uzatıldı'
+        );
       } else {
         const err = await res.json();
-        alert(err.error || 'Süre uzatma işlemi başarısız oldu.');
+        toast.error(err.error || 'Süre uzatma işlemi başarısız oldu.', 'İşlem Başarısız');
       }
     } catch (e: any) {
       console.error(e);
-      alert('Süre uzatma sırasında bir hata oluştu.');
+      toast.error('Süre uzatma sırasında bir hata oluştu.', 'Hata');
     } finally {
       setIsSubmittingExtend(false);
     }
@@ -522,6 +558,20 @@ export default function DashboardPage() {
     return <LandingPage />;
   }
 
+  if (user && loading && !data) {
+    return (
+      <AppLayout currentUser={user}>
+        <div className="space-y-6">
+          <KpiSkeleton count={4} />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            <div className="h-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl animate-pulse" />
+            <div className="h-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl animate-pulse" />
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   if ((authLoading && !user) || (loading && !data && !user)) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-4 text-slate-800 dark:text-slate-200 transition-colors">
@@ -548,7 +598,11 @@ export default function DashboardPage() {
               <span className="px-2.5 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider bg-amber-400/10 text-amber-600 dark:text-amber-400 border border-amber-400/30">
                 {language === 'sr' ? 'BEOGRAD OPERACIJE' : language === 'en' ? 'BELGRADE OPERATIONS' : 'BELGRAD OPERASYON'}
               </span>
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">1 EUR = 117 RSD</span>
+              {user?.fleetCode && (
+                <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 font-mono">
+                  {language === 'sr' ? 'Kod: ' : language === 'en' ? 'Code: ' : 'Kod: '}{user.fleetCode}
+                </span>
+              )}
               {isStaff && (
                 <span className="px-2 py-0.5 rounded-md text-xs font-bold bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/25">
                   {t.header_staff_mode}

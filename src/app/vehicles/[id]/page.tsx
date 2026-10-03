@@ -55,6 +55,7 @@ import {
 } from '@/lib/formatters';
 import { AuthUser } from '@/lib/auth-client';
 import { useLanguage } from '@/lib/i18n';
+import { useToast } from '@/components/ui/Toast';
 
 interface PartItem {
   partName: string;
@@ -73,6 +74,7 @@ const DEFAULT_ACCESSORIES = [
 
 export default function VehicleDetailPage() {
   const { t, language } = useLanguage();
+  const { toast } = useToast();
   const params = useParams();
   const router = useRouter();
   const vehicleId = params.id as string;
@@ -170,7 +172,7 @@ export default function VehicleDetailPage() {
         setRentPhotos((prev) => ({ ...prev, [side]: url }));
       }
     } catch (e: any) {
-      alert('Fotoğraf yüklenirken hata: ' + e.message);
+      toast.error(e?.message || (language === 'sr' ? 'Greška pri otpremanju fotografije.' : language === 'en' ? 'Photo upload error.' : 'Fotoğraf yüklenirken hata oluştu.'));
     } finally {
       setUploadingPhotoSide(null);
     }
@@ -298,7 +300,7 @@ export default function VehicleDetailPage() {
           setOilKm(v.currentKm);
         }
       } else {
-        alert('Araç bulunamadı.');
+        toast.error(language === 'sr' ? 'Vozilo nije pronađeno.' : language === 'en' ? 'Vehicle not found.' : 'Araç bulunamadı.');
         router.push('/vehicles');
       }
     } catch (e) {
@@ -312,7 +314,7 @@ export default function VehicleDetailPage() {
   const handleMaintSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!maintDesc) {
-      alert('Bakım açıklaması zorunludur.');
+      toast.warning(language === 'sr' ? 'Opis održavanja je obavezan.' : language === 'en' ? 'Maintenance description is required.' : 'Bakım açıklaması zorunludur.');
       return;
     }
     setIsSubmittingMaint(true);
@@ -351,12 +353,14 @@ export default function VehicleDetailPage() {
         setLaborCost('');
         setParts([{ partName: '', partCode: '', changeDate: new Date().toISOString().split('T')[0], cost: '' }]);
         await loadVehicle();
+        toast.success(language === 'sr' ? 'Servisni zapis je uspešno dodat.' : language === 'en' ? 'Maintenance record saved.' : 'Bakım kaydı başarıyla eklendi.');
       } else {
         const err = await res.json();
-        alert(err.error || 'Bakım eklenemedi');
+        toast.error(err.error || (language === 'sr' ? 'Greška pri čuvanju servisa.' : language === 'en' ? 'Maintenance error.' : 'Bakım eklenemedi.'));
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      toast.error(e?.message || 'Hata oluştu.');
     } finally {
       setIsSubmittingMaint(false);
     }
@@ -388,12 +392,14 @@ export default function VehicleDetailPage() {
         setShowOilModal(false);
         setOilNotes('');
         await loadVehicle();
+        toast.success(language === 'sr' ? 'Zamena ulja je uspešno zabeležena.' : language === 'en' ? 'Oil change recorded successfully.' : 'Motor yağı değişimi kaydedildi.');
       } else {
         const err = await res.json();
-        alert(err.error || 'Yağ değişimi eklenemedi');
+        toast.error(err.error || (language === 'sr' ? 'Greška pri zameni ulja.' : language === 'en' ? 'Oil change error.' : 'Yağ değişimi eklenemedi.'));
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      toast.error(e?.message || 'Hata oluştu.');
     } finally {
       setIsSubmittingOil(false);
     }
@@ -420,13 +426,14 @@ export default function VehicleDetailPage() {
         setShowExtendModal(false);
         setExtendNotes('');
         await loadVehicle();
+        toast.success(language === 'sr' ? 'Period zakupa je uspešno produžen.' : language === 'en' ? 'Rental extended successfully.' : 'Kiralama süresi uzatıldı.');
       } else {
         const err = await res.json();
-        alert(err.error || 'Süre uzatma işlemi başarısız oldu.');
+        toast.error(err.error || (language === 'sr' ? 'Produženje zakupa nije uspelo.' : language === 'en' ? 'Rental extension failed.' : 'Süre uzatma işlemi başarısız oldu.'));
       }
     } catch (e: any) {
       console.error(e);
-      alert('Süre uzatma sırasında bir hata oluştu.');
+      toast.error(e?.message || (language === 'sr' ? 'Greška pri produženju zakupa.' : language === 'en' ? 'Error during rental extension.' : 'Süre uzatma sırasında bir hata oluştu.'));
     } finally {
       setIsSubmittingExtend(false);
     }
@@ -493,12 +500,14 @@ export default function VehicleDetailPage() {
       if (res.ok) {
         setShowReturnModal(false);
         await loadVehicle();
+        toast.success(language === 'sr' ? 'Vozilo je uspešno vraćeno sa zakupa.' : language === 'en' ? 'Vehicle returned successfully.' : 'Araç teslim alındı ve iade işlemi tamamlandı.');
       } else {
         const err = await res.json();
-        alert(err.error || 'İade işlemi yapılamadı');
+        toast.error(err.error || (language === 'sr' ? 'Greška pri vraćanju vozila.' : language === 'en' ? 'Return error.' : 'İade işlemi yapılamadı.'));
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      toast.error(e?.message || 'Hata oluştu.');
     } finally {
       setIsSubmittingReturn(false);
     }
@@ -536,7 +545,7 @@ export default function VehicleDetailPage() {
 
     if (rentTab === 'NEW_CUSTOMER') {
       if (!newCustName.trim() || !newCustPhone.trim()) {
-        alert('Lütfen müşteri ad soyad ve telefon numarasını giriniz.');
+        toast.warning(language === 'sr' ? 'Unesite ime i broj telefona klijenta.' : language === 'en' ? 'Please enter customer name and phone number.' : 'Lütfen müşteri ad soyad ve telefon numarasını giriniz.');
         return;
       }
 
@@ -553,20 +562,20 @@ export default function VehicleDetailPage() {
 
         if (!createRes.ok) {
           const err = await createRes.json();
-          alert(err.error || 'Yeni müşteri oluşturulamadı');
+          toast.error(err.error || (language === 'sr' ? 'Nije moguće kreirati klijenta.' : language === 'en' ? 'Could not create customer.' : 'Yeni müşteri oluşturulamadı.'));
           return;
         }
 
         const newCustomer = await createRes.json();
         targetCustomerId = newCustomer.id;
       } catch (err: any) {
-        alert('Müşteri oluşturulurken hata: ' + err.message);
+        toast.error(err.message || (language === 'sr' ? 'Greška pri kreiranju klijenta.' : language === 'en' ? 'Customer creation error.' : 'Müşteri oluşturulurken hata oluştu.'));
         return;
       }
     }
 
     if (!targetCustomerId) {
-      alert('Lütfen müşteri seçiniz.');
+      toast.warning(language === 'sr' ? 'Izaberite klijenta.' : language === 'en' ? 'Please select a customer.' : 'Lütfen müşteri seçiniz.');
       return;
     }
 
@@ -600,12 +609,14 @@ export default function VehicleDetailPage() {
         setNewCustIdNo('');
         setRentNotes('');
         await loadVehicle();
+        toast.success(language === 'sr' ? 'Zakup je uspešno započet.' : language === 'en' ? 'Rental started successfully.' : 'Kiralama başarıyla başlatıldı.');
       } else {
         const err = await res.json();
-        alert(err.error || 'Kiralama başlatılamadı');
+        toast.error(err.error || (language === 'sr' ? 'Greška pri pokretanju zakupa.' : language === 'en' ? 'Could not start rental.' : 'Kiralama başlatılamadı.'));
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      toast.error(e?.message || 'Hata oluştu.');
     } finally {
       setIsSubmittingRent(false);
     }
@@ -656,12 +667,14 @@ export default function VehicleDetailPage() {
       if (res.ok) {
         setShowEditModal(false);
         await loadVehicle();
+        toast.success(language === 'sr' ? 'Podaci o vozilu su uspešno ažurirani.' : language === 'en' ? 'Vehicle updated successfully.' : 'Araç bilgileri güncellendi.');
       } else {
         const err = await res.json();
-        alert(err.error || 'Güncellenemedi');
+        toast.error(err.error || (language === 'sr' ? 'Greška pri ažuriranju vozila.' : language === 'en' ? 'Update failed.' : 'Güncellenemedi.'));
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      toast.error(e?.message || 'Hata oluştu.');
     } finally {
       setIsSubmittingEdit(false);
     }
@@ -677,20 +690,21 @@ export default function VehicleDetailPage() {
       });
       if (res.ok) {
         await loadVehicle();
+        toast.success(language === 'sr' ? 'Vozilo je sada slobodno i spremno za rentiranje.' : language === 'en' ? 'Vehicle is now available for rent.' : 'Araç müsait ve kiralamaya hazır duruma getirildi.');
       } else {
         const err = await res.json();
-        alert(err.error || 'Araç durumu güncellenemedi');
+        toast.error(err.error || (language === 'sr' ? 'Status vozila nije promenjen.' : language === 'en' ? 'Vehicle status not changed.' : 'Araç durumu güncellenemedi.'));
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert('İşlem sırasında hata oluştu.');
+      toast.error(e?.message || 'İşlem sırasında hata oluştu.');
     }
   };
 
   // Handle Delete Vehicle (STAFF protected)
   const handleDeleteVehicle = async () => {
     if (currentUser?.role === 'STAFF') {
-      alert('Çalışanların (STAFF) sistemden araç veya veri silme yetkisi yoktur!');
+      toast.error(language === 'sr' ? 'Osoblje (STAFF) nema ovlašćenje za brisanje vozila!' : language === 'en' ? 'Staff members do not have permission to delete vehicles!' : 'Çalışanların (STAFF) sistemden araç veya veri silme yetkisi yoktur!');
       return;
     }
 
@@ -699,14 +713,14 @@ export default function VehicleDetailPage() {
     try {
       const res = await fetch(`/api/vehicles/${vehicleId}`, { method: 'DELETE' });
       if (res.ok) {
-        alert('Araç başarıyla silindi.');
+        toast.success(language === 'sr' ? 'Vozilo je uspešno obrisano iz sistema.' : language === 'en' ? 'Vehicle successfully deleted.' : 'Araç başarıyla silindi.');
         router.push('/vehicles');
       } else {
         const err = await res.json();
-        alert(err.error || 'Araç silinemedi.');
+        toast.error(err.error || (language === 'sr' ? 'Vozilo nije moglo biti obrisano.' : language === 'en' ? 'Vehicle could not be deleted.' : 'Araç silinemedi.'));
       }
     } catch (e: any) {
-      alert(e.message);
+      toast.error(e.message || 'Hata oluştu.');
     }
   };
 
@@ -714,7 +728,7 @@ export default function VehicleDetailPage() {
   const handleFaultSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!faultTitle.trim()) {
-      alert('Lütfen arıza başlığı giriniz.');
+      toast.warning(language === 'sr' ? 'Unesite naslov kvara.' : language === 'en' ? 'Please enter fault title.' : 'Lütfen arıza başlığı giriniz.');
       return;
     }
     setIsSubmittingFault(true);
@@ -738,12 +752,13 @@ export default function VehicleDetailPage() {
         setFaultDescription('');
         setFaultCost('');
         await loadVehicle();
+        toast.success(language === 'sr' ? 'Kvar je uspešno evidentiran.' : language === 'en' ? 'Fault reported successfully.' : 'Arıza/hasar kaydı oluşturuldu.');
       } else {
         const err = await res.json();
-        alert(err.error || 'Arıza kaydedilemedi');
+        toast.error(err.error || (language === 'sr' ? 'Greška pri unosu kvara.' : language === 'en' ? 'Could not save fault.' : 'Arıza kaydedilemedi.'));
       }
     } catch (e: any) {
-      alert(e.message);
+      toast.error(e?.message || 'Hata oluştu.');
     } finally {
       setIsSubmittingFault(false);
     }
@@ -770,12 +785,13 @@ export default function VehicleDetailPage() {
         setResolveNotes('');
         setResolveCost('');
         await loadVehicle();
+        toast.success(language === 'sr' ? 'Kvar je označen kao popravljen.' : language === 'en' ? 'Fault marked as resolved.' : 'Arıza giderildi olarak işaretlendi.');
       } else {
         const err = await res.json();
-        alert(err.error || 'İşlem yapılamadı');
+        toast.error(err.error || (language === 'sr' ? 'Greška pri popravci kvara.' : language === 'en' ? 'Could not resolve fault.' : 'İşlem yapılamadı.'));
       }
     } catch (e: any) {
-      alert(e.message);
+      toast.error(e?.message || 'Hata oluştu.');
     } finally {
       setIsSubmittingResolve(false);
     }
@@ -794,15 +810,16 @@ export default function VehicleDetailPage() {
       });
       if (res.ok) {
         await loadVehicle();
+        toast.info(language === 'sr' ? 'Kvar je ponovo otvoren.' : language === 'en' ? 'Fault re-opened.' : 'Arıza tekrar açık duruma getirildi.');
       }
     } catch (e: any) {
-      alert(e.message);
+      toast.error(e?.message || 'Hata oluştu.');
     }
   };
 
   const handleDeleteFault = async (faultId: string) => {
     if (currentUser?.role === 'STAFF') {
-      alert('Çalışanların arıza kaydı silme yetkisi yoktur!');
+      toast.error(language === 'sr' ? 'Osoblje (STAFF) nema ovlašćenje za brisanje kvarova!' : language === 'en' ? 'Staff members do not have permission to delete fault records!' : 'Çalışanların arıza kaydı silme yetkisi yoktur!');
       return;
     }
     if (!confirm('Bu arıza kaydını silmek istediğinize emin misiniz?')) return;
@@ -810,12 +827,13 @@ export default function VehicleDetailPage() {
       const res = await fetch(`/api/faults/${faultId}`, { method: 'DELETE' });
       if (res.ok) {
         await loadVehicle();
+        toast.success(language === 'sr' ? 'Zapis o kvaru je obrisan.' : language === 'en' ? 'Fault record deleted.' : 'Arıza kaydı silindi.');
       } else {
         const err = await res.json();
-        alert(err.error || 'Arıza silinemedi');
+        toast.error(err.error || (language === 'sr' ? 'Greška pri brisanju kvara.' : language === 'en' ? 'Could not delete fault.' : 'Arıza silinemedi.'));
       }
     } catch (e: any) {
-      alert(e.message);
+      toast.error(e?.message || 'Hata oluştu.');
     }
   };
 
@@ -830,19 +848,29 @@ export default function VehicleDetailPage() {
       });
       const resData = await res.json();
       if (res.ok) {
-        alert(
-          `${data?.vehicle?.plate || 'Araç'} tarandı.\n${
-            resData.newTicketsCount > 0
-              ? `${resData.newTicketsCount} adet YENİ ceza bulundu!`
-              : 'Yeni bir ceza tespit edilmedi.'
-          }`
-        );
+        if (resData.newTicketsCount > 0) {
+          toast.warning(
+            language === 'sr'
+              ? `Vozilo skenirano: pronađeno ${resData.newTicketsCount} novih kazni!`
+              : language === 'en'
+              ? `Vehicle scanned: ${resData.newTicketsCount} new parking tickets found!`
+              : `${data?.vehicle?.plate || 'Araç'} tarandı: ${resData.newTicketsCount} adet yeni ceza bulundu!`
+          );
+        } else {
+          toast.success(
+            language === 'sr'
+              ? 'Vozilo skenirano: nema novih parking kazni.'
+              : language === 'en'
+              ? 'Vehicle scanned: no new parking tickets found.'
+              : `${data?.vehicle?.plate || 'Araç'} tarandı: yeni ceza tespit edilmedi.`
+          );
+        }
         await loadVehicle();
       } else {
-        alert(resData.error || 'Tarama hatası.');
+        toast.error(resData.error || (language === 'sr' ? 'Greška pri skeniranju.' : language === 'en' ? 'Scanning error.' : 'Tarama hatası.'));
       }
     } catch (e: any) {
-      alert(e.message || 'Sorgulama yapılamadı.');
+      toast.error(e?.message || (language === 'sr' ? 'Skeniranje nije uspelo.' : language === 'en' ? 'Scan failed.' : 'Sorgulama yapılamadı.'));
     } finally {
       setIsScanningParking(false);
     }
@@ -858,19 +886,24 @@ export default function VehicleDetailPage() {
       });
       if (res.ok) {
         await loadVehicle();
+        toast.success(
+          newStatus === 'PAID'
+            ? (language === 'sr' ? 'Kazna je označena kao plaćena.' : language === 'en' ? 'Ticket marked as paid.' : 'Ceza ödendi olarak işaretlendi.')
+            : (language === 'sr' ? 'Kazna je označena kao neplaćena.' : language === 'en' ? 'Ticket marked as unpaid.' : 'Ceza ödenmedi olarak işaretlendi.')
+        );
       } else {
         const err = await res.json();
-        alert(err.error || 'Güncellenemedi');
+        toast.error(err.error || (language === 'sr' ? 'Status nije ažuriran.' : language === 'en' ? 'Could not update status.' : 'Güncellenemedi.'));
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert('İşlem başarısız.');
+      toast.error(e?.message || (language === 'sr' ? 'Operacija nije uspela.' : language === 'en' ? 'Operation failed.' : 'İşlem başarısız.'));
     }
   };
 
   const handleNotifyWhatsApp = async (ticket: any) => {
     if (!ticket.customer?.phone) {
-      alert('Bu cezaya bağlı kayıtlı müşteri telefonu bulunamadı.');
+      toast.error(language === 'sr' ? 'Nije pronađen broj telefona klijenta za ovu kaznu.' : language === 'en' ? 'No registered customer phone found for this ticket.' : 'Bu cezaya bağlı kayıtlı müşteri telefonu bulunamadı.');
       return;
     }
     const url = generateParkingFineWhatsAppUrl(
@@ -894,12 +927,17 @@ export default function VehicleDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-xs font-semibold text-slate-200">Araç Detayları Getiriliyor...</p>
+      <AppLayout currentUser={currentUser} requiredFeature="vehicles">
+        <div className="space-y-6 animate-pulse">
+          <div className="h-9 bg-slate-200 dark:bg-slate-800 rounded-xl w-1/3" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-28 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
+            ))}
+          </div>
+          <div className="h-64 bg-slate-200 dark:bg-slate-800 rounded-2xl" />
         </div>
-      </div>
+      </AppLayout>
     );
   }
 

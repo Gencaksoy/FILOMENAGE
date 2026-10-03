@@ -30,6 +30,8 @@ import { Modal } from '@/components/ui/Modal';
 import { formatDate, formatKm, formatCurrency, getVehicleStatusLabel } from '@/lib/formatters';
 import { AuthUser } from '@/lib/auth-client';
 import { useLanguage } from '@/lib/i18n';
+import { useToast } from '@/components/ui/Toast';
+import { VehicleGridSkeleton } from '@/components/ui/Skeleton';
 
 const ACCESSORY_OPTIONS = [
   'Telefon Tutucu',
@@ -43,6 +45,7 @@ const ACCESSORY_OPTIONS = [
 function VehiclesContent() {
   const searchParams = useSearchParams();
   const { t, language } = useLanguage();
+  const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,15 +112,16 @@ function VehiclesContent() {
       });
       if (!res.ok) {
         const err = await res.json();
-        alert(err.error || 'Araç durumu güncellenemedi');
+        toast.error(err.error || (language === 'sr' ? 'Status vozila nije ažuriran.' : language === 'en' ? 'Could not update vehicle status.' : 'Araç durumu güncellenemedi.'));
         return;
       }
       setVehicles((prev) =>
         prev.map((v) => (v.id === vId ? { ...v, status: 'AVAILABLE' } : v))
       );
-    } catch (e) {
+      toast.success(language === 'sr' ? `Vozilo ${plate} je označeno kao slobodno.` : language === 'en' ? `Vehicle ${plate} marked as available.` : `${plate} plakalı araç müsait olarak işaretlendi.`);
+    } catch (e: any) {
       console.error(e);
-      alert('Araç güncellenirken hata oluştu.');
+      toast.error(e?.message || (language === 'sr' ? 'Greška pri ažuriranju vozila.' : language === 'en' ? 'Failed to update vehicle.' : 'Araç güncellenirken hata oluştu.'));
     }
   };
 
@@ -188,8 +192,16 @@ function VehiclesContent() {
       setIsNewModalOpen(false);
       setFormData(initialForm);
       await loadVehicles();
+      toast.success(
+        language === 'sr'
+          ? 'Vozilo je uspešno registrovano u sistem.'
+          : language === 'en'
+          ? 'Vehicle registered successfully.'
+          : 'Araç sisteme başarıyla kaydedildi.'
+      );
     } catch (err: any) {
       setFormError(err.message);
+      toast.error(err.message || (language === 'sr' ? 'Greška pri čuvanju vozila.' : language === 'en' ? 'Error saving vehicle.' : 'Araç kaydedilemedi.'));
     } finally {
       setFormLoading(false);
     }
@@ -526,10 +538,7 @@ function VehiclesContent() {
 
       {/* Vehicles Table / Mobile Cards */}
       {loading ? (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center">
-          <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-xs text-slate-500 dark:text-slate-400">{t.common_loading}</p>
-        </div>
+        <VehicleGridSkeleton count={6} />
       ) : filteredVehicles.length === 0 ? (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center">
           <Car className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />

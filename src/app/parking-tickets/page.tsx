@@ -27,10 +27,13 @@ import { Modal } from '@/components/ui/Modal';
 import { formatDate, generateParkingFineWhatsAppUrl } from '@/lib/formatters';
 import { AuthUser } from '@/lib/auth-client';
 import { useLanguage } from '@/lib/i18n';
+import { useToast } from '@/components/ui/Toast';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 
 function ParkingTicketsContent() {
   const searchParams = useSearchParams();
   const { t, language } = useLanguage();
+  const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [tickets, setTickets] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
@@ -138,20 +141,30 @@ function ParkingTicketsContent() {
       });
       const data = await res.json();
       if (res.ok) {
-        alert(
-          `${plate} plakalı araç tarandı.\n${
-            data.newTicketsCount > 0
-              ? `${data.newTicketsCount} adet YENİ ceza bulundu!`
-              : 'Yeni bir ceza tespit edilmedi.'
-          }`
-        );
+        if (data.newTicketsCount > 0) {
+          toast.warning(
+            language === 'sr'
+              ? `Vozilo ${plate}: pronađeno ${data.newTicketsCount} novih kazni!`
+              : language === 'en'
+              ? `Vehicle ${plate}: ${data.newTicketsCount} new parking tickets found!`
+              : `${plate} plakalı araç tarandı: ${data.newTicketsCount} yeni ceza bulundu!`
+          );
+        } else {
+          toast.success(
+            language === 'sr'
+              ? `Vozilo ${plate}: nema novih kazni.`
+              : language === 'en'
+              ? `Vehicle ${plate}: no new tickets found.`
+              : `${plate} plakalı araç tarandı. Yeni bir ceza tespit edilmedi.`
+          );
+        }
         await loadTickets();
       } else {
-        alert(data.error || 'Tarama hatası.');
+        toast.error(data.error || (language === 'sr' ? 'Greška pri skeniranju.' : language === 'en' ? 'Scanning error.' : 'Tarama hatası.'));
       }
     } catch (err) {
       console.error('Scan vehicle error:', err);
-      alert('Araç taranamadı.');
+      toast.error(language === 'sr' ? 'Vozilo nije moglo biti skenirano.' : language === 'en' ? 'Vehicle could not be scanned.' : 'Araç taranamadı.');
     } finally {
       setSingleScanningId(null);
     }
@@ -173,22 +186,27 @@ function ParkingTicketsContent() {
         if (selectedTicket?.id === ticket.id) {
           setSelectedTicket((prev: any) => ({ ...prev, status: newStatus }));
         }
+        toast.success(
+          newStatus === 'PAID'
+            ? (language === 'sr' ? 'Kazna je označena kao plaćena.' : language === 'en' ? 'Ticket marked as paid.' : 'Ceza ödendi olarak işaretlendi.')
+            : (language === 'sr' ? 'Kazna je označena kao neplaćena.' : language === 'en' ? 'Ticket marked as unpaid.' : 'Ceza ödenmedi olarak işaretlendi.')
+        );
         // İstatistikleri güncelle
         loadTickets();
       } else {
         const err = await res.json();
-        alert(err.error || 'Durum güncellenemedi.');
+        toast.error(err.error || (language === 'sr' ? 'Status nije ažuriran.' : language === 'en' ? 'Status could not be updated.' : 'Durum güncellenemedi.'));
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert('İşlem başarısız.');
+      toast.error(e?.message || (language === 'sr' ? 'Operacija nije uspela.' : language === 'en' ? 'Operation failed.' : 'İşlem başarısız.'));
     }
   };
 
   // WhatsApp bildirimi gönder ve durumu otomatik "bildirildi" yap
   const handleNotifyCustomerWhatsApp = async (ticket: any) => {
     if (!ticket.customer?.phone) {
-      alert('Bu cezaya bağlı kayıtlı bir müşteri telefonu bulunamadı.');
+      toast.error(language === 'sr' ? 'Nije pronađen broj telefona klijenta za ovu kaznu.' : language === 'en' ? 'No customer phone found for this ticket.' : 'Bu cezaya bağlı kayıtlı bir müşteri telefonu bulunamadı.');
       return;
     }
 
@@ -407,10 +425,7 @@ function ParkingTicketsContent() {
 
         {/* Tickets Content */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center p-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800">
-            <RefreshCw className="w-8 h-8 text-amber-500 animate-spin mb-3" />
-            <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">{t.common_loading}</span>
-          </div>
+          <TableSkeleton rows={5} cols={5} />
         ) : tickets.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-12 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 text-center">
             <div className="w-16 h-16 rounded-full bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4">

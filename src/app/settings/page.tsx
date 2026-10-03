@@ -5,9 +5,11 @@ import { Settings, Save, Building, BellRing, Check, ShieldAlert, Lock, KeyRound 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthUser } from '@/lib/auth-client';
 import { useLanguage } from '@/lib/i18n';
+import { useToast } from '@/components/ui/Toast';
 
 export default function SettingsPage() {
   const { t, language } = useLanguage();
+  const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(false);
@@ -114,7 +116,7 @@ export default function SettingsPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isStaff) {
-      alert(
+      toast.error(
         language === 'sr'
           ? 'Osoblje nema dozvolu za izmenu naziva firme ili sistemskih podešavanja.'
           : language === 'en'
@@ -133,13 +135,21 @@ export default function SettingsPage() {
 
       if (res.ok) {
         setSaved(true);
+        toast.success(
+          language === 'sr'
+            ? 'Podešavanja su uspešno sačuvana.'
+            : language === 'en'
+            ? 'Settings saved successfully.'
+            : 'Ayarlar başarıyla kaydedildi.'
+        );
         setTimeout(() => setSaved(false), 3000);
       } else {
         const err = await res.json();
-        alert(err.error || (language === 'sr' ? 'Podešavanja nisu sačuvana.' : language === 'en' ? 'Settings could not be saved.' : 'Ayarlar kaydedilemedi.'));
+        toast.error(err.error || (language === 'sr' ? 'Podešavanja nisu sačuvana.' : language === 'en' ? 'Settings could not be saved.' : 'Ayarlar kaydedilemedi.'));
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      toast.error(err?.message || (language === 'sr' ? 'Greška pri čuvanju.' : language === 'en' ? 'Save error.' : 'Kaydetme hatası.'));
     }
   };
 

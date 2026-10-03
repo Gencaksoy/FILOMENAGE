@@ -42,6 +42,7 @@ import {
 import { Modal } from '@/components/ui/Modal';
 import { formatDate } from '@/lib/formatters';
 import { AuthUser } from '@/lib/auth-client';
+import { useToast } from '@/components/ui/Toast';
 
 const AVAILABLE_MODULES = [
   { key: 'vehicles', label: 'Araç Yönetimi & Envanter', icon: Car, desc: 'Araç listesi, envanter ve plaka kayıtları' },
@@ -58,6 +59,7 @@ const AVAILABLE_MODULES = [
 
 export default function SuperAdminPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [fleets, setFleets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -179,9 +181,10 @@ export default function SuperAdminPage() {
 
       setFleetForNewUser(null);
       await loadData();
-      alert(`${fleetUserName} kullanıcısı ${fleetForNewUser.name} filosuna başarıyla eklendi.`);
+      toast.success(`${fleetUserName} kullanıcısı ${fleetForNewUser.name} filosuna başarıyla eklendi.`);
     } catch (err: any) {
       setFleetUserError(err.message);
+      toast.error(err.message || 'Kullanıcı eklenemedi.');
     } finally {
       setIsSubmittingFleetUser(false);
     }
@@ -199,19 +202,20 @@ export default function SuperAdminPage() {
       });
       if (res.ok) {
         await loadData();
+        toast.success(u.isActive ? `${u.name} askıya alındı.` : `${u.name} aktif edildi.`);
       } else {
         const err = await res.json();
-        alert(err.error || 'İşlem başarısız.');
+        toast.error(err.error || 'İşlem başarısız.');
       }
     } catch (err: any) {
-      alert(err.message);
+      toast.error(err.message || 'Hata oluştu.');
     }
   };
 
   const handleResetUserPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!userForPasswordReset || newPasswordForUser.length < 6) {
-      alert('Şifre en az 6 karakter olmalıdır.');
+      toast.error('Şifre en az 6 karakter olmalıdır.');
       return;
     }
     setIsSubmittingPasswordReset(true);
@@ -224,13 +228,13 @@ export default function SuperAdminPage() {
       if (res.ok) {
         setUserForPasswordReset(null);
         setNewPasswordForUser('');
-        alert('Kullanıcı şifresi başarıyla sıfırlandı.');
+        toast.success('Kullanıcı şifresi başarıyla sıfırlandı.');
       } else {
         const err = await res.json();
-        alert(err.error || 'Şifre sıfırlanamadı.');
+        toast.error(err.error || 'Şifre sıfırlanamadı.');
       }
     } catch (err: any) {
-      alert(err.message);
+      toast.error(err.message || 'Hata oluştu.');
     } finally {
       setIsSubmittingPasswordReset(false);
     }
@@ -258,11 +262,13 @@ export default function SuperAdminPage() {
       const res = await fetch(`/api/archives?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
       if (res.ok) {
         setArchives((prev) => prev.filter((a) => a.id !== id));
+        toast.success('Arşiv kaydı başarıyla silindi.');
       } else {
-        alert('Kayıt silinemedi');
+        toast.error('Kayıt silinemedi.');
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      toast.error(e?.message || 'Hata oluştu.');
     }
   };
 
@@ -373,9 +379,10 @@ export default function SuperAdminPage() {
         auditLogs: true,
       });
       await loadData();
-      alert('Yeni filo ve yönetici hesabı başarıyla tanımlandı.');
+      toast.success('Yeni filo ve yönetici hesabı başarıyla tanımlandı.');
     } catch (err: any) {
       setFormError(err.message);
+      toast.error(err.message || 'Filo oluşturulamadı.');
     } finally {
       setIsSubmitting(false);
     }
@@ -477,9 +484,10 @@ export default function SuperAdminPage() {
 
       setEditingFleet(null);
       await loadData();
-      alert('Filo bilgileri, ortaklık yapısı ve modül erişimleri başarıyla güncellendi.');
+      toast.success('Filo bilgileri, ortaklık yapısı ve modül erişimleri başarıyla güncellendi.');
     } catch (err: any) {
       setEditError(err.message);
+      toast.error(err.message || 'Filo güncellenemedi.');
     } finally {
       setIsSubmittingEdit(false);
     }
@@ -492,13 +500,15 @@ export default function SuperAdminPage() {
 
     try {
       const res = await fetch(`/api/fleets/${fleetId}`, { method: 'DELETE' });
-      if (res.ok) await loadData();
-      else {
+      if (res.ok) {
+        await loadData();
+        toast.success(`"${fleetName}" filosu başarıyla silindi.`);
+      } else {
         const err = await res.json();
-        alert(err.error || 'Filo silinemedi.');
+        toast.error(err.error || 'Filo silinemedi.');
       }
     } catch (e: any) {
-      alert(e.message);
+      toast.error(e.message || 'Hata oluştu.');
     }
   };
 

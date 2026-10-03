@@ -31,9 +31,12 @@ import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { formatDate } from '@/lib/formatters';
 import { AuthUser } from '@/lib/auth-client';
 import { useLanguage } from '@/lib/i18n';
+import { useToast } from '@/components/ui/Toast';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 
 function CustomersContent() {
   const { t, language } = useLanguage();
+  const { toast } = useToast();
   const searchParams = useSearchParams();
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [customers, setCustomers] = useState<any[]>([]);
@@ -173,8 +176,14 @@ function CustomersContent() {
 
       setIsModalOpen(false);
       await loadCustomers();
+      toast.success(
+        isEditing
+          ? (language === 'sr' ? 'Podaci o klijentu su ažurirani.' : language === 'en' ? 'Customer updated successfully.' : 'Müşteri bilgileri güncellendi.')
+          : (language === 'sr' ? 'Klijent je uspešno dodat.' : language === 'en' ? 'Customer added successfully.' : 'Müşteri başarıyla eklendi.')
+      );
     } catch (err: any) {
       setFormError(err.message);
+      toast.error(err.message || (language === 'sr' ? 'Greška pri čuvanju klijenta.' : language === 'en' ? 'Error saving customer.' : 'İşlem başarısız.'));
     } finally {
       setFormLoading(false);
     }
@@ -190,8 +199,9 @@ function CustomersContent() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Müşteri silinemedi.');
       await loadCustomers();
+      toast.success(language === 'sr' ? 'Klijent je uspešno obrisan.' : language === 'en' ? 'Customer deleted successfully.' : 'Müşteri silindi.');
     } catch (err: any) {
-      alert(err.message);
+      toast.error(err.message || (language === 'sr' ? 'Greška pri brisanju klijenta.' : language === 'en' ? 'Error deleting customer.' : 'Müşteri silinemedi.'));
     }
   };
 
@@ -205,7 +215,7 @@ function CustomersContent() {
     const file = fileInput?.files?.[0];
 
     if (!file) {
-      alert('Lütfen bir belge fotoğrafı seçiniz.');
+      toast.warning(language === 'sr' ? 'Ljubazno izaberite fotografiju dokumenta.' : language === 'en' ? 'Please select a document photo.' : 'Lütfen bir belge fotoğrafı seçiniz.');
       return;
     }
 
@@ -230,8 +240,9 @@ function CustomersContent() {
       setUploadDocTitle('');
       fileInput.value = '';
       await loadCustomers();
+      toast.success(language === 'sr' ? 'Dokument je uspešno sačuvan.' : language === 'en' ? 'Document uploaded successfully.' : 'Belge başarıyla yüklendi.');
     } catch (err: any) {
-      alert(err.message);
+      toast.error(err.message || (language === 'sr' ? 'Greška pri otpremanju dokumenta.' : language === 'en' ? 'Document upload error.' : 'Belge kaydedilemedi.'));
     } finally {
       setUploading(false);
     }
@@ -246,8 +257,9 @@ function CustomersContent() {
       });
       if (!res.ok) throw new Error('Belge silinemedi');
       await loadCustomers();
+      toast.success(language === 'sr' ? 'Dokument je uspešno obrisan.' : language === 'en' ? 'Document deleted successfully.' : 'Belge başarıyla silindi.');
     } catch (err: any) {
-      alert(err.message);
+      toast.error(err.message || (language === 'sr' ? 'Greška pri brisanju dokumenta.' : language === 'en' ? 'Error deleting document.' : 'Belge silinemedi.'));
     }
   };
 
@@ -308,12 +320,7 @@ function CustomersContent() {
 
       {/* Customers Table */}
       {loading ? (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center">
-          <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            {language === 'sr' ? 'Učitavanje klijenata...' : language === 'en' ? 'Loading customers...' : 'Müşteriler yükleniyor...'}
-          </p>
-        </div>
+        <TableSkeleton rows={6} cols={5} />
       ) : filteredCustomers.length === 0 ? (
         <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center">
           <Users className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto mb-3" />

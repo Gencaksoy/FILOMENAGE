@@ -24,9 +24,12 @@ import { formatDate } from '@/lib/formatters';
 import { AuthUser } from '@/lib/auth-client';
 import { validatePassword, validateRealisticEmail } from '@/lib/validation';
 import { useLanguage } from '@/lib/i18n';
+import { useToast } from '@/components/ui/Toast';
+import { TableSkeleton } from '@/components/ui/Skeleton';
 
 export default function UsersPage() {
   const { t, language } = useLanguage();
+  const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,12 +76,17 @@ export default function UsersPage() {
       });
       if (res.ok) {
         await loadUsers();
+        toast.success(
+          user.isActive
+            ? (language === 'sr' ? 'Korisnik je suspendovan.' : language === 'en' ? 'User suspended.' : 'Kullanıcı askıya alındı.')
+            : (language === 'sr' ? 'Korisnik je aktiviran.' : language === 'en' ? 'User activated.' : 'Kullanıcı aktif edildi.')
+        );
       } else {
         const err = await res.json();
-        alert(err.error || 'İşlem başarısız.');
+        toast.error(err.error || (language === 'sr' ? 'Operacija nije uspela.' : language === 'en' ? 'Operation failed.' : 'İşlem başarısız.'));
       }
     } catch (e: any) {
-      alert(e.message || 'Hata oluştu.');
+      toast.error(e.message || (language === 'sr' ? 'Došlo je do greške.' : language === 'en' ? 'An error occurred.' : 'Hata oluştu.'));
     }
   };
 
@@ -116,9 +124,16 @@ export default function UsersPage() {
       setEditingUser(null);
       setEditPassword('');
       await loadUsers();
-      alert('Kullanıcı bilgileri başarıyla güncellendi.');
+      toast.success(
+        language === 'sr'
+          ? 'Podaci o korisniku su uspešno ažurirani.'
+          : language === 'en'
+          ? 'User details updated successfully.'
+          : 'Kullanıcı bilgileri başarıyla güncellendi.'
+      );
     } catch (err: any) {
       setEditError(err.message);
+      toast.error(err.message || (language === 'sr' ? 'Greška pri ažuriranju.' : language === 'en' ? 'Update error.' : 'Güncelleme hatası.'));
     } finally {
       setIsSubmittingEdit(false);
     }
@@ -195,8 +210,16 @@ export default function UsersPage() {
       setNewPassword('');
       setNewRole('STAFF');
       await loadUsers();
+      toast.success(
+        language === 'sr'
+          ? 'Korisnik je uspešno kreiran.'
+          : language === 'en'
+          ? 'User created successfully.'
+          : 'Kullanıcı başarıyla oluşturuldu.'
+      );
     } catch (err: any) {
       setErrorMsg(err.message);
+      toast.error(err.message || (language === 'sr' ? 'Greška pri kreiranju korisnika.' : language === 'en' ? 'Error creating user.' : 'Kullanıcı oluşturulamadı.'));
     } finally {
       setIsSubmitting(false);
     }
@@ -211,12 +234,19 @@ export default function UsersPage() {
       const res = await fetch(`/api/users/${userId}`, { method: 'DELETE' });
       const data = await res.json();
       if (!res.ok) {
-        alert(data.error || 'Kullanıcı silinemedi.');
+        toast.error(data.error || (language === 'sr' ? 'Korisnik nije mogao biti obrisan.' : language === 'en' ? 'User could not be deleted.' : 'Kullanıcı silinemedi.'));
         return;
       }
       await loadUsers();
+      toast.success(
+        language === 'sr'
+          ? `Korisnik ${userName} je uspešno obrisan.`
+          : language === 'en'
+          ? `User ${userName} deleted successfully.`
+          : `${userName} kullanıcısı sistemden silindi.`
+      );
     } catch (err: any) {
-      alert(err.message || 'Bir hata oluştu.');
+      toast.error(err.message || (language === 'sr' ? 'Došlo je do greške.' : language === 'en' ? 'An error occurred.' : 'Bir hata oluştu.'));
     }
   };
 
@@ -302,12 +332,7 @@ export default function UsersPage() {
 
       {/* Users List Grid */}
       {loading ? (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center">
-          <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            {language === 'sr' ? 'Učitavanje korisnika...' : language === 'en' ? 'Loading users...' : 'Kullanıcılar listeleniyor...'}
-          </p>
-        </div>
+        <TableSkeleton rows={4} cols={3} />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {users
