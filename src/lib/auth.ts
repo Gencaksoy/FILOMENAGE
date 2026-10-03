@@ -17,31 +17,37 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     const user = parseSessionCookie(sessionCookie.value);
     if (!user?.id) return null;
 
-    // Askıya alınan veya silinen kullanıcıların anında erişimini kes
-    const dbUser = await prisma.user.findUnique({
-      where: { id: user.id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        isActive: true,
-        fleetId: true,
-        fleet: {
-          select: {
-            id: true,
-            name: true,
-            code: true,
-            status: true,
-            expiresAt: true,
-            isPartnership: true,
-            partners: true,
-            features: true,
-            maxVehicles: true,
+    // Askıya alınan veya silinen kullanıcıların anında erişimini denetle
+    let dbUser: any = null;
+    try {
+      dbUser = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          isActive: true,
+          fleetId: true,
+          fleet: {
+            select: {
+              id: true,
+              name: true,
+              code: true,
+              status: true,
+              expiresAt: true,
+              isPartnership: true,
+              partners: true,
+              features: true,
+              maxVehicles: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (dbErr) {
+      console.warn('DB lookup failed in getCurrentUser, falling back to cookie session user:', dbErr);
+      return user;
+    }
 
     if (!dbUser || !dbUser.isActive) {
       return null;

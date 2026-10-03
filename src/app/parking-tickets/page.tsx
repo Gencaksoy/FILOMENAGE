@@ -49,11 +49,15 @@ function ParkingTicketsContent() {
 
   useEffect(() => {
     fetch('/api/auth/me')
-      .then((res) => (res.ok ? res.json() : null))
+      .then((res) => {
+        if (res.ok) return res.json();
+        if (res.status === 401) window.location.href = '/login';
+        return null;
+      })
       .then((data) => {
         if (data?.user) setCurrentUser(data.user);
-        else window.location.href = '/login';
-      });
+      })
+      .catch(() => {});
 
     const statusParam = searchParams.get('status');
     if (statusParam) {

@@ -37,6 +37,7 @@ import { ImageLightbox } from '@/components/ui/ImageLightbox';
 import { formatDate, formatCurrency, formatKm, formatRsd, EUR_TO_RSD_RATE, VEHICLE_STATUS_MAP, getVehicleStatusLabel } from '@/lib/formatters';
 import { useRouter } from 'next/navigation';
 import { AuthUser } from '@/lib/auth-client';
+import { useAuth } from '@/lib/auth-context';
 import { useLanguage } from '@/lib/i18n';
 
 function getUpcomingStatusLabel(diffDays: number, lang: 'tr' | 'en' | 'sr') {
@@ -62,11 +63,17 @@ function getUpcomingStatusLabel(diffDays: number, lang: 'tr' | 'en' | 'sr') {
 export default function DashboardPage() {
   const router = useRouter();
   const { t, language } = useLanguage();
-  const [authState, setAuthState] = useState<'checking' | 'authenticated' | 'unauthenticated'>('checking');
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const { user: authUser, loading: authLoading } = useAuth();
+  const [user, setUser] = useState<AuthUser | null>(authUser);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedOwner, setSelectedOwner] = useState<string>('ALL');
+
+  useEffect(() => {
+    if (authUser) {
+      setUser(authUser);
+    }
+  }, [authUser]);
 
   // Modal: Return Rental (Teslim Alma + Aksesuar Checklist + Son Fotoğraflar + Bakıma Gönder)
   const [returningRental, setReturningRental] = useState<any | null>(null);
@@ -144,33 +151,32 @@ export default function DashboardPage() {
   const [analyticsPartnerFilter, setAnalyticsPartnerFilter] = useState('ALL');
   const [analyticsSortBy, setAnalyticsSortBy] = useState<'totalExpense' | 'revenue' | 'netProfit' | 'serviceCount' | 'faultCount'>('totalExpense');
 
-  const fetchData = async (owner: string = selectedOwner) => {
+  const fetchData = async (owner: string = selectedOwner, isBackground: boolean = false) => {
     try {
-      setLoading(true);
-      const meRes = await fetch('/api/auth/me');
-      if (!meRes.ok) {
-        setAuthState('unauthenticated');
-        setLoading(false);
-        return;
-      }
-      const u = await meRes.json();
-      if (!u.user) {
-        setAuthState('unauthenticated');
-        setLoading(false);
-        return;
+      if (!isBackground && !data) {
+        setLoading(true);
       }
 
-      setUser(u.user);
-      setAuthState('authenticated');
+      const [meRes, dashRes] = await Promise.all([
+        fetch('/api/auth/me'),
+        fetch(`/api/dashboard?owner=${encodeURIComponent(owner)}`),
+      ]);
 
-      const dashRes = await fetch(`/api/dashboard?owner=${encodeURIComponent(owner)}`);
+      if (meRes.ok) {
+        const u = await meRes.json();
+        if (u?.user) {
+          setUser(u.user);
+        }
+      } else if (meRes.status === 401 && !authUser) {
+        setUser(null);
+      }
+
       if (dashRes.ok) {
         const dashData = await dashRes.json();
         setData(dashData);
       }
     } catch (err) {
       console.error('Veri yükleme hatası:', err);
-      setAuthState('unauthenticated');
     } finally {
       setLoading(false);
     }
@@ -179,10 +185,10 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchData(selectedOwner);
 
-    // Emniyet kilidi: 5 saniye içinde yükleme tamamlanmazsa otomatik aç
+    // Emniyet kilidi: 3 saniye içinde yükleme tamamlanmazsa otomatik aç
     const safetyTimer = setTimeout(() => {
       setLoading(false);
-    }, 5000);
+    }, 3000);
 
     return () => clearTimeout(safetyTimer);
   }, [selectedOwner]);
@@ -284,7 +290,7 @@ export default function DashboardPage() {
         setReturningRental(null);
         setReturnKm('');
         setReturnNotes('');
-        await fetchData(selectedOwner);
+        await fetchData(selectedOwner, true);
       } else {
         const err = await res.json();
         alert(err.error || 'İade işlemi yapılamadı');
@@ -370,7 +376,7 @@ export default function DashboardPage() {
         setNewCustPhone('');
         setNewCustIdNo('');
         setRentNotes('');
-        await fetchData(selectedOwner);
+        await fetchData(selectedOwner, true);
       } else {
         const err = await res.json();
         alert(err.error || 'Kiralama başlatılamadı');
@@ -410,7 +416,7 @@ export default function DashboardPage() {
       if (res.ok) {
         setShowOilModal(false);
         setOilNotes('');
-        await fetchData(selectedOwner);
+        await fetchData(selectedOwner, true);
       } else {
         const err = await res.json();
         alert(err.error || 'Yağ değişimi eklenemedi');
@@ -442,7 +448,7 @@ export default function DashboardPage() {
       if (res.ok) {
         setExtendingRental(null);
         setExtendNotes('');
-        await fetchData(selectedOwner);
+        await fetchData(selectedOwner, true);
       } else {
         const err = await res.json();
         alert(err.error || 'Süre uzatma işlemi başarısız oldu.');
@@ -512,11 +518,11 @@ export default function DashboardPage() {
   const formDiscountVal = parseFloat(String(rentDiscount)) || 0;
   const formFinalPrice = Math.max(0, formBasePrice - formDiscountVal);
 
-  if (authState === 'unauthenticated') {
+  if (!authLoading && !user && !loading && !data) {
     return <LandingPage />;
   }
 
-  if (authState === 'checking' || loading || !data) {
+  if ((authLoading && !user) || (loading && !data && !user)) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-4 text-slate-800 dark:text-slate-200 transition-colors">
         <div className="w-16 h-16 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-2 flex items-center justify-center shadow-xl mb-4 animate-pulse">
@@ -526,6 +532,10 @@ export default function DashboardPage() {
         <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{t.dash_loading_portal}</span>
       </div>
     );
+  }
+
+  if (!user && !data) {
+    return <LandingPage />;
   }
 
   return (

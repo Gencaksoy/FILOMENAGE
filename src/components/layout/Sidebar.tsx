@@ -18,6 +18,7 @@ import {
   FolderLock,
   AlertTriangle,
   ChevronRight,
+  Lock,
 } from 'lucide-react';
 
 import { AuthUser } from '@/lib/auth-client';
@@ -131,19 +132,17 @@ export function Sidebar({ isOpen, onClose, unreadCount = 0, userRole, currentUse
             if (item.superAdminOnly && !isSuperAdmin) return null;
             if (item.adminOnly && isStaff) return null;
 
-            // SaaS Modül Erişim Kontrolleri (Kapatılan özellikleri gizle)
-            if (!isSuperAdmin && currentUser?.features) {
-              if (item.featureKey && currentUser.features[item.featureKey] === false) {
-                // Özel durum: Bakım & Yağ takibi sekmesi için ikisi de kapalıysa gizle
-                if (item.href === '/maintenances') {
-                  if (currentUser.features.maintenance === false && currentUser.features.oilChange === false) {
-                    return null;
-                  }
-                } else {
-                  return null;
-                }
-              }
-            }
+            // SaaS Modül Erişim Kontrolü:
+            // Modülleri sidebardan ASLA GİZLEME (kullanıcının isteği: sidebar küçülmesin, kaybolmasın).
+            // Devre dışı modüller kilitli olarak görünür ve tıklandığında AppLayout içerisindeki "Bu Modül Filonuz İçin Devre Dışı Bırakılmıştır" ekranına yönlendirilir.
+            const isFeatureDisabled =
+              !isSuperAdmin &&
+              currentUser?.features &&
+              (item.featureKey
+                ? item.href === '/maintenances'
+                  ? currentUser.features.maintenance === false && currentUser.features.oilChange === false
+                  : currentUser.features[item.featureKey] === false
+                : false);
 
             const isActive =
               item.href === '/'
@@ -161,20 +160,40 @@ export function Sidebar({ isOpen, onClose, unreadCount = 0, userRole, currentUse
                 className={`group flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl transition-all duration-150 ${
                   isActive
                     ? 'bg-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/25 ring-1 ring-amber-400/50'
+                    : isFeatureDisabled
+                    ? 'text-slate-400/70 hover:text-slate-200 hover:bg-slate-800/40 opacity-75'
                     : item.highlight
                     ? 'text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 font-bold'
                     : 'text-slate-300 hover:text-white hover:bg-slate-800/70'
                 }`}
+                title={
+                  isFeatureDisabled
+                    ? language === 'sr'
+                      ? 'Modul je deaktiviran za vašu flotu'
+                      : language === 'en'
+                      ? 'Module is disabled for your fleet'
+                      : 'Filonuz için devre dışı bırakılmış modül'
+                    : undefined
+                }
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Icon
                     className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
-                      isActive ? 'text-slate-950' : 'text-slate-400 group-hover:text-amber-400'
+                      isActive
+                        ? 'text-slate-950'
+                        : isFeatureDisabled
+                        ? 'text-slate-500'
+                        : 'text-slate-400 group-hover:text-amber-400'
                     }`}
                   />
                   <span className="truncate">{item.name}</span>
                 </div>
-                {item.badge !== undefined ? (
+                {isFeatureDisabled ? (
+                  <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-slate-800 text-amber-400/80 border border-amber-400/20 flex items-center gap-1 shrink-0">
+                    <Lock className="w-2.5 h-2.5" />
+                    <span>{language === 'sr' ? 'Zaključano' : language === 'en' ? 'Locked' : 'Kilitli'}</span>
+                  </span>
+                ) : item.badge !== undefined ? (
                   <span
                     className={`px-1.5 py-0.5 text-[10px] font-black rounded-full shrink-0 ${
                       isActive

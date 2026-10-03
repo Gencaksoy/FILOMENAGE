@@ -140,11 +140,15 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetch('/api/auth/me')
-      .then((res) => (res.ok ? res.json() : null))
+      .then((res) => {
+        if (res.ok) return res.json();
+        if (res.status === 401) window.location.href = '/login';
+        return null;
+      })
       .then((u) => {
         if (u?.user) setCurrentUser(u.user);
-        else window.location.href = '/login';
-      });
+      })
+      .catch(() => {});
 
     loadUsers();
   }, []);

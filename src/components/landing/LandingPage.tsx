@@ -55,25 +55,25 @@ export function LandingPage() {
   )}`;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors selection:bg-amber-500 selection:text-slate-950">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors selection:bg-amber-500 selection:text-slate-950">
       {/* 1. TOP NAVBAR */}
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 p-1 flex items-center justify-center shadow-lg shadow-amber-500/10">
+      <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 w-full">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 p-1 flex items-center justify-center shadow-lg shadow-amber-500/10 shrink-0">
               <img src="/icon.png" alt="Filo Yönetim" className="w-full h-full object-contain" />
             </div>
-            <div>
-              <span className="text-lg font-black tracking-wider text-slate-900 dark:text-white">
+            <div className="min-w-0">
+              <span className="text-sm sm:text-lg font-black tracking-wider text-slate-900 dark:text-white truncate block">
                 FİLO YÖNETİM
               </span>
-              <span className="block text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest">
+              <span className="hidden xs:block text-[10px] sm:text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest truncate">
                 {t.landing_hero_badge}
               </span>
             </div>
           </div>
 
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600 dark:text-slate-300">
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-600 dark:text-slate-300 shrink-0">
             <a href="#ozellikler" className="hover:text-amber-600 dark:hover:text-amber-400 transition-colors">
               {t.landing_features}
             </a>
@@ -88,21 +88,21 @@ export function LandingPage() {
             </a>
           </nav>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             <ThemeToggle variant="landing" />
             <LanguageSelector variant="landing" />
 
             <Link
               href="/login"
-              className="hidden sm:inline-flex px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all border border-slate-300 dark:border-slate-700"
+              className="hidden md:inline-flex px-3.5 py-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all border border-slate-300 dark:border-slate-700"
             >
               {t.auth_login}
             </Link>
             <Link
               href="/register"
-              className="px-3.5 py-2 text-xs sm:text-sm font-extrabold text-slate-950 bg-amber-500 hover:bg-amber-400 rounded-xl transition-all shadow-md shadow-amber-500/20 flex items-center gap-1.5"
+              className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-xs sm:text-sm font-extrabold text-slate-950 bg-amber-500 hover:bg-amber-400 rounded-xl transition-all shadow-md shadow-amber-500/20 flex items-center gap-1 sm:gap-1.5"
             >
-              <KeyRound className="w-4 h-4" />
+              <KeyRound className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span>{t.auth_register}</span>
             </Link>
           </div>
@@ -169,44 +169,44 @@ export function LandingPage() {
             </div>
 
             {/* Quick Feature Badges */}
-            <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-3 text-left">
-              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-center gap-3">
+            <div className="mt-10 sm:mt-12 grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 text-left">
+              <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-center gap-2.5 sm:gap-3 min-w-0">
                 <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                   <ShieldCheck className="w-4 h-4" />
                 </div>
-                <div>
-                  <span className="text-xs font-bold text-slate-900 dark:text-white block">Belgrad eDPK</span>
-                  <span className="text-[10px] text-slate-500">Parking Servis</span>
+                <div className="min-w-0 truncate">
+                  <span className="text-xs font-bold text-slate-900 dark:text-white block truncate">Belgrad eDPK</span>
+                  <span className="text-[10px] text-slate-500 block truncate">Parking Servis</span>
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-center gap-3">
+              <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-center gap-2.5 sm:gap-3 min-w-0">
                 <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                   <Calendar className="w-4 h-4" />
                 </div>
-                <div>
-                  <span className="text-xs font-bold text-slate-900 dark:text-white block">Registracija</span>
-                  <span className="text-[10px] text-slate-500">{language === 'sr' ? 'TÜV i Pregled' : 'TÜV & Muayene'}</span>
+                <div className="min-w-0 truncate">
+                  <span className="text-xs font-bold text-slate-900 dark:text-white block truncate">Registracija</span>
+                  <span className="text-[10px] text-slate-500 block truncate">{language === 'sr' ? 'TÜV i Pregled' : 'TÜV & Muayene'}</span>
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-center gap-3">
+              <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-center gap-2.5 sm:gap-3 min-w-0">
                 <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                   <Droplet className="w-4 h-4" />
                 </div>
-                <div>
-                  <span className="text-xs font-bold text-slate-900 dark:text-white block">{t.nav_maintenance}</span>
-                  <span className="text-[10px] text-slate-500">{language === 'sr' ? 'Servisni interval' : 'Periyot & Maliyet'}</span>
+                <div className="min-w-0 truncate">
+                  <span className="text-xs font-bold text-slate-900 dark:text-white block truncate">{t.nav_maintenance}</span>
+                  <span className="text-[10px] text-slate-500 block truncate">{language === 'sr' ? 'Servisni interval' : 'Periyot & Maliyet'}</span>
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-center gap-3">
+              <div className="p-3 sm:p-3.5 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex items-center gap-2.5 sm:gap-3 min-w-0">
                 <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
                   <BarChart3 className="w-4 h-4" />
                 </div>
-                <div>
-                  <span className="text-xs font-bold text-slate-900 dark:text-white block">{t.kpi_net_profit}</span>
-                  <span className="text-[10px] text-slate-500">{language === 'sr' ? 'Transparentna kasa' : 'Şeffaf Ortak Kasası'}</span>
+                <div className="min-w-0 truncate">
+                  <span className="text-xs font-bold text-slate-900 dark:text-white block truncate">{t.kpi_net_profit}</span>
+                  <span className="text-[10px] text-slate-500 block truncate">{language === 'sr' ? 'Transparentna kasa' : 'Şeffaf Ortak Kasası'}</span>
                 </div>
               </div>
             </div>
@@ -585,7 +585,7 @@ export function LandingPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center justify-center gap-3.5 sm:gap-6 text-center">
             <Link href="/login" className="hover:text-slate-900 dark:hover:text-white transition-colors">
               {t.auth_login}
             </Link>

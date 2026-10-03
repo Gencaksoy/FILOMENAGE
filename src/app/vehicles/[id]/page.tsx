@@ -227,11 +227,15 @@ export default function VehicleDetailPage() {
 
   useEffect(() => {
     fetch('/api/auth/me')
-      .then((res) => (res.ok ? res.json() : null))
+      .then((res) => {
+        if (res.ok) return res.json();
+        if (res.status === 401) router.push('/login');
+        return null;
+      })
       .then((u) => {
         if (u?.user) setCurrentUser(u.user);
-        else router.push('/login');
-      });
+      })
+      .catch(() => {});
 
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);

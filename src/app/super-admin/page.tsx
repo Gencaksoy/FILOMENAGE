@@ -287,7 +287,7 @@ export default function SuperAdminPage() {
           return;
         }
         setCurrentUser(u.user);
-      } else {
+      } else if (meRes.status === 401) {
         router.push('/login');
         return;
       }
@@ -527,31 +527,31 @@ export default function SuperAdminPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-slate-50 text-slate-900 flex flex-col font-sans">
       {/* Top Super Admin Navigation Bar */}
-      <header className="border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-30 shadow-xs pt-[env(safe-area-inset-top,0px)]">
-        <div className="h-16 px-4 sm:px-8 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold shadow-xs">
-              <FolderLock className="w-5 h-5" />
+      <header className="border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-30 shadow-xs pt-[env(safe-area-inset-top,0px)] w-full">
+        <div className="h-16 px-3 sm:px-8 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-bold shadow-xs shrink-0">
+              <FolderLock className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-900 text-base tracking-tight">SÜPER YÖNETİCİ PANELİ</span>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="font-bold text-slate-900 text-sm sm:text-base tracking-tight truncate">SÜPER YÖNETİCİ</span>
+                <span className="hidden xs:inline-block px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300">
                   SaaS Master
                 </span>
               </div>
-              <div className="text-xs text-slate-500 font-medium">
-                Panel Sahibi & Yapımcısı: <b className="text-slate-800">Akif Aksoy</b>
+              <div className="text-[10px] sm:text-xs text-slate-500 font-medium truncate">
+                Sahibi: <b className="text-slate-800">Akif Aksoy</b>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <Link
               href="/"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold border border-slate-200 transition-colors"
+              className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold border border-slate-200 transition-colors"
             >
               <Car className="w-4 h-4 text-slate-600" />
               <span>Filo Operasyon Ekranı</span>
@@ -560,7 +560,7 @@ export default function SuperAdminPage() {
 
             <button
               onClick={handleLogout}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-semibold border border-rose-200 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-semibold border border-rose-200 transition-colors cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Çıkış Yap</span>
@@ -646,11 +646,11 @@ export default function SuperAdminPage() {
         </div>
 
         {/* Tab Buttons */}
-        <div className="flex items-center justify-between flex-wrap gap-3 border-b border-slate-200 pb-3">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between flex-wrap gap-3 border-b border-slate-200 pb-3 w-full">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full sm:w-auto pb-1 max-w-full">
             <button
               onClick={() => setActiveTab('fleets')}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+              className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
                 activeTab === 'fleets'
                   ? 'bg-slate-900 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200'
@@ -661,7 +661,7 @@ export default function SuperAdminPage() {
             </button>
             <button
               onClick={() => setActiveTab('users')}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+              className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
                 activeTab === 'users'
                   ? 'bg-slate-900 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200'
@@ -675,7 +675,7 @@ export default function SuperAdminPage() {
                 setActiveTab('archives');
                 fetchArchives(selectedArchiveTable, archiveSearch);
               }}
-              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+              className={`px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 shrink-0 ${
                 activeTab === 'archives'
                   ? 'bg-slate-900 text-white shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200'
@@ -887,12 +887,12 @@ export default function SuperAdminPage() {
                       </div>
 
                       {/* Action buttons */}
-                      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                           <button
                             type="button"
                             onClick={() => handleToggleStatus(fleet.id, fleet.status)}
-                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
+                            className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1.5 ${
                               isActive
                                 ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                                 : 'bg-emerald-600 hover:bg-emerald-500 text-white'
@@ -905,7 +905,7 @@ export default function SuperAdminPage() {
                           <button
                             type="button"
                             onClick={() => openEditFleetModal(fleet)}
-                            className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                            className="px-2.5 sm:px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
                             title="Filo Ayarları, Ortaklar ve Modül İzinlerini Yönet"
                           >
                             <Edit className="w-3.5 h-3.5 text-amber-700" />
@@ -915,7 +915,7 @@ export default function SuperAdminPage() {
                           <button
                             type="button"
                             onClick={() => openAddUserToFleetModal(fleet)}
-                            className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+                            className="px-2.5 sm:px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
                             title="Bu filoya kullanıcı / personel ata"
                           >
                             <UserPlus className="w-3.5 h-3.5 text-purple-700" />
@@ -926,7 +926,7 @@ export default function SuperAdminPage() {
                         <button
                           type="button"
                           onClick={() => handleDeleteFleet(fleet.id, fleet.name)}
-                          className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+                          className="p-1.5 sm:p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer ml-auto"
                           title="Filoyu Sil"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -950,7 +950,7 @@ export default function SuperAdminPage() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+              <table className="w-full min-w-[650px] text-left text-xs">
                 <thead className="bg-slate-50 text-slate-600 font-bold uppercase text-xs border-b border-slate-200">
                   <tr>
                     <th className="py-3.5 px-4">Kullanıcı</th>
@@ -1120,7 +1120,7 @@ export default function SuperAdminPage() {
             ) : (
               <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
+                  <table className="w-full min-w-[650px] text-left text-xs">
                     <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
                       <tr>
                         <th className="py-3 px-4">Tür</th>

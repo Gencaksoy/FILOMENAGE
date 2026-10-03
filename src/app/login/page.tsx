@@ -43,17 +43,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8 transition-colors relative pt-[max(3rem,env(safe-area-inset-top,0px))] pb-[max(3rem,env(safe-area-inset-bottom,0px))]">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-center py-8 sm:py-12 px-3 sm:px-6 lg:px-8 transition-colors relative pt-[max(3.5rem,env(safe-area-inset-top,0px))] pb-[max(2rem,env(safe-area-inset-bottom,0px))]">
       {/* Top right language and theme selectors */}
-      <div className="absolute top-4 right-4 flex items-center gap-2">
+      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-1.5 sm:gap-2 z-10">
         <ThemeToggle />
         <LanguageSelector />
       </div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+      <div className="w-full max-w-md mx-auto sm:w-full">
         <div className="flex justify-center">
           <Link href="/" className="group">
-            <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-xl border border-slate-800 bg-slate-900 p-1 flex items-center justify-center group-hover:scale-105 transition-transform">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden shadow-xl border border-slate-800 bg-slate-900 p-1 flex items-center justify-center group-hover:scale-105 transition-transform">
               <img
                 src="/icon.png"
                 alt="Filo Yönetim"
@@ -62,16 +62,16 @@ export default function LoginPage() {
             </div>
           </Link>
         </div>
-        <h2 className="mt-5 text-center text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+        <h2 className="mt-4 sm:mt-5 text-center text-xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
           {language === 'sr' ? 'UPRAVLJANJE FLOTOM' : language === 'en' ? 'FLEET MANAGEMENT' : 'FİLO YÖNETİM'}
         </h2>
-        <p className="mt-1.5 text-center text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-1 text-center text-xs sm:text-sm text-slate-500 dark:text-slate-400 px-2">
           {language === 'sr' ? 'Profesionalni portal za praćenje i upravljanje flotom' : language === 'en' ? 'Professional Fleet & Vehicle Rental Portal' : 'Profesyonel Filo & Araç Takip Portalı'}
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 py-8 px-6 sm:px-10 shadow-lg rounded-3xl">
+      <div className="mt-6 sm:mt-8 w-full max-w-md mx-auto">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 py-6 sm:py-8 px-4 sm:px-10 shadow-lg rounded-3xl">
           {error && (
             <div className="mb-5 p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-sm font-medium animate-in fade-in">
               {error}

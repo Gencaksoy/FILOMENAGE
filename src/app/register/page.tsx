@@ -102,17 +102,17 @@ function RegisterForm() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-center py-10 sm:px-6 lg:px-8 transition-colors relative">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col justify-center py-8 sm:py-10 px-3 sm:px-6 lg:px-8 transition-colors relative pt-[max(3.5rem,env(safe-area-inset-top,0px))] pb-[max(2rem,env(safe-area-inset-bottom,0px))]">
       {/* Top right floating Language & Theme switches */}
-      <div className="absolute top-4 right-4 flex items-center gap-2">
+      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-1.5 sm:gap-2 z-10">
         <ThemeToggle />
         <LanguageSelector />
       </div>
 
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+      <div className="w-full max-w-md mx-auto">
         <div className="flex justify-center">
           <Link href="/" className="group">
-            <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-xl border border-slate-800 bg-slate-900 p-1 flex items-center justify-center group-hover:scale-105 transition-transform">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl overflow-hidden shadow-xl border border-slate-800 bg-slate-900 p-1 flex items-center justify-center group-hover:scale-105 transition-transform">
               <img
                 src="/icon.png"
                 alt="Filo Yönetim"
@@ -121,10 +121,10 @@ function RegisterForm() {
             </div>
           </Link>
         </div>
-        <h2 className="mt-4 text-center text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+        <h2 className="mt-4 text-center text-xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
           {t.auth_register}
         </h2>
-        <p className="mt-1 text-center text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+        <p className="mt-1 text-center text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto px-2">
           {language === 'sr'
             ? 'Kreirajte nalog pomoću koda licence koji vam je dodelio SaaS menadžer.'
             : language === 'en'
@@ -133,8 +133,8 @@ function RegisterForm() {
         </p>
       </div>
 
-      <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 py-8 px-6 sm:px-10 shadow-lg rounded-3xl">
+      <div className="mt-6 sm:mt-8 w-full max-w-md mx-auto">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 py-6 sm:py-8 px-4 sm:px-10 shadow-lg rounded-3xl">
           {/* Bilgilendirme Kartı */}
           <div className="mb-5 p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-amber-900 dark:text-amber-300 text-xs flex items-start gap-2.5">
             <ShieldCheck className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
