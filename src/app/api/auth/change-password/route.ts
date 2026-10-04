@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
+import { validatePassword } from '@/lib/validation';
 import bcrypt from 'bcryptjs';
 
 export const dynamic = 'force-dynamic';
@@ -19,6 +20,14 @@ export async function POST(req: Request) {
     if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 6) {
       return NextResponse.json(
         { error: 'Yeni şifre en az 6 karakter olmalıdır.' },
+        { status: 400 }
+      );
+    }
+
+    const validation = validatePassword(newPassword);
+    if (!validation.isValid) {
+      return NextResponse.json(
+        { error: validation.errors.join(' ') },
         { status: 400 }
       );
     }

@@ -318,6 +318,8 @@ export interface Translations {
   // Settings Module
   sett_title: string;
   sett_subtitle: string;
+  sett_tab_system: string;
+  sett_tab_password: string;
   sett_general_title: string;
   sett_company_name: string;
   sett_phone: string;
@@ -641,6 +643,8 @@ const translations: Record<Language, Translations> = {
     // Settings Module
     sett_title: 'Sistem & Filo Ayarları',
     sett_subtitle: 'Filo parametreleri, WhatsApp bildirimleri ve güvenlik ayarları',
+    sett_tab_system: 'Sistem & Filo Ayarları',
+    sett_tab_password: 'Şifre Değiştir',
     sett_general_title: 'Genel Filo Bilgileri',
     sett_company_name: 'Filo / Şirket Adı',
     sett_phone: 'İletişim & WhatsApp Numarası',
@@ -963,6 +967,8 @@ const translations: Record<Language, Translations> = {
     // Settings Module
     sett_title: 'System & Fleet Settings',
     sett_subtitle: 'Fleet parameters, WhatsApp notifications, and security settings',
+    sett_tab_system: 'System & Fleet Settings',
+    sett_tab_password: 'Change Password',
     sett_general_title: 'General Fleet Info',
     sett_company_name: 'Fleet / Company Name',
     sett_phone: 'Contact & WhatsApp Number',
@@ -1285,6 +1291,8 @@ const translations: Record<Language, Translations> = {
     // Settings Module
     sett_title: 'Podešavanja Sistema i Flote',
     sett_subtitle: 'Parametri flote, WhatsApp obaveštenja i bezbednosna podešavanja',
+    sett_tab_system: 'Podešavanja Sistema i Flote',
+    sett_tab_password: 'Promena Lozinke',
     sett_general_title: 'Opšte Informacije o Floti',
     sett_company_name: 'Naziv Flote / Firme',
     sett_phone: 'Broj Telefona i WhatsApp-a',

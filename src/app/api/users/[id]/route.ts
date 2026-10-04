@@ -28,10 +28,17 @@ export async function PATCH(
     if (
       !isSuper &&
       (targetUser.role === 'SUPER_ADMIN' ||
-        targetUser.email === 'super-admin@company.local' ||
         targetUser.email === 'super-admin@company.local')
     ) {
       return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 403 });
+    }
+
+    // Normal yöneticiler başka bir yöneticiyi düzenleyemez (Yalnızca Süper Admin diğer yöneticileri düzenleyebilir)
+    if (!isSuper && targetUser.role === 'ADMIN' && targetUser.id !== currentUser.id) {
+      return NextResponse.json(
+        { error: 'Başka bir yönetici hesabını düzenleme yetkiniz yoktur. Yöneticileri yalnızca Süper Yönetici düzenleyebilir.' },
+        { status: 403 }
+      );
     }
 
     // Başka filonun kullanıcısını düzenleyemez (Süper admin hariç)
@@ -58,9 +65,33 @@ export async function PATCH(
       typeof role === 'string' &&
       (role === 'ADMIN' || role === 'STAFF' || (isSuper && role === 'SUPER_ADMIN'))
     ) {
+      // Normal admin sadece STAFF rolündeki personelin rolünü değiştiremez veya admin yapamaz
+      if (!isSuper && targetUser.role !== 'STAFF') {
+        return NextResponse.json(
+          { error: 'Rol değiştirme yetkisi yalnızca Süper Yöneticiye aittir.' },
+          { status: 403 }
+        );
+      }
       updateData.role = role;
     }
-    if (typeof isActive === 'boolean') {
+    if (typeof isActive === 'boolean' && isActive !== targetUser.isActive) {
+      // Kendi hesabını askıya alamaz
+      if (targetUser.id === currentUser.id) {
+        return NextResponse.json(
+          { error: 'Kendi hesabınızı askıya alamaz veya durumunuzu değiştiremezsiniz.' },
+          { status: 400 }
+        );
+      }
+
+      // Normal admin SADECE STAFF rolünü askıya alabilir / aktif edebilir.
+      // Herkesi (Admin ve Staff) askıya alabilecek tek yetkili SUPER_ADMIN'dir.
+      if (!isSuper && targetUser.role !== 'STAFF') {
+        return NextResponse.json(
+          { error: 'Yöneticiler yalnızca personelleri (STAFF) askıya alabilir veya aktif edebilir. Yöneticileri yalnızca Süper Yönetici askıya alabilir.' },
+          { status: 403 }
+        );
+      }
+
       updateData.isActive = isActive;
     }
     if (typeof password === 'string' && password.trim().length >= 6) {
@@ -144,7 +175,6 @@ export async function DELETE(
     if (
       !isSuper &&
       (userToDelete.role === 'SUPER_ADMIN' ||
-        userToDelete.email === 'super-admin@company.local' ||
         userToDelete.email === 'super-admin@company.local')
     ) {
       return NextResponse.json({ error: 'Kullanıcı bulunamadı.' }, { status: 404 });
@@ -155,6 +185,15 @@ export async function DELETE(
       return NextResponse.json(
         { error: 'Aktif oturum açmış kullanıcı silinemez.' },
         { status: 400 }
+      );
+    }
+
+    // Normal yöneticiler SADECE STAFF rolündeki personelleri silebilir.
+    // Diğer yöneticileri yalnızca Süper Yönetici silebilir.
+    if (!isSuper && userToDelete.role !== 'STAFF') {
+      return NextResponse.json(
+        { error: 'Yöneticiler yalnızca personelleri (STAFF) silebilir. Yöneticileri yalnızca Süper Yönetici silebilir.' },
+        { status: 403 }
       );
     }
 

@@ -54,6 +54,16 @@ export default function UsersPage() {
   const isSuper = currentUser?.role === 'SUPER_ADMIN';
 
   const openEditModal = (u: any) => {
+    if (currentUser?.role !== 'SUPER_ADMIN' && u.role === 'ADMIN' && u.id !== currentUser?.id) {
+      toast.error(
+        language === 'sr'
+          ? 'Samo Super Administrator može izmeniti drugog administratora.'
+          : language === 'en'
+          ? 'Only Super Administrator can edit another administrator.'
+          : 'Yalnızca Süper Yönetici başka bir yöneticiyi düzenleyebilir.'
+      );
+      return;
+    }
     setEditingUser(u);
     setEditName(u.name);
     setEditRole(u.role as any);
@@ -62,6 +72,19 @@ export default function UsersPage() {
   };
 
   const handleToggleSuspend = async (user: any) => {
+    // Normal yöneticiler başka bir yöneticiyi askıya alamaz.
+    // Herkesi askıya alabilecek tek yetkili SUPER_ADMIN'dir.
+    if (currentUser?.role !== 'SUPER_ADMIN' && user.role !== 'STAFF') {
+      toast.error(
+        language === 'sr'
+          ? 'Samo Super Administrator može suspendovati drugog administratora.'
+          : language === 'en'
+          ? 'Only Super Administrator can suspend another administrator.'
+          : 'Yalnızca Süper Yönetici başka bir yöneticiyi askıya alabilir veya aktif edebilir.'
+      );
+      return;
+    }
+
     const actionText = user.isActive ? 'askıya almak (girişini engellemek)' : 'tekrar aktif etmek';
     if (!confirm(`${user.name} kullanıcısını ${actionText} istediğinize emin misiniz?`)) return;
 
@@ -222,7 +245,19 @@ export default function UsersPage() {
     }
   };
 
-  const handleDeleteUser = async (userId: string, userName: string) => {
+  const handleDeleteUser = async (userId: string, userName: string, userRole?: string) => {
+    // Normal yöneticiler başka bir yöneticiyi silemez
+    if (currentUser?.role !== 'SUPER_ADMIN' && userRole && userRole !== 'STAFF') {
+      toast.error(
+        language === 'sr'
+          ? 'Samo Super Administrator može obrisati drugog administratora.'
+          : language === 'en'
+          ? 'Only Super Administrator can delete another administrator.'
+          : 'Yalnızca Süper Yönetici başka bir yöneticiyi silebilir.'
+      );
+      return;
+    }
+
     if (!confirm(`${userName} isimli kullanıcıyı sistemden silmek istediğinize emin misiniz?`)) {
       return;
     }
@@ -341,6 +376,30 @@ export default function UsersPage() {
             .map((u) => {
             const isSuperAdmin = u.role === 'SUPER_ADMIN';
             const isSelf = u.id === currentUser?.id;
+            const isTargetStaff = u.role === 'STAFF';
+            const isTargetAdmin = u.role === 'ADMIN';
+            const isCurrentUserSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+            const isCurrentUserAdmin = currentUser?.role === 'ADMIN';
+
+            // Yetki Kuralları:
+            // - Süper Admin herkesi (kendisi ve diğer süper admin hariç) askıya alabilir / silebilir.
+            // - Normal Admin YALNIZCA STAFF (Personel) hesaplarını askıya alabilir / silebilir. Diğer adminleri askıya ALAMAZ!
+            const canSuspend =
+              !isSelf &&
+              !isSuperAdmin &&
+              (isCurrentUserSuperAdmin || (isCurrentUserAdmin && isTargetStaff));
+
+            const canDelete =
+              !isSelf &&
+              !isSuperAdmin &&
+              (isCurrentUserSuperAdmin || (isCurrentUserAdmin && isTargetStaff));
+
+            // Düzenleme yetkisi: Kendisi, Süper Admin (herkes), Normal Admin (yalnızca Staff)
+            const canEdit =
+              isSelf ||
+              isCurrentUserSuperAdmin ||
+              (isCurrentUserAdmin && isTargetStaff);
+
             const info = roleDescriptions[u.role] || {
               title: u.role,
               badge: 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700',
@@ -376,7 +435,7 @@ export default function UsersPage() {
                     </div>
 
                     <div className="flex items-center gap-1">
-                      {(isSelf || currentUser?.role === 'SUPER_ADMIN' || (!isSuperAdmin && currentUser?.role === 'ADMIN')) && (
+                      {canEdit && (
                         <button
                           type="button"
                           onClick={() => openEditModal(u)}
@@ -387,30 +446,30 @@ export default function UsersPage() {
                         </button>
                       )}
 
-                      {!isSuperAdmin && !isSelf && (currentUser?.role === 'ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => handleToggleSuspend(u)}
-                            className={`p-1.5 rounded-xl transition-colors cursor-pointer ${
-                              u.isActive
-                                ? 'text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/50'
-                                : 'text-rose-600 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50'
-                            }`}
-                            title={u.isActive ? (language === 'sr' ? 'Suspenduj Korisnika' : language === 'en' ? 'Suspend User' : 'Kullanıcıyı Askıya Al') : (language === 'sr' ? 'Aktiviraj Korisnika' : language === 'en' ? 'Activate User' : 'Askıyı Kaldır (Aktif Et)')}
-                          >
-                            <Power className="w-4 h-4" />
-                          </button>
+                      {canSuspend && (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleSuspend(u)}
+                          className={`p-1.5 rounded-xl transition-colors cursor-pointer ${
+                            u.isActive
+                              ? 'text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/50'
+                              : 'text-rose-600 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/50'
+                          }`}
+                          title={u.isActive ? (language === 'sr' ? 'Suspenduj Korisnika' : language === 'en' ? 'Suspend User' : 'Kullanıcıyı Askıya Al') : (language === 'sr' ? 'Aktiviraj Korisnika' : language === 'en' ? 'Activate User' : 'Askıyı Kaldır (Aktif Et)')}
+                        >
+                          <Power className="w-4 h-4" />
+                        </button>
+                      )}
 
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteUser(u.id, u.name)}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-xl transition-colors cursor-pointer"
-                            title={language === 'sr' ? 'Obriši Korisnika' : language === 'en' ? 'Delete User' : 'Kullanıcıyı Sil'}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </>
+                      {canDelete && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteUser(u.id, u.name, u.role)}
+                          className="p-1.5 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 rounded-xl transition-colors cursor-pointer"
+                          title={language === 'sr' ? 'Obriši Korisnika' : language === 'en' ? 'Delete User' : 'Kullanıcıyı Sil'}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       )}
                     </div>
                   </div>
@@ -443,7 +502,7 @@ export default function UsersPage() {
                         )}
                       </div>
 
-                      {!isSuperAdmin && !isSelf && (
+                      {canSuspend ? (
                         <button
                           type="button"
                           onClick={() => handleToggleSuspend(u)}
@@ -453,7 +512,11 @@ export default function UsersPage() {
                         >
                           {u.isActive ? (language === 'sr' ? 'Suspenduj' : language === 'en' ? 'Suspend' : 'Askıya Al') : (language === 'sr' ? 'Aktiviraj' : language === 'en' ? 'Activate' : 'Aktif Et')}
                         </button>
-                      )}
+                      ) : !isSelf && isTargetAdmin && !isCurrentUserSuperAdmin ? (
+                        <span className="text-[11px] text-slate-400 font-medium italic">
+                          {language === 'sr' ? '(Samo Super Admin)' : language === 'en' ? '(Super Admin only)' : '(Yalnızca Süper Admin)'}
+                        </span>
+                      ) : null}
                     </div>
                   </div>
 

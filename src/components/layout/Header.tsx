@@ -353,25 +353,36 @@ export function Header({ onToggleSidebar, currentUser, unreadCount = 0 }: Header
                   </Link>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowUserMenu(false);
-                    setPwdError(null);
-                    setPwdSuccess(null);
-                    setCurrentPassword('');
-                    setNewPassword('');
-                    setConfirmPassword('');
-                    setShowPasswordModal(true);
-                  }}
-                  className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors text-left cursor-pointer"
-                >
-                  <KeyRound className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-                  {t.header_change_password}
-                </button>
+                {currentUser?.role === 'STAFF' ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowUserMenu(false);
+                      setPwdError(null);
+                      setPwdSuccess(null);
+                      setCurrentPassword('');
+                      setNewPassword('');
+                      setConfirmPassword('');
+                      setShowPasswordModal(true);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors text-left cursor-pointer"
+                  >
+                    <KeyRound className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    {t.header_change_password}
+                  </button>
+                ) : (
+                  <Link
+                    href="/settings?tab=password"
+                    onClick={() => setShowUserMenu(false)}
+                    className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors"
+                  >
+                    <KeyRound className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    {t.header_change_password}
+                  </Link>
+                )}
 
                 <Link
-                  href="/settings"
+                  href="/settings?tab=system"
                   onClick={() => setShowUserMenu(false)}
                   className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
