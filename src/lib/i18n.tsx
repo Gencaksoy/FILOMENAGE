@@ -9,6 +9,7 @@ export interface Translations {
   nav_dashboard: string;
   nav_super_admin: string;
   nav_vehicles: string;
+  nav_excel_import: string;
   nav_customers: string;
   nav_maintenance: string;
   nav_inspection: string;
@@ -372,6 +373,7 @@ const translations: Record<Language, Translations> = {
     nav_dashboard: 'Dashboard',
     nav_super_admin: 'Süper Yönetici Paneli',
     nav_vehicles: 'Araçlar',
+    nav_excel_import: 'AI Excel Aktarım',
     nav_customers: 'Müşteriler & Belgeler',
     nav_maintenance: 'Bakım & Yağ Takibi',
     nav_inspection: 'Yıllık Muayene & Registracija',
@@ -727,6 +729,7 @@ const translations: Record<Language, Translations> = {
     nav_dashboard: 'Dashboard',
     nav_super_admin: 'Super Admin Panel',
     nav_vehicles: 'Vehicles',
+    nav_excel_import: 'AI Excel Import',
     nav_customers: 'Customers & Documents',
     nav_maintenance: 'Maintenance & Oil',
     nav_inspection: 'Annual Inspection & Regi',
@@ -1082,6 +1085,7 @@ const translations: Record<Language, Translations> = {
     nav_dashboard: 'Kontrolna tabla',
     nav_super_admin: 'Super Admin Panel',
     nav_vehicles: 'Vozila',
+    nav_excel_import: 'AI Excel Uvoz',
     nav_customers: 'Klijenti i Dokumenti',
     nav_maintenance: 'Održavanje i Ulje',
     nav_inspection: 'Godišnji Tehnički i Regi',

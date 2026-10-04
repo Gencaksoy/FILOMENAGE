@@ -30,6 +30,7 @@ interface AppLayoutProps {
 
 const FEATURE_NAMES: Record<string, string> = {
   vehicles: 'Araç Yönetimi & Envanter',
+  excelImport: 'AI Excel Aktarım & Veri Entegrasyonu',
   rentals: 'Kiralama & Teslimat Takibi',
   customers: 'Müşteri & Belge Yönetimi',
   maintenance: 'Periyodik Bakım & Onarım',

@@ -19,6 +19,7 @@ import {
   AlertTriangle,
   ChevronRight,
   Lock,
+  Sparkles,
 } from 'lucide-react';
 
 import { AuthUser } from '@/lib/auth-client';
@@ -55,6 +56,13 @@ export function Sidebar({ isOpen, onClose, unreadCount = 0, userRole, currentUse
     },
     { name: t.nav_dashboard, href: '/', icon: LayoutDashboard },
     { name: t.nav_vehicles, href: '/vehicles', icon: Car, featureKey: 'vehicles' },
+    {
+       name: t.nav_excel_import,
+       href: '/excel-import',
+       icon: Sparkles,
+       badge: 'AI',
+       featureKey: 'vehicles',
+    },
     { name: t.nav_customers, href: '/customers', icon: Users, featureKey: 'customers' },
     { name: t.nav_maintenance, href: '/maintenances', icon: Wrench, featureKey: 'maintenance' },
     { name: t.nav_inspection, href: '/inspection', icon: FileCheck2, featureKey: 'inspection' },
@@ -194,6 +202,8 @@ export function Sidebar({ isOpen, onClose, unreadCount = 0, userRole, currentUse
                     className={`px-1.5 py-0.5 text-[10px] font-black rounded-full shrink-0 ${
                       isActive
                         ? 'bg-slate-950 text-white'
+                        : typeof item.badge === 'string'
+                        ? 'bg-gradient-to-r from-purple-500/25 to-amber-500/25 text-amber-300 border border-amber-400/30 text-[9px] px-2 py-0.2 tracking-wider'
                         : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
                     }`}
                   >
