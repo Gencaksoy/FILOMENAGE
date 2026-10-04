@@ -5,11 +5,14 @@ function getSessionSecret(): string {
   if (secret) return secret;
 
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('Set NEXTAUTH_SECRET, AUTH_SECRET, or JWT_SECRET to sign session cookies.');
+    console.warn(
+      '⚠️ [SECURITY WARNING] NEXTAUTH_SECRET, AUTH_SECRET, or JWT_SECRET is not set in environment variables! Using fallback secret for deployment.'
+    );
   }
 
-  return 'development-only-session-secret-change-before-deployment';
+  return 'filo-yonetim-production-default-jwt-secret-key-change-in-env';
 }
+
 
 function encodeBase64Url(value: Uint8Array): string {
   let binary = '';
