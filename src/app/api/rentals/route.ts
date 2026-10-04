@@ -97,9 +97,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Araç bulunamadı.' }, { status: 404 });
     }
 
-    if (vehicle.status === 'RENTED') {
+    const activeRental = await prisma.rental.findFirst({
+      where: { vehicleId, status: 'ACTIVE' },
+    });
+    if (activeRental) {
       return NextResponse.json(
-        { error: `${vehicle.plate} plakalı araç zaten kiradadır!` },
+        { error: `${vehicle.plate} plakalı aracın devam eden aktif bir kiralama sözleşmesi bulunmaktadır! Yeni kiralama yapmadan önce mevcut kiralamayı teslim alınız.` },
         { status: 400 }
       );
     }

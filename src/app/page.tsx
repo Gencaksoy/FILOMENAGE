@@ -121,7 +121,7 @@ export default function DashboardPage() {
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] // Varsayılan 1 ay
   );
   const [rentMonthlyRate, setRentMonthlyRate] = useState<number | string>(350);
-  const [rentDiscount, setRentDiscount] = useState<number | string>(0);
+  const [rentDiscount, setRentDiscount] = useState<number | string>('');
   const [rentIsPaid, setRentIsPaid] = useState<boolean>(true);
   const [rentNotes, setRentNotes] = useState('');
   
@@ -143,7 +143,7 @@ export default function DashboardPage() {
   const [oilType, setOilType] = useState('5W-30 Tam Sentetik');
   const [oilFilter, setOilFilter] = useState(true);
   const [oilCurrency, setOilCurrency] = useState<'EUR' | 'RSD'>('EUR');
-  const [oilCost, setOilCost] = useState('75');
+  const [oilCost, setOilCost] = useState<number | string>('');
   const [oilService, setOilService] = useState('');
   const [oilNotes, setOilNotes] = useState('');
   const [oilPaidBy, setOilPaidBy] = useState('Şirket Kasası');
@@ -211,7 +211,7 @@ export default function DashboardPage() {
         }
       }
       if (cRes.ok) setCustomers(await cRes.json());
-      setRentDiscount(0);
+      setRentDiscount('');
       setRentIsPaid(true);
       setShowRentModal(true);
     } catch (e) {
@@ -425,7 +425,7 @@ export default function DashboardPage() {
           km: oilKm ? parseInt(String(oilKm), 10) : undefined,
           oilType,
           filterChanged: oilFilter,
-          cost: parseFloat(oilCost) || 0,
+          cost: parseFloat(String(oilCost)) || 0,
           currency: oilCurrency,
           serviceName: oilService,
           notes: oilNotes,
@@ -1551,6 +1551,30 @@ export default function DashboardPage() {
                         setReturningRental(item);
                         setReturnKm('');
                         setSentToPostCheck(true);
+
+                        let parsedChecklist: Record<string, boolean> = {
+                          'Telefon Tutucu': true,
+                          'Çakmaklık Şarj Aleti': true,
+                          'İlk Yardım Çantası': true,
+                          'Reflektör & Yangın Tüpü': true,
+                          'Paspas Seti': true,
+                        };
+                        if (item.deliveryAccessories) {
+                          try {
+                            const arr = typeof item.deliveryAccessories === 'string'
+                              ? JSON.parse(item.deliveryAccessories)
+                              : item.deliveryAccessories;
+                            if (Array.isArray(arr) && arr.length > 0) {
+                              parsedChecklist = {};
+                              arr.forEach((accName: string) => {
+                                parsedChecklist[accName] = true;
+                              });
+                            }
+                          } catch (e) {
+                            // keep default
+                          }
+                        }
+                        setAccessoriesChecklist(parsedChecklist);
                       }}
                       className="inline-flex items-center gap-1.5 px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
                     >
@@ -1634,6 +1658,7 @@ export default function DashboardPage() {
                 <input
                   type="number"
                   value={extendDays}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => setExtendDays(e.target.value)}
                   required
                   min={1}
@@ -1753,6 +1778,7 @@ export default function DashboardPage() {
                 <input
                   type="number"
                   value={returnKm}
+                  onFocus={(e) => e.target.select()}
                   onChange={(e) => setReturnKm(e.target.value)}
                   placeholder="Örn: 78900"
                   className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl focus:border-amber-500 font-mono font-bold"
@@ -2139,6 +2165,7 @@ export default function DashboardPage() {
                     value={rentMonthlyRate}
                     onFocus={(e) => e.target.select()}
                     onChange={(e) => setRentMonthlyRate(e.target.value)}
+                    placeholder="Örn: 350"
                     className="w-full px-3 py-2 text-xs border border-amber-300 dark:border-amber-700 rounded-xl font-bold bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                   />
                 </div>
@@ -2331,7 +2358,9 @@ export default function DashboardPage() {
                   <input
                     type="number"
                     value={oilKm}
+                    onFocus={(e) => e.target.select()}
                     onChange={(e) => setOilKm(e.target.value)}
+                    placeholder="Örn: 155000"
                     required
                     className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl font-mono font-bold"
                   />
@@ -2361,13 +2390,14 @@ export default function DashboardPage() {
                     value={oilCost}
                     onFocus={(e) => e.target.select()}
                     onChange={(e) => setOilCost(e.target.value)}
+                    placeholder="Örn: 75"
                     className="w-full px-3 py-1.5 text-xs border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl font-bold"
                   />
                 </div>
                 <div className="col-span-2 text-xs text-slate-500 dark:text-slate-400 font-mono">
                   {oilCurrency === 'RSD'
-                    ? `${language === 'sr' ? 'U evrima: ~' : language === 'en' ? 'In EUR: ~' : 'EUR Karşılığı: ~'}${Math.round(((parseFloat(oilCost) || 0) / EUR_TO_RSD_RATE) * 100) / 100} €`
-                    : `${language === 'sr' ? 'U dinarima: ~' : language === 'en' ? 'In RSD: ~' : 'Dinar Karşılığı: ~'}${Math.round((parseFloat(oilCost) || 0) * EUR_TO_RSD_RATE)} RSD`}
+                    ? `${language === 'sr' ? 'U evrima: ~' : language === 'en' ? 'In EUR: ~' : 'EUR Karşılığı: ~'}${Math.round(((parseFloat(String(oilCost)) || 0) / EUR_TO_RSD_RATE) * 100) / 100} €`
+                    : `${language === 'sr' ? 'U dinarima: ~' : language === 'en' ? 'In RSD: ~' : 'Dinar Karşılığı: ~'}${Math.round((parseFloat(String(oilCost)) || 0) * EUR_TO_RSD_RATE)} RSD`}
                 </div>
               </div>
 

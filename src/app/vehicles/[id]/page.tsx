@@ -56,6 +56,7 @@ import {
 import { AuthUser } from '@/lib/auth-client';
 import { useLanguage } from '@/lib/i18n';
 import { useToast } from '@/components/ui/Toast';
+import VehicleAccessoriesManager, { STANDARD_DEFAULT_ACCESSORIES } from '@/components/vehicles/VehicleAccessoriesManager';
 
 interface PartItem {
   partName: string;
@@ -112,7 +113,7 @@ export default function VehicleDetailPage() {
   const [oilType, setOilType] = useState('5W-30 Tam Sentetik');
   const [oilService, setOilService] = useState('');
   const [filterChanged, setFilterChanged] = useState(true);
-  const [oilCost, setOilCost] = useState<number | string>(75);
+  const [oilCost, setOilCost] = useState<number | string>('');
   const [oilNotes, setOilNotes] = useState('');
   const [oilPaidBy, setOilPaidBy] = useState('Şirket Kasası');
   const [isSubmittingOil, setIsSubmittingOil] = useState(false);
@@ -146,7 +147,7 @@ export default function VehicleDetailPage() {
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
   const [rentMonthlyRate, setRentMonthlyRate] = useState<number | string>(350);
-  const [rentDiscount, setRentDiscount] = useState<number | string>(0);
+  const [rentDiscount, setRentDiscount] = useState<number | string>('');
   const [rentIsPaid, setRentIsPaid] = useState(true);
   const [rentNotes, setRentNotes] = useState('');
   const [rentAccessories, setRentAccessories] = useState<string[]>(DEFAULT_ACCESSORIES);
@@ -187,16 +188,16 @@ export default function VehicleDetailPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editBrand, setEditBrand] = useState('');
   const [editModel, setEditModel] = useState('');
-  const [editYear, setEditYear] = useState<number>(2023);
+  const [editYear, setEditYear] = useState<number | string>(2023);
   const [editColor, setEditColor] = useState('');
-  const [editKm, setEditKm] = useState<number>(0);
+  const [editKm, setEditKm] = useState<number | string>(0);
   const [editFuelType, setEditFuelType] = useState('Dizel');
-  const [editFuelConsumptionRsd, setEditFuelConsumptionRsd] = useState<number>(1100);
+  const [editFuelConsumptionRsd, setEditFuelConsumptionRsd] = useState<number | string>(1100);
   const [editRegistrationExpiry, setEditRegistrationExpiry] = useState('');
-  const [editPurchasePrice, setEditPurchasePrice] = useState<number>(6500);
-  const [editInitialExpenses, setEditInitialExpenses] = useState<number>(350);
-  const [editMonthlyPrice, setEditMonthlyPrice] = useState<number>(350);
-  const [editDailyPrice, setEditDailyPrice] = useState<number>(25);
+  const [editPurchasePrice, setEditPurchasePrice] = useState<number | string>(6500);
+  const [editInitialExpenses, setEditInitialExpenses] = useState<number | string>(350);
+  const [editMonthlyPrice, setEditMonthlyPrice] = useState<number | string>(350);
+  const [editDailyPrice, setEditDailyPrice] = useState<number | string>(25);
   const [editOwner, setEditOwner] = useState('');
   const [editStatus, setEditStatus] = useState('AVAILABLE');
   const [editAccessories, setEditAccessories] = useState<string[]>(DEFAULT_ACCESSORIES);
@@ -519,7 +520,7 @@ export default function VehicleDetailPage() {
       const cRes = await fetch('/api/customers');
       if (cRes.ok) setCustomers(await cRes.json());
       setRentMonthlyRate(data?.vehicle?.monthlyPrice || 350);
-      setRentDiscount(0);
+      setRentDiscount('');
       setRentIsPaid(true);
 
       let initialAcc = DEFAULT_ACCESSORIES;
@@ -645,16 +646,16 @@ export default function VehicleDetailPage() {
         body: JSON.stringify({
           brand: editBrand,
           model: editModel,
-          modelYear: editYear,
+          modelYear: parseInt(String(editYear), 10) || 0,
           color: editColor,
-          currentKm: editKm,
+          currentKm: parseInt(String(editKm), 10) || 0,
           fuelType: editFuelType,
-          fuelConsumptionRsd: editFuelConsumptionRsd,
+          fuelConsumptionRsd: parseFloat(String(editFuelConsumptionRsd)) || 0,
           registrationExpiry: editRegistrationExpiry || null,
-          purchasePrice: editPurchasePrice,
-          initialExpenses: editInitialExpenses,
-          monthlyPrice: editMonthlyPrice,
-          dailyPrice: editDailyPrice,
+          purchasePrice: parseFloat(String(editPurchasePrice)) || 0,
+          initialExpenses: parseFloat(String(editInitialExpenses)) || 0,
+          monthlyPrice: parseFloat(String(editMonthlyPrice)) || 0,
+          dailyPrice: parseFloat(String(editDailyPrice)) || 0,
           owner: editOwner,
           status: editStatus,
           accessories: JSON.stringify(editAccessories),
@@ -1771,14 +1772,29 @@ export default function VehicleDetailPage() {
 
       {/* ARAÇ İÇİ AKSESUARLAR ÇUBUĞU */}
       <div className="bg-white rounded-2xl border border-slate-200 p-4 mb-6 shadow-xs">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+          <div className="flex items-center gap-2">
             <Layers className="w-4 h-4 text-amber-600" />
-            Araç İçi Kayıtlı Aksesuarlar
-          </span>
-          <span className="text-xs text-slate-400">
-            Teslim alma ve verme süreçlerinde bu aksesuarlar kontrol edilir.
-          </span>
+            <span className="text-xs font-bold text-slate-800">
+              {language === 'sr' ? 'Oprema i Karakteristike u Vozilu' : language === 'en' ? 'Registered Interior Accessories & Equipment' : 'Araç İçi Kayıtlı Aksesuarlar & Donanımlar'}
+            </span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-100 text-amber-800 border border-amber-200">
+              {vehicleAccessoriesList.length}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400 hidden sm:inline">
+              {language === 'sr' ? 'Oprema se proverava pri izdavanju i povratku.' : language === 'en' ? 'Accessories are verified at rental delivery & return.' : 'Teslim alma ve verme süreçlerinde bu donanımlar kontrol edilir.'}
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowEditModal(true)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 rounded-lg border border-amber-300 transition-colors cursor-pointer"
+            >
+              <Edit className="w-3 h-3 text-amber-600" />
+              <span>{language === 'sr' ? 'Izmeni Opremu' : language === 'en' ? 'Edit Accessories' : 'Aksesuarları Düzenle'}</span>
+            </button>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           {vehicleAccessoriesList.length > 0 ? (
@@ -1792,7 +1808,16 @@ export default function VehicleDetailPage() {
               </span>
             ))
           ) : (
-            <span className="text-xs text-slate-400 italic">Kayıtlı aksesuar yok.</span>
+            <div className="flex items-center justify-between w-full py-1 text-xs text-slate-400 italic">
+              <span>{language === 'sr' ? 'Nema evidentirane opreme.' : language === 'en' ? 'No registered accessories.' : 'Kayıtlı aksesuar veya donanım yok.'}</span>
+              <button
+                type="button"
+                onClick={() => setShowEditModal(true)}
+                className="text-xs font-bold text-amber-700 hover:underline cursor-pointer ml-2 not-italic"
+              >
+                + {language === 'sr' ? 'Dodaj Opremu' : language === 'en' ? 'Add Equipment' : 'Donanım Ekle'}
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -2590,6 +2615,7 @@ export default function VehicleDetailPage() {
             <input
               type="number"
               value={extendDays}
+              onFocus={(e) => e.target.select()}
               onChange={(e) => setExtendDays(e.target.value)}
               required
               min={1}
@@ -2702,7 +2728,9 @@ export default function VehicleDetailPage() {
               type="number"
               required
               value={returnKm}
+              onFocus={(e) => e.target.select()}
               onChange={(e) => setReturnKm(e.target.value)}
+              placeholder="Örn: 150000"
               className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-amber-500 font-mono font-bold"
             />
           </div>
@@ -2725,7 +2753,7 @@ export default function VehicleDetailPage() {
               )}
             </div>
             <div className="space-y-2">
-              {DEFAULT_ACCESSORIES.map((acc) => {
+              {Array.from(new Set([...returnAccessories, ...vehicleAccessoriesList, ...DEFAULT_ACCESSORIES])).map((acc) => {
                 const checked = returnAccessories.includes(acc);
                 return (
                   <label
@@ -2935,7 +2963,9 @@ export default function VehicleDetailPage() {
                 type="number"
                 required
                 value={rentMonthlyRate}
+                onFocus={(e) => e.target.select()}
                 onChange={(e) => setRentMonthlyRate(e.target.value)}
+                placeholder="Örn: 350"
                 className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-amber-500 font-bold"
               />
             </div>
@@ -2946,6 +2976,7 @@ export default function VehicleDetailPage() {
               <input
                 type="number"
                 value={rentDiscount}
+                onFocus={(e) => e.target.select()}
                 onChange={(e) => setRentDiscount(e.target.value)}
                 placeholder="Örn: 25"
                 className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-amber-500 font-bold text-rose-600"
@@ -2974,7 +3005,7 @@ export default function VehicleDetailPage() {
               Müşteriye Teslim Edilen Aksesuarlar
             </span>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {DEFAULT_ACCESSORIES.map((acc) => {
+              {Array.from(new Set([...vehicleAccessoriesList, ...DEFAULT_ACCESSORIES])).map((acc) => {
                 const checked = rentAccessories.includes(acc);
                 return (
                   <label
@@ -3235,7 +3266,7 @@ export default function VehicleDetailPage() {
                       value={p.cost}
                       onFocus={(e) => e.target.select()}
                       onChange={(e) => updatePartRow(idx, 'cost', e.target.value)}
-                      placeholder={`Tutar (${maintCurrency})`}
+                      placeholder={`Örn: 45 (${maintCurrency})`}
                       className="flex-1 sm:w-28 px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:border-blue-500 font-mono font-bold"
                     />
                     {parts.length > 1 && (
@@ -3375,7 +3406,9 @@ export default function VehicleDetailPage() {
                 type="number"
                 required
                 value={oilKm}
+                onFocus={(e) => e.target.select()}
                 onChange={(e) => setOilKm(e.target.value)}
+                placeholder="Örn: 155000"
                 className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-emerald-500 font-mono font-bold"
               />
             </div>
@@ -3402,7 +3435,9 @@ export default function VehicleDetailPage() {
                 type="number"
                 required
                 value={oilCost}
+                onFocus={(e) => e.target.select()}
                 onChange={(e) => setOilCost(e.target.value)}
+                placeholder="Örn: 75"
                 className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-emerald-500 font-bold"
               />
             </div>
@@ -3696,7 +3731,9 @@ export default function VehicleDetailPage() {
                 type="number"
                 required
                 value={editYear}
-                onChange={(e) => setEditYear(parseInt(e.target.value, 10) || 2023)}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => setEditYear(e.target.value)}
+                placeholder="Örn: 2023"
                 className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl"
               />
             </div>
@@ -3715,7 +3752,9 @@ export default function VehicleDetailPage() {
                 type="number"
                 required
                 value={editKm}
-                onChange={(e) => setEditKm(parseInt(e.target.value, 10) || 0)}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => setEditKm(e.target.value)}
+                placeholder="Örn: 150000"
                 className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-mono font-bold"
               />
             </div>
@@ -3797,7 +3836,9 @@ export default function VehicleDetailPage() {
               <input
                 type="number"
                 value={editFuelConsumptionRsd}
-                onChange={(e) => setEditFuelConsumptionRsd(parseFloat(e.target.value) || 0)}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => setEditFuelConsumptionRsd(e.target.value)}
+                placeholder="Örn: 1100"
                 className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-mono font-bold"
               />
             </div>
@@ -3819,7 +3860,9 @@ export default function VehicleDetailPage() {
               <input
                 type="number"
                 value={editPurchasePrice}
-                onChange={(e) => setEditPurchasePrice(parseFloat(e.target.value) || 0)}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => setEditPurchasePrice(e.target.value)}
+                placeholder="Örn: 6500"
                 className="w-full px-3 py-2 text-xs border border-amber-300 rounded-xl bg-white font-mono font-bold"
               />
             </div>
@@ -3828,7 +3871,9 @@ export default function VehicleDetailPage() {
               <input
                 type="number"
                 value={editInitialExpenses}
-                onChange={(e) => setEditInitialExpenses(parseFloat(e.target.value) || 0)}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => setEditInitialExpenses(e.target.value)}
+                placeholder="Örn: 350"
                 className="w-full px-3 py-2 text-xs border border-amber-300 rounded-xl bg-white font-mono font-bold"
               />
             </div>
@@ -3837,11 +3882,19 @@ export default function VehicleDetailPage() {
               <input
                 type="number"
                 value={editMonthlyPrice}
-                onChange={(e) => setEditMonthlyPrice(parseFloat(e.target.value) || 0)}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => setEditMonthlyPrice(e.target.value)}
+                placeholder="Örn: 350"
                 className="w-full px-3 py-2 text-xs border border-amber-300 rounded-xl bg-white font-mono font-bold"
               />
             </div>
           </div>
+
+          {/* Araç İçi Aksesuarlar & Donanımlar */}
+          <VehicleAccessoriesManager
+            accessories={editAccessories}
+            onChange={(accs) => setEditAccessories(accs)}
+          />
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">Notlar</label>
@@ -3934,6 +3987,7 @@ export default function VehicleDetailPage() {
               <input
                 type="number"
                 value={faultCost}
+                onFocus={(e) => e.target.select()}
                 onChange={(e) => setFaultCost(e.target.value)}
                 placeholder="Örn: 80"
                 className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-rose-500 font-mono"
@@ -4023,6 +4077,7 @@ export default function VehicleDetailPage() {
               <input
                 type="number"
                 value={resolveCost}
+                onFocus={(e) => e.target.select()}
                 onChange={(e) => setResolveCost(e.target.value)}
                 placeholder="Örn: 90"
                 className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-emerald-500 font-mono font-bold"

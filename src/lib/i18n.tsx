@@ -252,6 +252,9 @@ export interface Translations {
   veh_modal_daily_price: string;
   veh_modal_monthly_price: string;
   veh_modal_owner: string;
+  veh_modal_edit_title: string;
+  veh_accessories_title: string;
+  veh_accessories_subtitle: string;
 
   // Maintenances Module
   maint_title: string;
@@ -577,6 +580,9 @@ const translations: Record<Language, Translations> = {
     veh_modal_daily_price: 'Günlük Kira Fiyatı (€)',
     veh_modal_monthly_price: 'Aylık Kira Fiyatı (€)',
     veh_modal_owner: 'Araç Sahibi / Ortak',
+    veh_modal_edit_title: 'Araç Bilgilerini Düzenle',
+    veh_accessories_title: 'Araç İçi Aksesuarlar & Donanımlar',
+    veh_accessories_subtitle: 'Kira teslimatında ve iadelerinde kontrol edilecek araç donanımları',
 
     // Maintenances Module
     maint_title: 'Bakım & Motor Yağı Takibi',
@@ -901,6 +907,9 @@ const translations: Record<Language, Translations> = {
     veh_modal_daily_price: 'Daily Rental Rate (€)',
     veh_modal_monthly_price: 'Monthly Rental Rate (€)',
     veh_modal_owner: 'Vehicle Owner / Partner',
+    veh_modal_edit_title: 'Edit Vehicle Details',
+    veh_accessories_title: 'Vehicle Interior Accessories & Features',
+    veh_accessories_subtitle: 'Interior accessories and equipment checked during rentals',
 
     // Maintenances Module
     maint_title: 'Maintenance & Engine Oil Tracking',
@@ -1225,6 +1234,9 @@ const translations: Record<Language, Translations> = {
     veh_modal_daily_price: 'Dnevna Cena Najma (€)',
     veh_modal_monthly_price: 'Mesečna Cena Najma (€)',
     veh_modal_owner: 'Vlasnik / Partner',
+    veh_modal_edit_title: 'Izmena Podataka o Vozilu',
+    veh_accessories_title: 'Oprema i Dodaci u Vozilu',
+    veh_accessories_subtitle: 'Oprema u vozilu koja se proverava pri preuzimanju i povratku',
 
     // Maintenances Module
     maint_title: 'Održavanje i Motorno Ulje',

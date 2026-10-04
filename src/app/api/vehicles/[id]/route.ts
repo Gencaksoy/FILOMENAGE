@@ -90,6 +90,8 @@ export async function GET(
       } else {
         remainingText = `${remainingDays} gün kaldı`;
       }
+    } else if (vehicle.status === 'RENTED') {
+      remainingText = 'Müşteride Kirada';
     } else if (vehicle.status === 'POST_RENTAL_CHECK') {
       remainingText = 'Kiradan Sonra Bakım / Temizlikte';
     } else if (vehicle.status === 'MAINTENANCE') {

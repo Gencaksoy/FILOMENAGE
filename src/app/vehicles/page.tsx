@@ -24,6 +24,8 @@ import {
   ShieldAlert,
   PhoneCall,
   MessageSquare,
+  Edit,
+  Layers,
 } from 'lucide-react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Modal } from '@/components/ui/Modal';
@@ -32,6 +34,7 @@ import { AuthUser } from '@/lib/auth-client';
 import { useLanguage } from '@/lib/i18n';
 import { useToast } from '@/components/ui/Toast';
 import { VehicleGridSkeleton } from '@/components/ui/Skeleton';
+import VehicleAccessoriesManager, { STANDARD_DEFAULT_ACCESSORIES } from '@/components/vehicles/VehicleAccessoriesManager';
 
 const ACCESSORY_OPTIONS = [
   'Telefon Tutucu',
@@ -61,6 +64,13 @@ function VehiclesContent() {
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
+  // Edit Vehicle Modal state
+  const [editingVehicle, setEditingVehicle] = useState<any | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState<any>(null);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+
   const formatRemainingRental = (days: number | null, lang: 'tr' | 'en' | 'sr') => {
     if (days === null) return '-';
     if (days < 0) {
@@ -83,16 +93,16 @@ function VehiclesContent() {
     plate: '',
     brand: '',
     model: '',
-    modelYear: new Date().getFullYear(),
+    modelYear: '' as any,
     color: '',
-    currentKm: 0,
+    currentKm: '' as any,
     fuelType: 'Dizel',
-    fuelConsumptionRsd: 1100,
+    fuelConsumptionRsd: '' as any,
     registrationExpiry: oneYearLater.toISOString().slice(0, 10),
-    purchasePrice: 6500,
-    initialExpenses: 350,
-    dailyPrice: 25,
-    monthlyPrice: 350,
+    purchasePrice: '' as any,
+    initialExpenses: '' as any,
+    dailyPrice: '' as any,
+    monthlyPrice: '' as any,
     status: 'AVAILABLE',
     owner: '',
     accessories: ['Telefon Tutucu', 'Çakmaklık Şarj Aleti', 'İlk Yardım Çantası', 'Reflektör & Yangın Tüpü', 'Paspas Seti'],
@@ -100,6 +110,10 @@ function VehiclesContent() {
     engineNo: '',
     chronicIssues: '',
     notes: '',
+    customerName: '',
+    customerPhone: '',
+    rentalStartDate: new Date().toISOString().slice(0, 10),
+    rentalEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
   };
   const [formData, setFormData] = useState(initialForm);
 
@@ -180,10 +194,21 @@ function VehiclesContent() {
     setFormError(null);
 
     try {
+      const payload = {
+        ...formData,
+        modelYear: parseInt(String(formData.modelYear), 10) || new Date().getFullYear(),
+        currentKm: parseInt(String(formData.currentKm), 10) || 0,
+        fuelConsumptionRsd: parseFloat(String(formData.fuelConsumptionRsd)) || 0,
+        purchasePrice: parseFloat(String(formData.purchasePrice)) || 0,
+        initialExpenses: parseFloat(String(formData.initialExpenses)) || 0,
+        monthlyPrice: parseFloat(String(formData.monthlyPrice)) || 0,
+        dailyPrice: parseFloat(String(formData.dailyPrice)) || 0,
+      };
+
       const res = await fetch('/api/vehicles', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       const result = await res.json();
@@ -213,6 +238,90 @@ function VehiclesContent() {
       setFormData({ ...formData, accessories: current.filter((x) => x !== acc) });
     } else {
       setFormData({ ...formData, accessories: [...current, acc] });
+    }
+  };
+
+  const openEditModal = (v: any) => {
+    let accs: string[] = STANDARD_DEFAULT_ACCESSORIES;
+    if (v.accessories) {
+      try {
+        accs = JSON.parse(v.accessories);
+        if (!Array.isArray(accs)) accs = STANDARD_DEFAULT_ACCESSORIES;
+      } catch {
+        accs = typeof v.accessories === 'string' ? [v.accessories] : STANDARD_DEFAULT_ACCESSORIES;
+      }
+    }
+
+    setEditingVehicle(v);
+    setEditFormData({
+      plate: v.plate || '',
+      brand: v.brand || '',
+      model: v.model || '',
+      modelYear: v.modelYear || new Date().getFullYear(),
+      color: v.color || '',
+      currentKm: v.currentKm ?? 0,
+      fuelType: v.fuelType || 'Dizel',
+      fuelConsumptionRsd: v.fuelConsumptionRsd ?? 0,
+      registrationExpiry: v.registrationExpiry ? new Date(v.registrationExpiry).toISOString().slice(0, 10) : '',
+      purchasePrice: v.purchasePrice ?? 0,
+      initialExpenses: v.initialExpenses ?? 0,
+      dailyPrice: v.dailyPrice ?? 0,
+      monthlyPrice: v.monthlyPrice ?? 350,
+      status: v.status || 'AVAILABLE',
+      owner: v.owner || '',
+      accessories: accs,
+      vin: v.vin || '',
+      engineNo: v.engineNo || '',
+      chronicIssues: v.chronicIssues || '',
+      notes: v.notes || '',
+    });
+    setEditError(null);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditVehicleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingVehicle) return;
+    setEditLoading(true);
+    setEditError(null);
+
+    try {
+      const payload = {
+        ...editFormData,
+        modelYear: parseInt(String(editFormData.modelYear), 10) || new Date().getFullYear(),
+        currentKm: parseInt(String(editFormData.currentKm), 10) || 0,
+        fuelConsumptionRsd: parseFloat(String(editFormData.fuelConsumptionRsd)) || 0,
+        purchasePrice: parseFloat(String(editFormData.purchasePrice)) || 0,
+        initialExpenses: parseFloat(String(editFormData.initialExpenses)) || 0,
+        monthlyPrice: parseFloat(String(editFormData.monthlyPrice)) || 0,
+        dailyPrice: parseFloat(String(editFormData.dailyPrice)) || 0,
+        accessories: JSON.stringify(editFormData.accessories || []),
+      };
+
+      const res = await fetch(`/api/vehicles/${editingVehicle.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Araç güncellenemedi.');
+
+      setIsEditModalOpen(false);
+      setEditingVehicle(null);
+      await loadVehicles();
+      toast.success(
+        language === 'sr'
+          ? 'Podaci o vozilu i oprema su uspešno ažurirani.'
+          : language === 'en'
+          ? 'Vehicle details and accessories updated successfully.'
+          : 'Araç bilgileri ve aksesuarları başarıyla güncellendi.'
+      );
+    } catch (err: any) {
+      setEditError(err.message);
+      toast.error(err.message || 'Araç güncellenemedi.');
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -761,6 +870,16 @@ function VehiclesContent() {
                           <span className="text-sky-700 dark:text-sky-400 font-semibold italic">
                             {language === 'sr' ? 'Na pregledu / čišćenju' : language === 'en' ? 'In post-rental check' : 'Muayene / Temizlikte'}
                           </span>
+                        ) : isRented ? (
+                          <div className="text-amber-800 dark:text-amber-300">
+                            <span className="font-bold inline-flex items-center gap-1">
+                              <KeyRound className="w-3 h-3 text-amber-600" />
+                              {language === 'sr' ? 'U Najmu' : language === 'en' ? 'Rented' : 'Kirada'}
+                            </span>
+                            <div className="text-[11px] text-amber-700/80 dark:text-amber-400/80 font-normal">
+                              {language === 'sr' ? '(Bez ugovora)' : language === 'en' ? '(No contract)' : '(Sözleşme Bekleniyor)'}
+                            </div>
+                          </div>
                         ) : (
                           <span className="text-slate-400 italic">
                             {t.veh_tab_available}
@@ -782,6 +901,11 @@ function VehiclesContent() {
                           >
                             <Clock className="w-3 h-3 mr-1" />
                             {formatRemainingRental(v.activeRental.remainingDays, language)}
+                          </span>
+                        ) : isRented ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {language === 'sr' ? 'U toku' : language === 'en' ? 'Ongoing' : 'Devam Ediyor'}
                           </span>
                         ) : (
                           <span className="text-slate-400">-</span>
@@ -812,15 +936,26 @@ function VehiclesContent() {
                         )}
                       </td>
 
-                      {/* Detay Butonu */}
+                      {/* İşlem Butonları */}
                       <td className="py-3.5 px-4 text-right">
-                        <Link
-                          href={`/vehicles/${v.id}`}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-amber-500 dark:hover:bg-amber-500 hover:text-slate-950 dark:hover:text-slate-950 font-bold rounded-xl text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          {t.veh_btn_details}
-                        </Link>
+                        <div className="inline-flex items-center gap-1.5 justify-end">
+                          <button
+                            type="button"
+                            onClick={() => openEditModal(v)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 font-bold rounded-xl text-slate-700 dark:text-slate-200 transition-colors cursor-pointer text-xs"
+                            title={t.common_edit}
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                            <span className="hidden sm:inline">{t.common_edit}</span>
+                          </button>
+                          <Link
+                            href={`/vehicles/${v.id}`}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-amber-500 dark:hover:bg-amber-500 hover:text-slate-950 dark:hover:text-slate-950 font-bold rounded-xl text-slate-700 dark:text-slate-200 transition-colors cursor-pointer text-xs"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>{t.veh_btn_details}</span>
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -923,8 +1058,10 @@ function VehiclesContent() {
               <input
                 type="number"
                 required
-                value={formData.modelYear}
-                onChange={(e) => setFormData({ ...formData, modelYear: parseInt(e.target.value, 10) || 2024 })}
+                value={formData.modelYear ?? ''}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => setFormData({ ...formData, modelYear: e.target.value })}
+                placeholder="Örn: 2024"
                 className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
               />
             </div>
@@ -947,8 +1084,10 @@ function VehiclesContent() {
               <input
                 type="number"
                 required
-                value={formData.currentKm}
-                onChange={(e) => setFormData({ ...formData, currentKm: parseInt(e.target.value, 10) || 0 })}
+                value={formData.currentKm ?? ''}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => setFormData({ ...formData, currentKm: e.target.value })}
+                placeholder={language === 'sr' ? 'Npr: 120000' : language === 'en' ? 'E.g.: 120000' : 'Örn: 120000'}
                 className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 font-mono font-bold bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
               />
             </div>
@@ -1033,8 +1172,9 @@ function VehiclesContent() {
               </label>
               <input
                 type="number"
-                value={formData.fuelConsumptionRsd}
-                onChange={(e) => setFormData({ ...formData, fuelConsumptionRsd: parseFloat(e.target.value) || 0 })}
+                value={formData.fuelConsumptionRsd ?? ''}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => setFormData({ ...formData, fuelConsumptionRsd: e.target.value })}
                 placeholder="Örn: 1100"
                 className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 font-mono font-bold bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
               />
@@ -1049,8 +1189,9 @@ function VehiclesContent() {
               </label>
               <input
                 type="number"
-                value={formData.purchasePrice}
-                onChange={(e) => setFormData({ ...formData, purchasePrice: parseFloat(e.target.value) || 0 })}
+                value={formData.purchasePrice ?? ''}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => setFormData({ ...formData, purchasePrice: e.target.value })}
                 placeholder="Örn: 6500"
                 className="w-full px-3 py-2 text-xs border border-amber-300 dark:border-amber-700 rounded-xl focus:border-amber-500 font-mono font-bold bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
               />
@@ -1061,8 +1202,9 @@ function VehiclesContent() {
               </label>
               <input
                 type="number"
-                value={formData.initialExpenses}
-                onChange={(e) => setFormData({ ...formData, initialExpenses: parseFloat(e.target.value) || 0 })}
+                value={formData.initialExpenses ?? ''}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => setFormData({ ...formData, initialExpenses: e.target.value })}
                 placeholder="Örn: 350"
                 className="w-full px-3 py-2 text-xs border border-amber-300 dark:border-amber-700 rounded-xl focus:border-amber-500 font-mono font-bold bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
               />
@@ -1077,8 +1219,10 @@ function VehiclesContent() {
               </label>
               <input
                 type="number"
-                value={formData.monthlyPrice}
-                onChange={(e) => setFormData({ ...formData, monthlyPrice: parseFloat(e.target.value) || 0 })}
+                value={formData.monthlyPrice ?? ''}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => setFormData({ ...formData, monthlyPrice: e.target.value })}
+                placeholder="Örn: 350"
                 className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 font-bold bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
               />
             </div>
@@ -1088,8 +1232,10 @@ function VehiclesContent() {
               </label>
               <input
                 type="number"
-                value={formData.dailyPrice}
-                onChange={(e) => setFormData({ ...formData, dailyPrice: parseFloat(e.target.value) || 0 })}
+                value={formData.dailyPrice ?? ''}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => setFormData({ ...formData, dailyPrice: e.target.value })}
+                placeholder="Örn: 25"
                 className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
               />
             </div>
@@ -1100,14 +1246,96 @@ function VehiclesContent() {
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 font-semibold bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 font-bold bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
               >
                 <option value="AVAILABLE">{t.veh_tab_available}</option>
+                <option value="RENTED">{t.veh_tab_rented}</option>
                 <option value="POST_RENTAL_CHECK">{t.kpi_post_check}</option>
                 <option value="MAINTENANCE">{t.kpi_maintenance}</option>
               </select>
             </div>
           </div>
+
+          {/* Kiralama / Müşteri Bilgisi (Sadece Durum 'Kirada' iken gösterilir - Excel Aktarımı İçin Çok Kolaylık Sağlar) */}
+          {formData.status === 'RENTED' && (
+            <div className="bg-amber-50/70 dark:bg-amber-950/30 p-3.5 rounded-2xl border border-amber-300 dark:border-amber-800 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-black text-amber-900 dark:text-amber-300">
+                <KeyRound className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span>
+                  {language === 'sr'
+                    ? 'Podaci o Zakupu i Klijentu (Opciono / Za prenos iz Excela)'
+                    : language === 'en'
+                    ? 'Rental & Client Details (Optional / For Excel Migration)'
+                    : 'Kiralama & Müşteri Bilgileri (İsteğe Bağlı / Excel Aktarımı İçin)'}
+                </span>
+              </div>
+              <p className="text-[11px] text-amber-800/90 dark:text-amber-300/80">
+                {language === 'sr'
+                  ? 'Ako popunite ovo polje, ugovor o zakupu i klijent će biti automatski kreirani u sistemu. Možete ostaviti prazno i dodati ugovor kasnije.'
+                  : language === 'en'
+                  ? 'If filled, a rental contract and client will be created automatically. You can also leave this blank and attach a contract later.'
+                  : 'Bu alanı doldurursanız kiralama sözleşmesi ve müşteri sistemde otomatik oluşturulur. İsterseniz boş bırakıp aracı sadece "Kirada" olarak da kaydedebilirsiniz.'}
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    {language === 'sr' ? 'Ime i Prezime Klijenta' : language === 'en' ? 'Client Full Name' : 'Müşteri / Sürücü Adı Soyadı'}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.customerName}
+                    onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                    placeholder={language === 'sr' ? 'Npr: Marko Petrović' : language === 'en' ? 'E.g.: John Doe' : 'Örn: Ahmet Yılmaz'}
+                    className="w-full px-3 py-2 text-xs border border-amber-300 dark:border-amber-700 rounded-xl focus:border-amber-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    {language === 'sr' ? 'Telefon Klijenta' : language === 'en' ? 'Client Phone' : 'Müşteri Telefon Numarası'}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.customerPhone}
+                    onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
+                    placeholder="+381 6..."
+                    className="w-full px-3 py-2 text-xs border border-amber-300 dark:border-amber-700 rounded-xl focus:border-amber-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    {language === 'sr' ? 'Datum Početka Zakupa' : language === 'en' ? 'Rental Start Date' : 'Kira Başlangıç Tarihi'}
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.rentalStartDate}
+                    onChange={(e) => setFormData({ ...formData, rentalStartDate: e.target.value })}
+                    className="w-full px-3 py-2 text-xs border border-amber-300 dark:border-amber-700 rounded-xl focus:border-amber-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    {language === 'sr' ? 'Datum Završetka Zakupa' : language === 'en' ? 'Rental End Date' : 'Planlanan İade Tarihi'}
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.rentalEndDate}
+                    onChange={(e) => setFormData({ ...formData, rentalEndDate: e.target.value })}
+                    className="w-full px-3 py-2 text-xs border border-amber-300 dark:border-amber-700 rounded-xl focus:border-amber-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Araç İçi Aksesuarlar & Donanımlar */}
+          <VehicleAccessoriesManager
+            accessories={formData.accessories || []}
+            onChange={(newAccs) => setFormData({ ...formData, accessories: newAccs })}
+          />
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
@@ -1140,6 +1368,322 @@ function VehiclesContent() {
           </div>
         </form>
       </Modal>
+
+      {/* Edit Vehicle Modal */}
+      {isEditModalOpen && editFormData && (
+        <Modal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          title={t.veh_modal_edit_title}
+          subtitle={`${editFormData.plate} - ${editFormData.brand} ${editFormData.model}`}
+          maxWidth="2xl"
+        >
+          {editError && (
+            <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{editError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleEditVehicleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  {t.veh_modal_plate} *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editFormData.plate}
+                  onChange={(e) => setEditFormData({ ...editFormData, plate: e.target.value.toUpperCase() })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 font-mono font-bold uppercase bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  {currentUser?.isPartnership ? `${t.veh_modal_owner} *` : t.veh_card_owner}
+                </label>
+                {currentUser?.isPartnership && (currentUser?.partners || []).length > 0 ? (
+                  <select
+                    value={editFormData.owner}
+                    onChange={(e) => setEditFormData({ ...editFormData, owner: e.target.value })}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 font-bold bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                  >
+                    {(currentUser.partners || []).map((partner) => (
+                      <option key={partner} value={partner}>
+                        {partner}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={editFormData.owner}
+                    onChange={(e) => setEditFormData({ ...editFormData, owner: e.target.value })}
+                    placeholder={currentUser?.fleetName || (language === 'sr' ? 'Vlasnik / Flota' : 'Araç Sahibi / Filo')}
+                    className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 font-medium bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                  />
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  {t.veh_modal_brand} *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editFormData.brand}
+                  onChange={(e) => setEditFormData({ ...editFormData, brand: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  {t.veh_modal_model} *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editFormData.model}
+                  onChange={(e) => setEditFormData({ ...editFormData, model: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  {t.veh_modal_year} *
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={editFormData.modelYear}
+                  onChange={(e) => setEditFormData({ ...editFormData, modelYear: parseInt(e.target.value, 10) || 2023 })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  {t.veh_modal_color}
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.color}
+                  onChange={(e) => setEditFormData({ ...editFormData, color: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  {t.veh_modal_km} *
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={editFormData.currentKm}
+                  onChange={(e) => setEditFormData({ ...editFormData, currentKm: parseInt(e.target.value, 10) || 0 })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 font-mono font-bold bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  {t.veh_modal_reg_expiry} *
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={editFormData.registrationExpiry}
+                  onChange={(e) => setEditFormData({ ...editFormData, registrationExpiry: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 font-mono bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+            </div>
+
+            {/* Detaylı Araç Kimliği (Şasi No & Motor No) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+              <div>
+                <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1">
+                  VIN / Broj Šasije (17 Haneli)
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.vin}
+                  onChange={(e) => setEditFormData({ ...editFormData, vin: e.target.value.toUpperCase() })}
+                  placeholder="Örn: VF1BZ0A0548123456"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-600 rounded-xl focus:border-amber-500 font-mono font-bold uppercase bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1">
+                  Broj Motora / Motor No
+                </label>
+                <input
+                  type="text"
+                  value={editFormData.engineNo}
+                  onChange={(e) => setEditFormData({ ...editFormData, engineNo: e.target.value.toUpperCase() })}
+                  placeholder="Örn: K9K 836 D012345"
+                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-600 rounded-xl focus:border-amber-500 font-mono font-bold uppercase bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+            </div>
+
+            {/* Kronik Arızalar / Bilinen Sorunlar */}
+            <div className="bg-amber-50/70 dark:bg-amber-950/30 p-3 rounded-xl border border-amber-300/80 dark:border-amber-800">
+              <label className="block text-xs font-bold text-amber-900 dark:text-amber-300 mb-1 flex items-center gap-1.5">
+                <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                {language === 'sr' ? 'Poznati kvarovi / Napomene' : language === 'en' ? 'Known Issues / Special Notes' : 'Kronik Arızalar / Bilinen Sıkıntılar / Önemli Notlar'}
+              </label>
+              <textarea
+                rows={2}
+                value={editFormData.chronicIssues}
+                onChange={(e) => setEditFormData({ ...editFormData, chronicIssues: e.target.value })}
+                placeholder={language === 'sr' ? 'npr. provera ulja na 2000 km...' : 'Örn: Yağ kontrolü vb...'}
+                className="w-full px-3 py-2 text-xs border border-amber-300 dark:border-amber-700 rounded-xl focus:border-amber-500 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 placeholder:text-slate-400"
+              />
+            </div>
+
+            {/* Yakıt & Tüketim */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  {t.veh_modal_fuel_type} *
+                </label>
+                <select
+                  value={editFormData.fuelType}
+                  onChange={(e) => setEditFormData({ ...editFormData, fuelType: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 font-semibold bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                >
+                  <option value="Dizel">Dizel (Euro Diesel)</option>
+                  <option value="Benzin">Benzin (BMB 95)</option>
+                  <option value="Benzin+LPG">Benzin + TNG (LPG)</option>
+                  <option value="Benzin+Metan">Benzin + Metan (CNG)</option>
+                  <option value="Hibrid">Hibrid (Hybrid)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  100 KM Ortalama Tüketim (RSD / Dinar)
+                </label>
+                <input
+                  type="number"
+                  value={editFormData.fuelConsumptionRsd}
+                  onChange={(e) => setEditFormData({ ...editFormData, fuelConsumptionRsd: parseFloat(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 font-mono font-bold bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+            </div>
+
+            {/* Satın Alma & Devir Masrafları */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-amber-50/60 dark:bg-amber-950/20 p-3 rounded-xl border border-amber-200/80 dark:border-amber-900/40">
+              <div>
+                <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1">
+                  {t.veh_modal_purchase_price} *
+                </label>
+                <input
+                  type="number"
+                  value={editFormData.purchasePrice}
+                  onChange={(e) => setEditFormData({ ...editFormData, purchasePrice: parseFloat(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 text-xs border border-amber-300 dark:border-amber-700 rounded-xl focus:border-amber-500 font-mono font-bold bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-800 dark:text-slate-200 mb-1">
+                  {t.veh_modal_initial_expense}
+                </label>
+                <input
+                  type="number"
+                  value={editFormData.initialExpenses}
+                  onChange={(e) => setEditFormData({ ...editFormData, initialExpenses: parseFloat(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 text-xs border border-amber-300 dark:border-amber-700 rounded-xl focus:border-amber-500 font-mono font-bold bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+            </div>
+
+            {/* Kiralama Fiyatları & Durum */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  {t.veh_modal_monthly_price} *
+                </label>
+                <input
+                  type="number"
+                  value={editFormData.monthlyPrice}
+                  onChange={(e) => setEditFormData({ ...editFormData, monthlyPrice: parseFloat(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 font-bold bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  {t.veh_modal_daily_price}
+                </label>
+                <input
+                  type="number"
+                  value={editFormData.dailyPrice}
+                  onChange={(e) => setEditFormData({ ...editFormData, dailyPrice: parseFloat(e.target.value) || 0 })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  {t.common_status}
+                </label>
+                <select
+                  value={editFormData.status}
+                  onChange={(e) => setEditFormData({ ...editFormData, status: e.target.value })}
+                  className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 font-semibold bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                >
+                  <option value="AVAILABLE">{t.veh_tab_available}</option>
+                  <option value="RENTED">{t.veh_tab_rented}</option>
+                  <option value="POST_RENTAL_CHECK">{t.kpi_post_check}</option>
+                  <option value="MAINTENANCE">{t.kpi_maintenance}</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Araç İçi Aksesuarlar & Donanımlar */}
+            <VehicleAccessoriesManager
+              accessories={editFormData.accessories || []}
+              onChange={(newAccs) => setEditFormData({ ...editFormData, accessories: newAccs })}
+            />
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                {t.common_notes}
+              </label>
+              <textarea
+                rows={2}
+                value={editFormData.notes}
+                onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
+                placeholder={language === 'sr' ? 'Opšte napomene o vozilu...' : 'Araçla ilgili genel notlar...'}
+                className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-700 rounded-xl focus:border-amber-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="px-4 py-2 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl cursor-pointer"
+              >
+                {t.common_cancel}
+              </button>
+              <button
+                type="submit"
+                disabled={editLoading}
+                className="px-5 py-2 text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 rounded-xl shadow-md cursor-pointer transition-colors disabled:opacity-50"
+              >
+                {editLoading ? t.common_saving : (language === 'sr' ? 'Sačuvaj Izmene' : language === 'en' ? 'Save Changes' : 'Güncelle')}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
 
       {/* Quota Full Warning Modal */}
       <Modal

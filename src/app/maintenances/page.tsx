@@ -72,7 +72,7 @@ function MaintenancesContent() {
   const [oilType, setOilType] = useState('5W-30 Tam Sentetik');
   const [oilService, setOilService] = useState('Belgrade Auto Centar');
   const [oilFilter, setOilFilter] = useState(true);
-  const [oilCost, setOilCost] = useState<number | string>(75);
+  const [oilCost, setOilCost] = useState<number | string>('');
   const [oilNotes, setOilNotes] = useState('');
   const [oilPaidBy, setOilPaidBy] = useState('Şirket Kasası');
   const [oilLoading, setOilLoading] = useState(false);
@@ -865,7 +865,7 @@ function MaintenancesContent() {
                         value={p.cost}
                         onFocus={(e) => e.target.select()}
                         onChange={(e) => updatePartRow(idx, 'cost', e.target.value)}
-                        placeholder={`Fiyat (${maintCurrency})`}
+                        placeholder={`Örn: 45 (${maintCurrency})`}
                         className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-lg focus:border-blue-500 focus:outline-hidden font-bold"
                       />
                     </div>
@@ -1050,6 +1050,7 @@ function MaintenancesContent() {
                 type="number"
                 required
                 value={oilKm}
+                onFocus={(e) => e.target.select()}
                 onChange={(e) => setOilKm(e.target.value)}
                 placeholder="Örn: 65000"
                 className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-emerald-500 focus:outline-hidden font-bold"
@@ -1078,7 +1079,9 @@ function MaintenancesContent() {
                 type="number"
                 required
                 value={oilCost}
+                onFocus={(e) => e.target.select()}
                 onChange={(e) => setOilCost(e.target.value)}
+                placeholder="Örn: 75"
                 className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-emerald-500 focus:outline-hidden font-bold"
               />
             </div>

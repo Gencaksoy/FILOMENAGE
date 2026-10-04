@@ -96,13 +96,17 @@ export async function GET(req: Request) {
       let remainingDays: number | null = null;
       let remainingText = 'Boşta';
 
-      if (v.status === 'RENTED' && activeRental) {
-        const endDate = new Date(activeRental.endDate);
-        const diffTime = endDate.getTime() - now.getTime();
-        remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (v.status === 'RENTED') {
+        if (activeRental) {
+          const endDate = new Date(activeRental.endDate);
+          const diffTime = endDate.getTime() - now.getTime();
+          remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-        if (diffDaysText(remainingDays)) {
-          remainingText = diffDaysText(remainingDays);
+          if (diffDaysText(remainingDays)) {
+            remainingText = diffDaysText(remainingDays);
+          }
+        } else {
+          remainingText = 'Kirada';
         }
       } else if (v.status === 'MAINTENANCE') {
         remainingText = 'Serviste';
@@ -340,6 +344,57 @@ export async function POST(req: Request) {
         fleetId: assignedFleetId,
       },
     });
+
+    // If vehicle is created as RENTED and customer name is provided, create customer and active rental
+    if (vehicle.status === 'RENTED' && body.customerName && body.customerName.trim()) {
+      try {
+        const cName = body.customerName.trim();
+        const cPhone = body.customerPhone?.trim() || '-';
+        let customer = await prisma.customer.findFirst({
+          where: {
+            fleetId: assignedFleetId,
+            name: { equals: cName, mode: 'insensitive' },
+            isDeleted: false,
+          },
+        });
+        if (!customer) {
+          customer = await prisma.customer.create({
+            data: {
+              name: cName,
+              phone: cPhone,
+              fleetId: assignedFleetId,
+            },
+          });
+        }
+
+        const rStart = body.rentalStartDate ? new Date(body.rentalStartDate) : new Date();
+        const rEnd = body.rentalEndDate ? new Date(body.rentalEndDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+        const mRate = parseFloat(body.monthlyPrice) || 350;
+        const diffTime = rEnd.getTime() - rStart.getTime();
+        const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+        const months = Math.max(1, Math.round(diffDays / 30));
+        const totalAmount = months * mRate;
+
+        await prisma.rental.create({
+          data: {
+            vehicleId: vehicle.id,
+            customerId: customer.id,
+            startDate: rStart,
+            endDate: rEnd,
+            startKm: vehicle.currentKm,
+            monthlyRate: mRate,
+            dailyRate: mRate / 30,
+            totalAmount,
+            isPaid: true,
+            status: 'ACTIVE',
+            deliveryAccessories: vehicle.accessories,
+            notes: 'Araç eklenirken otomatik oluşturuldu.',
+          },
+        });
+      } catch (err) {
+        console.error('Auto rental creation error:', err);
+      }
+    }
 
     await logAudit({
       userName: body.userName || 'Yönetici',

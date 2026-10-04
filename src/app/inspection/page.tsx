@@ -401,7 +401,9 @@ function InspectionContent() {
                 type="number"
                 required
                 value={formCost}
+                onFocus={(e) => e.target.select()}
                 onChange={(e) => setFormCost(e.target.value)}
+                placeholder="Örn: 65"
                 className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-purple-500 font-mono font-bold"
               />
             </div>

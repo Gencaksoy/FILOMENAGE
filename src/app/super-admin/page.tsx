@@ -86,7 +86,7 @@ export default function SuperAdminPage() {
   const [newOwnerPassword, setNewOwnerPassword] = useState('filo123');
   const [newPhone, setNewPhone] = useState('');
   const [newCity, setNewCity] = useState('Belgrad');
-  const [newMaxVehicles, setNewMaxVehicles] = useState(20);
+  const [newMaxVehicles, setNewMaxVehicles] = useState<number | string>(20);
   const [newExpiresMonths, setNewExpiresMonths] = useState(12);
   const [newNotes, setNewNotes] = useState('');
   const [newIsPartnership, setNewIsPartnership] = useState(false);
@@ -113,7 +113,7 @@ export default function SuperAdminPage() {
   const [editOwnerEmail, setEditOwnerEmail] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editCity, setEditCity] = useState('Belgrad');
-  const [editMaxVehicles, setEditMaxVehicles] = useState(20);
+  const [editMaxVehicles, setEditMaxVehicles] = useState<number | string>(20);
   const [editIsPartnership, setEditIsPartnership] = useState(false);
   const [editPartnersInput, setEditPartnersInput] = useState('');
   const [editFeatures, setEditFeatures] = useState<Record<string, boolean>>({
@@ -345,7 +345,7 @@ export default function SuperAdminPage() {
           ownerPassword: newOwnerPassword,
           phone: newPhone,
           city: newCity,
-          maxVehicles: newMaxVehicles,
+          maxVehicles: parseInt(String(newMaxVehicles), 10) || 20,
           expiresMonths: newExpiresMonths,
           notes: newNotes,
           isPartnership: newIsPartnership,
@@ -463,7 +463,7 @@ export default function SuperAdminPage() {
         ownerEmail: editOwnerEmail,
         phone: editPhone,
         city: editCity,
-        maxVehicles: editMaxVehicles,
+        maxVehicles: parseInt(String(editMaxVehicles), 10) || 20,
         isPartnership: editIsPartnership,
         partners: partnersArray,
         features: editFeatures,
@@ -1421,7 +1421,9 @@ export default function SuperAdminPage() {
                 type="number"
                 min="1"
                 value={newMaxVehicles}
-                onChange={(e) => setNewMaxVehicles(parseInt(e.target.value) || 20)}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => setNewMaxVehicles(e.target.value)}
+                placeholder="Örn: 20"
                 className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-bold"
               />
             </div>
@@ -1668,7 +1670,9 @@ export default function SuperAdminPage() {
                 type="number"
                 min="1"
                 value={editMaxVehicles}
-                onChange={(e) => setEditMaxVehicles(parseInt(e.target.value) || 20)}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => setEditMaxVehicles(e.target.value)}
+                placeholder="Örn: 20"
                 className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-bold"
               />
             </div>

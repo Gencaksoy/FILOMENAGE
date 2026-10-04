@@ -114,6 +114,8 @@ Projede `ui-ux-pro-max-skill-main` prensipleri uygulanmaktadır:
 │   │   │   ├── Skeleton.tsx                          # Sıfır CLS iskelet yükleyiciler
 │   │   │   ├── Modal.tsx                             # Erişilebilir diyalog penceresi
 │   │   │   └── ImageLightbox.tsx                     # Fotoğraf büyütme modalı
+│   │   ├── vehicles/
+│   │   │   └── VehicleAccessoriesManager.tsx         # Araç içi aksesuar & donanım yönetici bileşeni
 │   │   └── landing/
 │   │       └── LandingPage.tsx                       # SaaS tanıtım ve satış sayfası
 │   └── lib/
