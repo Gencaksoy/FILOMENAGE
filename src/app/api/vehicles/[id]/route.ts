@@ -72,7 +72,9 @@ export async function GET(
     }
 
     const now = new Date();
-    const activeRental = vehicle.rentals.find((r) => r.status === 'ACTIVE');
+    const activeRental = vehicle.status === 'RENTED'
+      ? vehicle.rentals.find((r) => r.status === 'ACTIVE') || null
+      : null;
     let remainingDays: number | null = null;
     let remainingText = 'Boşta (Kiralanabilir)';
 
@@ -139,6 +141,10 @@ export async function GET(
       activeRental: activeRental
         ? {
             ...activeRental,
+            customerName: activeRental.customer?.name || '',
+            customerPhone: activeRental.customer?.phone || '',
+            contractUrl: activeRental.contractUrl || null,
+            contractTitle: activeRental.contractTitle || null,
             remainingDays,
             remainingText,
             photos: {
@@ -191,9 +197,40 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const body = await req.json();
+    const currentUser = await getSessionUser();
+    const currentVehicle = await prisma.vehicle.findUnique({
+      where: { id: params.id },
+      include: { fleet: true },
+    });
 
+    if (!currentVehicle) {
+      return NextResponse.json({ error: 'Araç bulunamadı.' }, { status: 404 });
+    }
+
+    const body = await req.json();
     const updateData: any = {};
+
+    // 1. Plaka Değiştirme ve Kontrolleri
+    if (body.plate !== undefined) {
+      const newPlate = body.plate.trim().toUpperCase();
+      if (!newPlate) {
+        return NextResponse.json({ error: 'Plaka boş bırakılamaz.' }, { status: 400 });
+      }
+      const existingWithPlate = await prisma.vehicle.findFirst({
+        where: {
+          plate: newPlate,
+          NOT: { id: params.id },
+        },
+      });
+      if (existingWithPlate) {
+        return NextResponse.json(
+          { error: `${newPlate} plakası zaten başka bir araca kayıtlıdır.` },
+          { status: 400 }
+        );
+      }
+      updateData.plate = newPlate;
+    }
+
     if (body.brand !== undefined) updateData.brand = body.brand;
     if (body.model !== undefined) updateData.model = body.model;
     if (body.modelYear !== undefined) updateData.modelYear = parseInt(body.modelYear, 10);
@@ -201,7 +238,6 @@ export async function PUT(
     if (body.currentKm !== undefined) updateData.currentKm = parseInt(body.currentKm, 10);
     if (body.dailyPrice !== undefined) updateData.dailyPrice = parseFloat(body.dailyPrice) || 0;
     if (body.monthlyPrice !== undefined) updateData.monthlyPrice = parseFloat(body.monthlyPrice) || 350;
-    if (body.status !== undefined) updateData.status = body.status;
     if (body.owner !== undefined) updateData.owner = body.owner;
     if (body.fuelType !== undefined) updateData.fuelType = body.fuelType;
     if (body.fuelConsumptionRsd !== undefined) updateData.fuelConsumptionRsd = parseFloat(body.fuelConsumptionRsd) || 0;
@@ -218,18 +254,129 @@ export async function PUT(
     if (body.chronicIssues !== undefined) updateData.chronicIssues = body.chronicIssues ? body.chronicIssues.trim() : null;
     if (body.notes !== undefined) updateData.notes = body.notes;
 
+    // 2. Durum Değişikliği & Kiralama / Boşta Kolerasyonu
+    if (body.status !== undefined) {
+      updateData.status = body.status;
+
+      // Araç Boşta, Serviste veya Muayenede yapıldığında devam eden aktif kiralama kaydını kapat
+      if (body.status === 'AVAILABLE' || body.status === 'MAINTENANCE' || body.status === 'POST_RENTAL_CHECK') {
+        await prisma.rental.updateMany({
+          where: { vehicleId: params.id, status: 'ACTIVE' },
+          data: {
+            status: 'RETURNED',
+            returnDate: new Date(),
+            notes: `Araç durumu ${body.status === 'AVAILABLE' ? 'Boşta' : body.status} olarak güncellendiğinde kiralama otomatik sonlandırıldı.`,
+          },
+        });
+      }
+    }
+
+    // 3. Eğer araç KİRADA (RENTED) yapılıyorsa müşteri bağlantısını ve sözleşmesini kur
+    const targetStatus = updateData.status || currentVehicle.status;
+    if (targetStatus === 'RENTED') {
+      let targetCustomerId = body.customerId || null;
+      if (!targetCustomerId && body.customerName && body.customerName.trim()) {
+        const cName = body.customerName.trim();
+        const cPhone = body.customerPhone?.trim() || '-';
+        let cust = await prisma.customer.findFirst({
+          where: {
+            fleetId: currentVehicle.fleetId,
+            name: { equals: cName, mode: 'insensitive' },
+            isDeleted: false,
+          },
+        });
+        if (!cust) {
+          cust = await prisma.customer.create({
+            data: {
+              name: cName,
+              phone: cPhone,
+              fleetId: currentVehicle.fleetId,
+            },
+          });
+        }
+        targetCustomerId = cust.id;
+      }
+
+      if (targetCustomerId) {
+        // Zaten aynı müşteri için aktif bir kiralama yoksa oluştur
+        const existingActive = await prisma.rental.findFirst({
+          where: { vehicleId: params.id, status: 'ACTIVE' },
+        });
+
+        if (!existingActive) {
+          const rStart = body.rentalStartDate ? new Date(body.rentalStartDate) : new Date();
+          const rEnd = body.rentalEndDate ? new Date(body.rentalEndDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+          const mRate = parseFloat(body.monthlyPrice) || currentVehicle.monthlyPrice || 350;
+          const diffTime = rEnd.getTime() - rStart.getTime();
+          const diffDays = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+          const months = Math.max(1, Math.round(diffDays / 30));
+          const totalAmount = months * mRate;
+
+          const createdRental = await prisma.rental.create({
+            data: {
+              vehicleId: params.id,
+              customerId: targetCustomerId,
+              startDate: rStart,
+              endDate: rEnd,
+              startKm: updateData.currentKm ?? currentVehicle.currentKm,
+              monthlyRate: mRate,
+              dailyRate: mRate / 30,
+              totalAmount,
+              isPaid: body.isPaid !== undefined ? Boolean(body.isPaid) : true,
+              status: 'ACTIVE',
+              contractUrl: body.contractUrl || null,
+              contractTitle: body.contractTitle || null,
+              deliveryAccessories: updateData.accessories || currentVehicle.accessories,
+              notes: body.rentalNotes?.trim() || 'Araç güncellenirken kiralama kaydı oluşturuldu.',
+            },
+          });
+
+          // Sözleşme yüklendiyse müşteri evraklarına da ekle
+          if (body.contractUrl) {
+            const contractDocTitle = body.contractTitle || `${updateData.plate || currentVehicle.plate} Kiralama Sözleşmesi (${rStart.toISOString().slice(0, 10)} - ${rEnd.toISOString().slice(0, 10)})`;
+            await prisma.customerDocument.create({
+              data: {
+                customerId: targetCustomerId,
+                rentalId: createdRental.id,
+                docType: 'CONTRACT',
+                title: contractDocTitle,
+                fileUrl: body.contractUrl,
+              },
+            });
+          }
+        }
+      }
+    }
+
+    // 4. Aracı Güncelle
     const updated = await prisma.vehicle.update({
       where: { id: params.id },
       data: updateData,
     });
 
+    // 5. Plaka Değiştiyse İlgili Park Cezası Kayıtlarını da Senkronize Et
+    if (updateData.plate && updateData.plate !== currentVehicle.plate) {
+      const cleanPlate = updateData.plate.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+      await prisma.parkingTicket.updateMany({
+        where: { vehicleId: params.id },
+        data: {
+          plate: updateData.plate,
+          cleanPlate,
+        },
+      });
+    }
+
+    const plateChangeNote = updateData.plate && updateData.plate !== currentVehicle.plate
+      ? `Plaka değiştirildi: [${currentVehicle.plate} ➔ ${updateData.plate}]. `
+      : '';
+
     await logAudit({
-      userName: body.userName || 'Yönetici',
-      userRole: body.userRole || 'ADMIN',
+      userName: currentUser?.name || body.userName || 'Yönetici',
+      userRole: currentUser?.role || body.userRole || 'ADMIN',
       action: 'UPDATE_VEHICLE',
       target: updated.plate,
       fleetId: updated.fleetId,
-      description: `${updated.plate} araç bilgileri güncellendi (Sahip: ${updated.owner}, Durum: ${updated.status}).`,
+      description: `${plateChangeNote}${updated.plate} araç bilgileri güncellendi (Sahip: ${updated.owner}, Durum: ${updated.status}).`,
     });
 
     return NextResponse.json(updated);

@@ -73,8 +73,18 @@ export async function POST(req: Request) {
         url: localUrl,
       });
     } catch (localErr: any) {
-      console.error('Local fallback failed:', localErr);
-      return NextResponse.json({ error: 'Dosya kaydedilemedi.' }, { status: 500 });
+      console.warn('Local fs write failed (likely serverless readonly), falling back to data URL:', localErr?.message);
+      // Vercel serverless ortamında ve Supabase erişilemezse data URL fallback (küçük/sıkıştırılmış dosyalar için)
+      if (buffer.length <= 2 * 1024 * 1024) {
+        const base64Data = `data:${contentType};base64,${buffer.toString('base64')}`;
+        return NextResponse.json({
+          success: true,
+          fileName,
+          fileUrl: base64Data,
+          url: base64Data,
+        });
+      }
+      return NextResponse.json({ error: 'Dosya kaydedilemedi. Lütfen daha küçük bir dosya seçiniz.' }, { status: 500 });
     }
   } catch (error: any) {
     console.error('Upload error:', error);

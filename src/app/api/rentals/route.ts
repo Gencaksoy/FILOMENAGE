@@ -77,6 +77,8 @@ export async function POST(req: Request) {
       monthlyRate,
       discountAmount,
       isPaid,
+      contractUrl,
+      contractTitle,
       photoFront,
       photoBack,
       photoRight,
@@ -146,6 +148,8 @@ export async function POST(req: Request) {
           totalAmount,
           isPaid: isPaid !== undefined ? Boolean(isPaid) : true,
           status: 'ACTIVE',
+          contractUrl: contractUrl || null,
+          contractTitle: contractTitle || null,
           photoFront: photoFront || null,
           photoBack: photoBack || null,
           photoRight: photoRight || null,
@@ -166,13 +170,27 @@ export async function POST(req: Request) {
       }),
     ]);
 
+    // Sözleşme belgesi yüklendiyse, müşterinin belgelerine 'CONTRACT' tipinde kaydet
+    if (contractUrl) {
+      const docTitle = contractTitle?.trim() || `${vehicle.plate} Kiralama Sözleşmesi (${start.toISOString().slice(0, 10)} - ${end.toISOString().slice(0, 10)})`;
+      await prisma.customerDocument.create({
+        data: {
+          customerId,
+          rentalId: rental.id,
+          docType: 'CONTRACT',
+          title: docTitle,
+          fileUrl: contractUrl,
+        },
+      });
+    }
+
     await logAudit({
       userName: currentUser?.name || 'Yönetici',
       userRole: currentUser?.role || 'ADMIN',
       action: 'RENTAL_START',
       target: vehicle.plate,
       fleetId: vehicle.fleetId || currentUser?.fleetId,
-      description: `${vehicle.plate} aracı ${customer.name} müşterisine ${diffDays} günlüğüne kiralandı (${finalMonthly} €/aylık, İskonto: ${discount} €, Ödeme Teyit: ${rental.isPaid ? 'ÖDENDİ' : 'BEKLİYOR'}).`,
+      description: `${vehicle.plate} aracı ${customer.name} müşterisine ${diffDays} günlüğüne kiralandı (${finalMonthly} €/aylık, İskonto: ${discount} €, Sözleşme: ${contractUrl ? 'YÜKLENDİ' : 'YOK'}).`,
     });
 
     return NextResponse.json(rental, { status: 201 });

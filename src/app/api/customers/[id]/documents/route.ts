@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logAudit } from '@/lib/audit';
+import { getSessionUser } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,6 +10,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
+    const currentUser = await getSessionUser();
     const body = await req.json();
     const targetFileUrl = body.fileUrl || body.url;
     const targetDocType = body.docType || 'OTHER';
@@ -31,6 +33,7 @@ export async function POST(
     const doc = await prisma.customerDocument.create({
       data: {
         customerId: params.id,
+        rentalId: body.rentalId || null,
         docType: targetDocType,
         title: body.title || 'Müşteri Belgesi',
         fileUrl: targetFileUrl,
@@ -38,9 +41,11 @@ export async function POST(
     });
 
     await logAudit({
-      userName: 'Yönetici',
+      userName: currentUser?.name || 'Yönetici',
+      userRole: currentUser?.role || 'ADMIN',
       action: 'ADD_CUSTOMER_DOCUMENT',
       target: customer.name,
+      fleetId: customer.fleetId || currentUser?.fleetId,
       description: `${customer.name} müşterisine yeni belge eklendi (${doc.title} - ${doc.docType}).`,
     });
 

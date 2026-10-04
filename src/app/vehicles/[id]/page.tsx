@@ -40,7 +40,10 @@ import {
   MessageCircle,
   RefreshCw,
   XCircle,
+  FileText,
+  Upload,
 } from 'lucide-react';
+import { safeUploadFile } from '@/lib/file-utils';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Modal } from '@/components/ui/Modal';
 import { ImageLightbox } from '@/components/ui/ImageLightbox';
@@ -160,18 +163,40 @@ export default function VehicleDetailPage() {
   const [isSubmittingRent, setIsSubmittingRent] = useState(false);
   const [uploadingPhotoSide, setUploadingPhotoSide] = useState<string | null>(null);
 
+  // Kiralama Sözleşmesi Ekleme State'leri
+  const [rentContractUrl, setRentContractUrl] = useState('');
+  const [rentContractTitle, setRentContractTitle] = useState('');
+  const [rentContractFileName, setRentContractFileName] = useState('');
+  const [isUploadingContract, setIsUploadingContract] = useState(false);
+
+  const handleContractUpload = async (file: File) => {
+    setIsUploadingContract(true);
+    try {
+      const { fileUrl, fileName } = await safeUploadFile(file);
+      setRentContractUrl(fileUrl);
+      setRentContractFileName(fileName);
+      if (!rentContractTitle) {
+        setRentContractTitle(`${vehicle.plate} Kiralama Sözleşmesi`);
+      }
+      toast.success(
+        language === 'sr'
+          ? 'Ugovor je uspešno otpremljen.'
+          : language === 'en'
+          ? 'Contract uploaded successfully.'
+          : 'Sözleşme belgesi yüklendi.'
+      );
+    } catch (e: any) {
+      toast.error(e?.message || 'Sözleşme yüklenirken hata oluştu.');
+    } finally {
+      setIsUploadingContract(false);
+    }
+  };
+
   const handlePhotoUpload = async (file: File, side: 'front' | 'back' | 'right' | 'left') => {
     setUploadingPhotoSide(side);
     try {
-      const data = new FormData();
-      data.append('file', file);
-      const res = await fetch('/api/upload', { method: 'POST', body: data });
-      if (!res.ok) throw new Error('Fotoğraf yüklenemedi');
-      const json = await res.json();
-      const url = json.fileUrl || json.url;
-      if (url) {
-        setRentPhotos((prev) => ({ ...prev, [side]: url }));
-      }
+      const { fileUrl } = await safeUploadFile(file);
+      setRentPhotos((prev) => ({ ...prev, [side]: fileUrl }));
     } catch (e: any) {
       toast.error(e?.message || (language === 'sr' ? 'Greška pri otpremanju fotografije.' : language === 'en' ? 'Photo upload error.' : 'Fotoğraf yüklenirken hata oluştu.'));
     } finally {
@@ -186,6 +211,7 @@ export default function VehicleDetailPage() {
 
   // Modal: Edit Vehicle
   const [showEditModal, setShowEditModal] = useState(false);
+  const [editPlate, setEditPlate] = useState('');
   const [editBrand, setEditBrand] = useState('');
   const [editModel, setEditModel] = useState('');
   const [editYear, setEditYear] = useState<number | string>(2023);
@@ -205,9 +231,74 @@ export default function VehicleDetailPage() {
   const [editVin, setEditVin] = useState('');
   const [editEngineNo, setEditEngineNo] = useState('');
   const [editChronicIssues, setEditChronicIssues] = useState('');
+  const [editCustomerId, setEditCustomerId] = useState('');
+  const [editCustomerName, setEditCustomerName] = useState('');
+  const [editCustomerPhone, setEditCustomerPhone] = useState('');
+  const [editContractUrl, setEditContractUrl] = useState('');
+  const [editContractFileName, setEditContractFileName] = useState('');
+  const [isUploadingEditContract, setIsUploadingEditContract] = useState(false);
   const [copiedVin, setCopiedVin] = useState(false);
   const [lightboxImage, setLightboxImage] = useState<{ src: string; title?: string } | null>(null);
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+
+  const handleEditContractUpload = async (file: File) => {
+    setIsUploadingEditContract(true);
+    try {
+      const { fileUrl, fileName } = await safeUploadFile(file);
+      setEditContractUrl(fileUrl);
+      setEditContractFileName(fileName);
+      toast.success(
+        language === 'sr'
+          ? 'Ugovor je uspešno otpremljen.'
+          : language === 'en'
+          ? 'Contract uploaded successfully.'
+          : 'Sözleşme belgesi yüklendi.'
+      );
+    } catch (e: any) {
+      toast.error(e?.message || 'Sözleşme yüklenirken hata oluştu.');
+    } finally {
+      setIsUploadingEditContract(false);
+    }
+  };
+
+  const openEditModal = () => {
+    const v = data?.vehicle;
+    if (v) {
+      setEditPlate(v.plate || '');
+      setEditBrand(v.brand || '');
+      setEditModel(v.model || '');
+      setEditYear(v.modelYear || 2023);
+      setEditColor(v.color || '');
+      setEditKm(v.currentKm ?? 0);
+      setEditFuelType(v.fuelType || 'Dizel');
+      setEditFuelConsumptionRsd(v.fuelConsumptionRsd || 1100);
+      setEditRegistrationExpiry(v.registrationExpiry ? v.registrationExpiry.slice(0, 10) : '');
+      setEditPurchasePrice(v.purchasePrice || 0);
+      setEditInitialExpenses(v.initialExpenses || 0);
+      setEditMonthlyPrice(v.monthlyPrice || 350);
+      setEditDailyPrice(v.dailyPrice || 25);
+      setEditOwner(v.owner || '');
+      setEditStatus(v.status);
+      setEditNotes(v.notes || '');
+      setEditVin(v.vin || '');
+      setEditEngineNo(v.engineNo || '');
+      setEditChronicIssues(v.chronicIssues || '');
+      if (data?.activeRental) {
+        setEditCustomerId(data.activeRental.customerId || '');
+        setEditCustomerName(data.activeRental.customerName || '');
+        setEditCustomerPhone(data.activeRental.customerPhone || '');
+        setEditContractUrl(data.activeRental.contractUrl || '');
+        setEditContractFileName(data.activeRental.contractTitle || '');
+      } else {
+        setEditCustomerId('');
+        setEditCustomerName('');
+        setEditCustomerPhone('');
+        setEditContractUrl('');
+        setEditContractFileName('');
+      }
+    }
+    setShowEditModal(true);
+  };
 
   // Faults State & Modals
   const [faultFilter, setFaultFilter] = useState<'ALL' | 'OPEN' | 'RESOLVED'>('ALL');
@@ -270,6 +361,7 @@ export default function VehicleDetailPage() {
         setData(json);
         if (json.vehicle) {
           const v = json.vehicle;
+          setEditPlate(v.plate);
           setEditBrand(v.brand);
           setEditModel(v.model);
           setEditYear(v.modelYear);
@@ -595,6 +687,8 @@ export default function VehicleDetailPage() {
           isPaid: rentIsPaid,
           notes: rentNotes,
           deliveryAccessories: JSON.stringify(rentAccessories),
+          contractUrl: rentContractUrl || undefined,
+          contractTitle: rentContractTitle || undefined,
           photoFront: rentPhotos.front,
           photoBack: rentPhotos.back,
           photoRight: rentPhotos.right,
@@ -609,6 +703,9 @@ export default function VehicleDetailPage() {
         setNewCustPhone('');
         setNewCustIdNo('');
         setRentNotes('');
+        setRentContractUrl('');
+        setRentContractTitle('');
+        setRentContractFileName('');
         await loadVehicle();
         toast.success(language === 'sr' ? 'Zakup je uspešno započet.' : language === 'en' ? 'Rental started successfully.' : 'Kiralama başarıyla başlatıldı.');
       } else {
@@ -638,12 +735,17 @@ export default function VehicleDetailPage() {
   // Handle Edit Submit
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editPlate.trim()) {
+      toast.warning('Plaka zorunludur.');
+      return;
+    }
     setIsSubmittingEdit(true);
     try {
       const res = await fetch(`/api/vehicles/${vehicleId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          plate: editPlate.trim().toUpperCase(),
           brand: editBrand,
           model: editModel,
           modelYear: parseInt(String(editYear), 10) || 0,
@@ -663,6 +765,10 @@ export default function VehicleDetailPage() {
           engineNo: editEngineNo,
           chronicIssues: editChronicIssues,
           notes: editNotes,
+          customerId: editStatus === 'RENTED' ? editCustomerId || undefined : undefined,
+          customerName: editStatus === 'RENTED' ? editCustomerName.trim() || undefined : undefined,
+          customerPhone: editStatus === 'RENTED' ? editCustomerPhone.trim() || undefined : undefined,
+          contractUrl: editStatus === 'RENTED' ? editContractUrl || undefined : undefined,
         }),
       });
       if (res.ok) {
@@ -1078,7 +1184,7 @@ export default function VehicleDetailPage() {
 
           {/* Edit Vehicle */}
           <button
-            onClick={() => setShowEditModal(true)}
+            onClick={openEditModal}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl cursor-pointer transition-colors"
           >
             <Edit className="w-4 h-4" />
@@ -1192,7 +1298,7 @@ export default function VehicleDetailPage() {
                 </h4>
                 <button
                   type="button"
-                  onClick={() => setShowEditModal(true)}
+                  onClick={openEditModal}
                   className="text-xs font-bold text-amber-800 hover:underline cursor-pointer"
                 >
                   Düzenle
@@ -1780,6 +1886,20 @@ export default function VehicleDetailPage() {
                       4 Fotoğraf
                     </button>
 
+                    {/* Contract Document Button */}
+                    {activeRental.contractUrl && (
+                      <a
+                        href={activeRental.contractUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg border border-emerald-300 transition-colors shadow-2xs"
+                        title={activeRental.contractTitle || 'Sözleşmeyi Görüntüle'}
+                      >
+                        <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                        📄 {activeRental.contractTitle || (language === 'sr' ? 'Ugovor' : language === 'en' ? 'Contract' : 'Sözleşme')}
+                      </a>
+                    )}
+
                     {/* Süre Uzat Button */}
                     <button
                       onClick={() => {
@@ -1882,7 +2002,7 @@ export default function VehicleDetailPage() {
             </span>
             <button
               type="button"
-              onClick={() => setShowEditModal(true)}
+              onClick={openEditModal}
               className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 rounded-lg border border-amber-300 transition-colors cursor-pointer"
             >
               <Edit className="w-3 h-3 text-amber-600" />
@@ -1906,7 +2026,7 @@ export default function VehicleDetailPage() {
               <span>{language === 'sr' ? 'Nema evidentirane opreme.' : language === 'en' ? 'No registered accessories.' : 'Kayıtlı aksesuar veya donanım yok.'}</span>
               <button
                 type="button"
-                onClick={() => setShowEditModal(true)}
+                onClick={openEditModal}
                 className="text-xs font-bold text-amber-700 hover:underline cursor-pointer ml-2 not-italic"
               >
                 + {language === 'sr' ? 'Dodaj Opremu' : language === 'en' ? 'Add Equipment' : 'Donanım Ekle'}
@@ -2049,7 +2169,7 @@ export default function VehicleDetailPage() {
 
                   <button
                     type="button"
-                    onClick={() => setShowEditModal(true)}
+                    onClick={openEditModal}
                     className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black rounded-xl shadow-xs cursor-pointer transition-colors shrink-0"
                   >
                     <Edit className="w-3.5 h-3.5" />
@@ -3582,6 +3702,78 @@ export default function VehicleDetailPage() {
             </div>
           </div>
 
+          {/* Kiralama Sözleşmesi / Belgesi (PDF veya Görsel) */}
+          <div className="bg-emerald-50/70 p-3.5 rounded-xl border border-emerald-200">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
+              <span className="text-xs font-bold text-emerald-950 flex items-center gap-1.5">
+                <FileText className="w-4 h-4 text-emerald-600 shrink-0" />
+                📄 Kiralama Sözleşmesi / Teslim Tutanağı (PDF veya Resim)
+              </span>
+              <span className="text-[10.5px] text-emerald-700 font-medium">
+                Otomatik müşterinin belgelerine de eklenecektir
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div>
+                <label className="block text-[11px] font-semibold text-emerald-900 mb-1">
+                  Sözleşme Başlığı / Notu
+                </label>
+                <input
+                  type="text"
+                  value={rentContractTitle}
+                  onChange={(e) => setRentContractTitle(e.target.value)}
+                  placeholder={`${vehicle.plate} Kiralama Sözleşmesi`}
+                  className="w-full px-3 py-2 text-xs border border-emerald-300 rounded-xl bg-white focus:border-emerald-500 font-medium text-slate-900"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-emerald-900 mb-1">
+                  Sözleşme Dosyası (PDF / Fotoğraf)
+                </label>
+                {rentContractUrl ? (
+                  <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-xl border border-emerald-300 h-[38px]">
+                    <a
+                      href={rentContractUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-bold text-emerald-800 hover:underline truncate max-w-[190px]"
+                      title={rentContractFileName || 'Yüklenen Belge'}
+                    >
+                      📎 {rentContractFileName || 'Sözleşme Yüklendi'}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setRentContractUrl('');
+                        setRentContractFileName('');
+                      }}
+                      className="text-rose-500 hover:text-rose-700 text-xs font-bold ml-2 cursor-pointer"
+                    >
+                      Kaldır
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-emerald-900 bg-white hover:bg-emerald-100 border border-dashed border-emerald-400 rounded-xl cursor-pointer transition-colors shadow-2xs h-[38px]">
+                    <Upload className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span>{isUploadingContract ? 'Yükleniyor...' : 'Sözleşme Seç (PDF / Fotoğraf)'}</span>
+                    <input
+                      type="file"
+                      accept=".pdf,image/*"
+                      disabled={isUploadingContract}
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleContractUpload(file);
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               Kiralama Notları
@@ -4178,7 +4370,38 @@ export default function VehicleDetailPage() {
         maxWidth="2xl"
       >
         <form onSubmit={handleEditSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-amber-700 mb-1">Plaka *</label>
+              <input
+                type="text"
+                required
+                value={editPlate}
+                onChange={(e) => setEditPlate(e.target.value.toUpperCase())}
+                placeholder="Örn: BG-1709OT"
+                className="w-full px-3 py-2 text-xs border border-amber-300 rounded-xl font-mono font-bold uppercase bg-amber-50/40 focus:border-amber-500 focus:bg-white text-slate-900"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Marka *</label>
+              <input
+                type="text"
+                required
+                value={editBrand}
+                onChange={(e) => setEditBrand(e.target.value)}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Model *</label>
+              <input
+                type="text"
+                required
+                value={editModel}
+                onChange={(e) => setEditModel(e.target.value)}
+                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl"
+              />
+            </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 {currentUser?.isPartnership ? 'Ortak *' : 'Sahip / Şirket'}
@@ -4204,26 +4427,6 @@ export default function VehicleDetailPage() {
                   className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl font-medium"
                 />
               )}
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Marka *</label>
-              <input
-                type="text"
-                required
-                value={editBrand}
-                onChange={(e) => setEditBrand(e.target.value)}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Model *</label>
-              <input
-                type="text"
-                required
-                value={editModel}
-                onChange={(e) => setEditModel(e.target.value)}
-                className="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl"
-              />
             </div>
           </div>
 
@@ -4275,6 +4478,105 @@ export default function VehicleDetailPage() {
               </select>
             </div>
           </div>
+
+          {/* Kirada İse Müşteri ve Sözleşme Bağlantısı */}
+          {editStatus === 'RENTED' && (
+            <div className="bg-amber-50/70 p-3.5 rounded-xl border border-amber-300 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
+                <KeyRound className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>Kira & Müşteri Bağlantısı (Kirada Olan Araç İçin)</span>
+              </div>
+              <p className="text-[11px] text-amber-800">
+                Araç kirada durumunda olduğundan aracı kiralayan müşteriyi ve sözleşmeyi bağlayabilirsiniz.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-800 mb-1">Kayıtlı Müşteri Seç</label>
+                  <select
+                    value={editCustomerId}
+                    onChange={(e) => {
+                      const cid = e.target.value;
+                      setEditCustomerId(cid);
+                      if (cid) {
+                        const found = customers.find((c) => c.id === cid);
+                        if (found) {
+                          setEditCustomerName(found.name);
+                          setEditCustomerPhone(found.phone);
+                        }
+                      }
+                    }}
+                    className="w-full px-3 py-2 text-xs border border-amber-300 rounded-xl bg-white font-medium"
+                  >
+                    <option value="">-- Listeden Müşteri Seçiniz --</option>
+                    {customers.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({c.phone})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-800 mb-1">
+                    Veya Müşteri Adı (Serbest Giriş)
+                  </label>
+                  <input
+                    type="text"
+                    value={editCustomerName}
+                    onChange={(e) => setEditCustomerName(e.target.value)}
+                    placeholder="Örn: Marko Jovanovic"
+                    className="w-full px-3 py-2 text-xs border border-amber-300 rounded-xl bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Sözleşme Belgesi / Upload */}
+              <div className="pt-2 border-t border-amber-200">
+                <label className="block text-xs font-semibold text-slate-800 mb-1 flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-amber-600" />
+                  Kiralama Sözleşmesi / Belgesi (PDF veya Görsel)
+                </label>
+                {editContractUrl ? (
+                  <div className="flex items-center justify-between bg-white px-3 py-2 rounded-lg border border-amber-300">
+                    <a
+                      href={editContractUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-bold text-amber-800 hover:underline truncate max-w-[280px]"
+                    >
+                      📎 {editContractFileName || 'Yüklenen Sözleşme'}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditContractUrl('');
+                        setEditContractFileName('');
+                      }}
+                      className="text-rose-500 hover:text-rose-700 text-xs font-bold ml-2 cursor-pointer"
+                    >
+                      Kaldır
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-amber-900 bg-white hover:bg-amber-100 border border-dashed border-amber-400 rounded-lg cursor-pointer transition-colors shadow-2xs">
+                    <Upload className="w-3.5 h-3.5 text-amber-600" />
+                    <span>{isUploadingEditContract ? 'Yükleniyor...' : 'Sözleşme Yükle (PDF / Fotoğraf)'}</span>
+                    <input
+                      type="file"
+                      accept=".pdf,image/*"
+                      disabled={isUploadingEditContract}
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleEditContractUpload(file);
+                      }}
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Detaylı Araç Kimliği (Şasi No & Motor No) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">

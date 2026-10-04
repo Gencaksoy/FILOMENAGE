@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { safeUploadFile } from '@/lib/file-utils';
 import {
   Users,
   Plus,
@@ -68,6 +69,8 @@ function CustomersContent() {
   const [uploadDocType, setUploadDocType] = useState('PASSPORT');
   const [uploadDocTitle, setUploadDocTitle] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [docFile, setDocFile] = useState<File | null>(null);
+  const docFileInputRef = useRef<HTMLInputElement>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [companyName, setCompanyName] = useState('Filo Yönetim & Rent a Car');
 
@@ -143,17 +146,8 @@ function CustomersContent() {
   };
 
   const handleFileUpload = async (file: File): Promise<string> => {
-    const data = new FormData();
-    data.append('file', file);
-    const res = await fetch('/api/upload', { method: 'POST', body: data });
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || 'Dosya yüklenemedi');
-    }
-    const json = await res.json();
-    const url = json.fileUrl || json.url;
-    if (!url) throw new Error('Dosya URL adresi oluşturulamadı.');
-    return url;
+    const { fileUrl } = await safeUploadFile(file);
+    return fileUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -210,39 +204,70 @@ function CustomersContent() {
     e.preventDefault();
     if (!docModalCustomer) return;
 
-    const form = e.currentTarget;
-    const fileInput = form.querySelector('input[type="file"]') as HTMLInputElement;
-    const file = fileInput?.files?.[0];
+    const file = docFile || docFileInputRef.current?.files?.[0];
 
     if (!file) {
-      toast.warning(language === 'sr' ? 'Ljubazno izaberite fotografiju dokumenta.' : language === 'en' ? 'Please select a document photo.' : 'Lütfen bir belge fotoğrafı seçiniz.');
+      toast.warning(
+        language === 'sr'
+          ? 'Ljubazno izaberite fotografiju ili PDF dokumenta.'
+          : language === 'en'
+          ? 'Please select a document photo or PDF.'
+          : 'Lütfen bir belge fotoğrafı veya PDF seçiniz.'
+      );
       return;
     }
 
     setUploading(true);
     try {
-      const fileUrl = await handleFileUpload(file);
+      const { fileUrl } = await safeUploadFile(file);
+      const defaultTitle = uploadDocType === 'CONTRACT'
+        ? `${docModalCustomer.name} - Kiralama Sözleşmesi`
+        : `${docModalCustomer.name} - ${uploadDocType}`;
+
       const res = await fetch(`/api/customers/${docModalCustomer.id}/documents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           docType: uploadDocType,
-          title: uploadDocTitle || `${docModalCustomer.name} - ${uploadDocType}`,
+          title: uploadDocTitle.trim() || defaultTitle,
           fileUrl,
         }),
       });
 
+      const resText = await res.text();
+      let resJson: any = null;
+      try {
+        resJson = JSON.parse(resText);
+      } catch {
+        throw new Error('Belge kaydedilemedi (Sunucu yanıtı geçersiz).');
+      }
+
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || 'Belge kaydedilemedi');
+        throw new Error(resJson?.error || 'Belge kaydedilemedi');
       }
 
       setUploadDocTitle('');
-      fileInput.value = '';
+      setDocFile(null);
+      if (docFileInputRef.current) {
+        docFileInputRef.current.value = '';
+      }
       await loadCustomers();
-      toast.success(language === 'sr' ? 'Dokument je uspešno sačuvan.' : language === 'en' ? 'Document uploaded successfully.' : 'Belge başarıyla yüklendi.');
+      toast.success(
+        language === 'sr'
+          ? 'Dokument je uspešno sačuvan.'
+          : language === 'en'
+          ? 'Document uploaded successfully.'
+          : 'Belge başarıyla yüklendi.'
+      );
     } catch (err: any) {
-      toast.error(err.message || (language === 'sr' ? 'Greška pri otpremanju dokumenta.' : language === 'en' ? 'Document upload error.' : 'Belge kaydedilemedi.'));
+      toast.error(
+        err.message ||
+          (language === 'sr'
+            ? 'Greška pri otpremanju dokumenta.'
+            : language === 'en'
+            ? 'Document upload error.'
+            : 'Belge kaydedilemedi.')
+      );
     } finally {
       setUploading(false);
     }
@@ -552,54 +577,76 @@ function CustomersContent() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {docModalCustomer.documents.map((doc: any) => (
-                    <div
-                      key={doc.id}
-                      className="border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 bg-slate-50/60 dark:bg-slate-800/40 relative group hover:border-amber-400 transition-all flex flex-col justify-between"
-                    >
-                      <div>
-                        {/* Image preview / thumbnail */}
-                        <div
-                          onClick={() => setPreviewImage(doc.fileUrl)}
-                          className="w-full h-32 bg-slate-200 dark:bg-slate-700 rounded-lg overflow-hidden cursor-pointer relative mb-2 flex items-center justify-center group-hover:opacity-90 transition-opacity"
-                        >
-                          <img
-                            src={doc.fileUrl}
-                            alt={doc.title}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              (e.target as any).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>';
-                            }}
-                          />
-                          <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity">
-                            <Eye className="w-4 h-4 mr-1" /> {language === 'sr' ? 'Pregledaj' : language === 'en' ? 'View' : 'İncele'}
+                  {docModalCustomer.documents.map((doc: any) => {
+                    const isPdf = doc.fileUrl?.toLowerCase().includes('.pdf');
+                    return (
+                      <div
+                        key={doc.id}
+                        className="border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 bg-slate-50/60 dark:bg-slate-800/40 relative group hover:border-amber-400 transition-all flex flex-col justify-between"
+                      >
+                        <div>
+                          {/* Image / PDF preview */}
+                          {isPdf ? (
+                            <a
+                              href={doc.fileUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="w-full h-32 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 rounded-lg overflow-hidden cursor-pointer relative mb-2 flex flex-col items-center justify-center group-hover:opacity-90 transition-opacity text-amber-700 dark:text-amber-400"
+                            >
+                              <FileText className="w-10 h-10 mb-1" />
+                              <span className="text-[11px] font-bold">PDF Sözleşme / Evrak</span>
+                              <span className="text-[9px] text-slate-400">Yeni sekmede aç ↗</span>
+                            </a>
+                          ) : (
+                            <div
+                              onClick={() => setPreviewImage(doc.fileUrl)}
+                              className="w-full h-32 bg-slate-200 dark:bg-slate-700 rounded-lg overflow-hidden cursor-pointer relative mb-2 flex items-center justify-center group-hover:opacity-90 transition-opacity"
+                            >
+                              <img
+                                src={doc.fileUrl}
+                                alt={doc.title}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.target as any).src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="%2394a3b8" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>';
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity">
+                                <Eye className="w-4 h-4 mr-1" /> {language === 'sr' ? 'Pregledaj' : language === 'en' ? 'View' : 'İncele'}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate" title={doc.title}>{doc.title}</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                            {doc.docType === 'CONTRACT' ? (
+                              <span className="inline-block px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 font-bold text-[10px]">
+                                📄 {language === 'sr' ? 'Ugovor o zakupu' : language === 'en' ? 'Rental Contract' : 'Kiralama Sözleşmesi'}
+                              </span>
+                            ) : doc.docType === 'PASSPORT' ? (
+                              language === 'sr' ? 'Pasoš' : language === 'en' ? 'Passport' : 'Pasaport'
+                            ) : doc.docType === 'DRIVING_LICENSE' ? (
+                              language === 'sr' ? 'Vozačka Dozvola' : language === 'en' ? 'Driver License' : 'Ehliyet'
+                            ) : doc.docType === 'ID_CARD' ? (
+                              language === 'sr' ? 'Lična Karta' : language === 'en' ? 'ID Card' : 'Kimlik Kartı'
+                            ) : (
+                              language === 'sr' ? 'Ostali Dokument' : language === 'en' ? 'Other Document' : 'Diğer Belge'
+                            )}
                           </div>
                         </div>
 
-                        <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">{doc.title}</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-                          {doc.docType === 'PASSPORT'
-                            ? (language === 'sr' ? 'Pasoš' : language === 'en' ? 'Passport' : 'Pasaport')
-                            : doc.docType === 'DRIVING_LICENSE'
-                            ? (language === 'sr' ? 'Vozačka Dozvola' : language === 'en' ? 'Driver License' : 'Ehliyet')
-                            : doc.docType === 'ID_CARD'
-                            ? (language === 'sr' ? 'Lična Karta' : language === 'en' ? 'ID Card' : 'Kimlik Kartı')
-                            : (language === 'sr' ? 'Ostali Dokument' : language === 'en' ? 'Other Document' : 'Diğer Belge')}
+                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-400 dark:text-slate-500">
+                          <span>{formatDate(doc.createdAt)}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteDocument(doc.id)}
+                            className="text-rose-500 hover:text-rose-700 font-bold cursor-pointer"
+                          >
+                            {language === 'sr' ? 'Obriši' : language === 'en' ? 'Delete' : 'Sil'}
+                          </button>
                         </div>
                       </div>
-
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-400 dark:text-slate-500">
-                        <span>{formatDate(doc.createdAt)}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteDocument(doc.id)}
-                          className="text-rose-500 hover:text-rose-700 font-bold cursor-pointer"
-                        >
-                          {language === 'sr' ? 'Obriši' : language === 'en' ? 'Delete' : 'Sil'}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -608,7 +655,7 @@ function CustomersContent() {
             <form onSubmit={handleAddDocument} className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-800">
               <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                 <Upload className="w-4 h-4 text-amber-500" />
-                {language === 'sr' ? 'Dodaj Novu Fotografiju Dokumenta' : language === 'en' ? 'Upload New Document Photo' : 'Yeni Belge Fotoğrafı Ekle'}
+                {language === 'sr' ? 'Dodaj Novi Dokument ili Ugovor' : language === 'en' ? 'Upload New Document or Contract' : 'Yeni Belge veya Sözleşme Ekle'}
               </h4>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
@@ -621,10 +668,11 @@ function CustomersContent() {
                     onChange={(e) => setUploadDocType(e.target.value)}
                     className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl focus:border-amber-500 focus:outline-hidden bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100"
                   >
+                    <option value="CONTRACT">{language === 'sr' ? '📄 Ugovor o zakupu (Rental Contract)' : language === 'en' ? '📄 Rental Contract' : '📄 Kiralama Sözleşmesi'}</option>
                     <option value="PASSPORT">{language === 'sr' ? 'Pasoš (Passport)' : language === 'en' ? 'Passport' : 'Pasaport (Passport)'}</option>
                     <option value="DRIVING_LICENSE">{language === 'sr' ? 'Vozačka Dozvola (Driving License)' : language === 'en' ? 'Driving License' : 'Sürücü Belgesi (Ehliyet)'}</option>
                     <option value="ID_CARD">{language === 'sr' ? 'Lična Karta (ID Card)' : language === 'en' ? 'ID Card' : 'Kimlik Kartı (ID Card)'}</option>
-                    <option value="OTHER">{language === 'sr' ? 'Ostalo / Ugovor' : language === 'en' ? 'Other Document / Contract' : 'Diğer Evrak / Sözleşme'}</option>
+                    <option value="OTHER">{language === 'sr' ? 'Ostalo / Drugi Dokument' : language === 'en' ? 'Other Document' : 'Diğer Evrak / Belge'}</option>
                   </select>
                 </div>
 
@@ -636,18 +684,20 @@ function CustomersContent() {
                     type="text"
                     value={uploadDocTitle}
                     onChange={(e) => setUploadDocTitle(e.target.value)}
-                    placeholder={language === 'sr' ? 'Npr: Boravak / Pasoš' : language === 'en' ? 'E.g. Resident Permit / Passport' : 'Örn: Sırbistan Oturum / Pasaport'}
+                    placeholder={language === 'sr' ? 'Npr: Ugovor o zakupu / Boravak' : language === 'en' ? 'E.g. Rental Contract / Permit' : 'Örn: BG-1709OT Kiralama Sözleşmesi'}
                     className="w-full px-3 py-2 text-xs border border-slate-300 dark:border-slate-700 rounded-xl focus:border-amber-500 focus:outline-hidden bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    {language === 'sr' ? 'Izaberite Fajl (Fotografiju) *' : language === 'en' ? 'Select File (Photo) *' : 'Dosya Seç (Fotoğraf) *'}
+                    {language === 'sr' ? 'Izaberite Fajl (PDF / Foto) *' : language === 'en' ? 'Select File (PDF / Photo) *' : 'Dosya Seç (PDF / Fotoğraf) *'}
                   </label>
                   <input
+                    ref={docFileInputRef}
                     type="file"
-                    accept="image/*,.pdf"
+                    accept="image/*,.pdf,application/pdf"
+                    onChange={(e) => setDocFile(e.target.files?.[0] || null)}
                     required
                     className="w-full text-xs text-slate-600 dark:text-slate-300 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-400 cursor-pointer"
                   />

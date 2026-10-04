@@ -26,7 +26,10 @@ import {
   MessageSquare,
   Edit,
   Layers,
+  FileText,
+  Upload,
 } from 'lucide-react';
+import { safeUploadFile } from '@/lib/file-utils';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Modal } from '@/components/ui/Modal';
 import { formatDate, formatKm, formatCurrency, getVehicleStatusLabel } from '@/lib/formatters';
@@ -110,12 +113,40 @@ function VehiclesContent() {
     engineNo: '',
     chronicIssues: '',
     notes: '',
+    customerId: '',
     customerName: '',
     customerPhone: '',
+    contractUrl: '',
+    contractTitle: '',
     rentalStartDate: new Date().toISOString().slice(0, 10),
     rentalEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
   };
   const [formData, setFormData] = useState(initialForm);
+  const [customersList, setCustomersList] = useState<any[]>([]);
+  const [isUploadingContract, setIsUploadingContract] = useState(false);
+
+  const handleContractUpload = async (file: File, isEdit: boolean = false) => {
+    setIsUploadingContract(true);
+    try {
+      const { fileUrl, fileName } = await safeUploadFile(file);
+      if (isEdit) {
+        setEditFormData((prev: any) => ({ ...prev, contractUrl: fileUrl, contractTitle: fileName }));
+      } else {
+        setFormData((prev: any) => ({ ...prev, contractUrl: fileUrl, contractTitle: fileName }));
+      }
+      toast.success(
+        language === 'sr'
+          ? 'Ugovor je uspešno otpremljen.'
+          : language === 'en'
+          ? 'Contract uploaded successfully.'
+          : 'Sözleşme belgesi yüklendi.'
+      );
+    } catch (e: any) {
+      toast.error(e?.message || 'Sözleşme yüklenirken hata oluştu.');
+    } finally {
+      setIsUploadingContract(false);
+    }
+  };
 
   const handleMarkAsAvailable = async (vId: string, plate: string) => {
     try {
@@ -130,8 +161,9 @@ function VehiclesContent() {
         return;
       }
       setVehicles((prev) =>
-        prev.map((v) => (v.id === vId ? { ...v, status: 'AVAILABLE' } : v))
+        prev.map((v) => (v.id === vId ? { ...v, status: 'AVAILABLE', activeRental: null } : v))
       );
+      await loadVehicles();
       toast.success(language === 'sr' ? `Vozilo ${plate} je označeno kao slobodno.` : language === 'en' ? `Vehicle ${plate} marked as available.` : `${plate} plakalı araç müsait olarak işaretlendi.`);
     } catch (e: any) {
       console.error(e);
@@ -152,6 +184,7 @@ function VehiclesContent() {
       .catch(() => {});
 
     loadVehicles();
+    loadCustomers();
 
     const statusParam = searchParams.get('status');
     if (statusParam) {
@@ -172,6 +205,18 @@ function VehiclesContent() {
       setIsNewModalOpen(true);
     }
   }, [searchParams]);
+
+  const loadCustomers = async () => {
+    try {
+      const res = await fetch('/api/customers');
+      if (res.ok) {
+        const data = await res.json();
+        setCustomersList(Array.isArray(data) ? data : data.customers || []);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const loadVehicles = async () => {
     try {
@@ -196,6 +241,7 @@ function VehiclesContent() {
     try {
       const payload = {
         ...formData,
+        plate: formData.plate.trim().toUpperCase(),
         modelYear: parseInt(String(formData.modelYear), 10) || new Date().getFullYear(),
         currentKm: parseInt(String(formData.currentKm), 10) || 0,
         fuelConsumptionRsd: parseFloat(String(formData.fuelConsumptionRsd)) || 0,
@@ -203,6 +249,11 @@ function VehiclesContent() {
         initialExpenses: parseFloat(String(formData.initialExpenses)) || 0,
         monthlyPrice: parseFloat(String(formData.monthlyPrice)) || 0,
         dailyPrice: parseFloat(String(formData.dailyPrice)) || 0,
+        customerId: formData.status === 'RENTED' ? formData.customerId || undefined : undefined,
+        customerName: formData.status === 'RENTED' ? formData.customerName?.trim() || undefined : undefined,
+        customerPhone: formData.status === 'RENTED' ? formData.customerPhone?.trim() || undefined : undefined,
+        contractUrl: formData.status === 'RENTED' ? formData.contractUrl || undefined : undefined,
+        contractTitle: formData.status === 'RENTED' ? formData.contractTitle || undefined : undefined,
       };
 
       const res = await fetch('/api/vehicles', {
@@ -274,6 +325,11 @@ function VehiclesContent() {
       engineNo: v.engineNo || '',
       chronicIssues: v.chronicIssues || '',
       notes: v.notes || '',
+      customerId: v.activeRental?.customerId || '',
+      customerName: v.activeRental?.customerName || '',
+      customerPhone: v.activeRental?.customerPhone || '',
+      contractUrl: v.activeRental?.contractUrl || '',
+      contractTitle: v.activeRental?.contractTitle || '',
     });
     setEditError(null);
     setIsEditModalOpen(true);
@@ -288,6 +344,7 @@ function VehiclesContent() {
     try {
       const payload = {
         ...editFormData,
+        plate: editFormData.plate?.trim().toUpperCase(),
         modelYear: parseInt(String(editFormData.modelYear), 10) || new Date().getFullYear(),
         currentKm: parseInt(String(editFormData.currentKm), 10) || 0,
         fuelConsumptionRsd: parseFloat(String(editFormData.fuelConsumptionRsd)) || 0,
@@ -296,6 +353,10 @@ function VehiclesContent() {
         monthlyPrice: parseFloat(String(editFormData.monthlyPrice)) || 0,
         dailyPrice: parseFloat(String(editFormData.dailyPrice)) || 0,
         accessories: JSON.stringify(editFormData.accessories || []),
+        customerId: editFormData.status === 'RENTED' ? editFormData.customerId || undefined : undefined,
+        customerName: editFormData.status === 'RENTED' ? editFormData.customerName?.trim() || undefined : undefined,
+        customerPhone: editFormData.status === 'RENTED' ? editFormData.customerPhone?.trim() || undefined : undefined,
+        contractUrl: editFormData.status === 'RENTED' ? editFormData.contractUrl || undefined : undefined,
       };
 
       const res = await fetch(`/api/vehicles/${editingVehicle.id}`, {
@@ -866,6 +927,18 @@ function VehiclesContent() {
                               <Phone className="w-3 h-3 text-slate-400" />
                               {v.activeRental.customerPhone}
                             </div>
+                            {v.activeRental.contractUrl && (
+                              <a
+                                href={v.activeRental.contractUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 mt-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 hover:underline"
+                                title={v.activeRental.contractTitle || 'Sözleşmeyi Aç'}
+                              >
+                                <FileText className="w-3 h-3 text-emerald-600" />
+                                <span>📄 {language === 'sr' ? 'Ugovor' : language === 'en' ? 'Contract' : 'Sözleşme'}</span>
+                              </a>
+                            )}
                           </div>
                         ) : isPostCheck ? (
                           <span className="text-sky-700 dark:text-sky-400 font-semibold italic">
@@ -1319,7 +1392,33 @@ function VehiclesContent() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    {language === 'sr' ? 'Ime i Prezime Klijenta' : language === 'en' ? 'Client Full Name' : 'Müşteri / Sürücü Adı Soyadı'}
+                    Kayıtlı Müşteri Seç
+                  </label>
+                  <select
+                    value={formData.customerId}
+                    onChange={(e) => {
+                      const cid = e.target.value;
+                      const found = customersList.find((c) => c.id === cid);
+                      setFormData({
+                        ...formData,
+                        customerId: cid,
+                        customerName: found ? found.name : formData.customerName,
+                        customerPhone: found ? found.phone : formData.customerPhone,
+                      });
+                    }}
+                    className="w-full px-3 py-2 text-xs border border-amber-300 dark:border-amber-700 rounded-xl focus:border-amber-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium"
+                  >
+                    <option value="">-- Müşteri Listesinden Seçiniz --</option>
+                    {customersList.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} ({c.phone})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    {language === 'sr' ? 'Ime i Prezime Klijenta' : language === 'en' ? 'Client Full Name' : 'Veya Müşteri Adı Soyadı'}
                   </label>
                   <input
                     type="text"
@@ -1329,6 +1428,9 @@ function VehiclesContent() {
                     className="w-full px-3 py-2 text-xs border border-amber-300 dark:border-amber-700 rounded-xl focus:border-amber-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     {language === 'sr' ? 'Telefon Klijenta' : language === 'en' ? 'Client Phone' : 'Müşteri Telefon Numarası'}
@@ -1341,12 +1443,9 @@ function VehiclesContent() {
                     className="w-full px-3 py-2 text-xs border border-amber-300 dark:border-amber-700 rounded-xl focus:border-amber-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono"
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    {language === 'sr' ? 'Datum Početka Zakupa' : language === 'en' ? 'Rental Start Date' : 'Kira Başlangıç Tarihi'}
+                    {language === 'sr' ? 'Datum Početka Zakupa' : language === 'en' ? 'Rental Start Date' : 'Kira Başlangıç'}
                   </label>
                   <input
                     type="date"
@@ -1357,7 +1456,7 @@ function VehiclesContent() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    {language === 'sr' ? 'Datum Završetka Zakupa' : language === 'en' ? 'Rental End Date' : 'Planlanan İade Tarihi'}
+                    {language === 'sr' ? 'Datum Završetka Zakupa' : language === 'en' ? 'Rental End Date' : 'Planlanan İade'}
                   </label>
                   <input
                     type="date"
@@ -1366,6 +1465,48 @@ function VehiclesContent() {
                     className="w-full px-3 py-2 text-xs border border-amber-300 dark:border-amber-700 rounded-xl focus:border-amber-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-mono"
                   />
                 </div>
+              </div>
+
+              {/* Sözleşme Belgesi / Upload */}
+              <div className="pt-2 border-t border-amber-200 dark:border-amber-800/80">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-amber-600" />
+                  Kiralama Sözleşmesi / Belgesi (PDF veya Görsel)
+                </label>
+                {formData.contractUrl ? (
+                  <div className="flex items-center justify-between bg-white dark:bg-slate-800 px-3 py-2 rounded-xl border border-amber-300 dark:border-amber-700">
+                    <a
+                      href={formData.contractUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs font-bold text-amber-800 dark:text-amber-400 hover:underline truncate max-w-[280px]"
+                    >
+                      📎 {formData.contractTitle || 'Yüklenen Sözleşme'}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, contractUrl: '', contractTitle: '' })}
+                      className="text-rose-500 hover:text-rose-700 text-xs font-bold ml-2 cursor-pointer"
+                    >
+                      Kaldır
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-amber-900 dark:text-amber-300 bg-white dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 border border-dashed border-amber-400 rounded-xl cursor-pointer transition-colors shadow-2xs">
+                    <Upload className="w-3.5 h-3.5 text-amber-600" />
+                    <span>{isUploadingContract ? 'Yükleniyor...' : 'Sözleşme Yükle (PDF / Fotoğraf)'}</span>
+                    <input
+                      type="file"
+                      accept=".pdf,image/*"
+                      disabled={isUploadingContract}
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleContractUpload(file, false);
+                      }}
+                    />
+                  </label>
+                )}
               </div>
             </div>
           )}
@@ -1684,6 +1825,103 @@ function VehiclesContent() {
                 </select>
               </div>
             </div>
+
+            {/* Kirada İse Müşteri ve Sözleşme Bağlantısı */}
+            {editFormData.status === 'RENTED' && (
+              <div className="bg-amber-50/70 dark:bg-amber-950/30 p-3.5 rounded-2xl border border-amber-300 dark:border-amber-800 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-amber-900 dark:text-amber-300">
+                  <KeyRound className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span>Kira & Müşteri Bağlantısı (Kirada Olan Araç İçin)</span>
+                </div>
+                <p className="text-[11px] text-amber-800/90 dark:text-amber-300/80">
+                  Araç durumu kirada olduğu için aracı kiralayan müşteriyi ve sözleşmesini bağlayabilirsiniz.
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Kayıtlı Müşteri Seç
+                    </label>
+                    <select
+                      value={editFormData.customerId || ''}
+                      onChange={(e) => {
+                        const cid = e.target.value;
+                        const found = customersList.find((c) => c.id === cid);
+                        setEditFormData({
+                          ...editFormData,
+                          customerId: cid,
+                          customerName: found ? found.name : editFormData.customerName,
+                          customerPhone: found ? found.phone : editFormData.customerPhone,
+                        });
+                      }}
+                      className="w-full px-3 py-2 text-xs border border-amber-300 dark:border-amber-700 rounded-xl focus:border-amber-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-medium"
+                    >
+                      <option value="">-- Müşteri Listesinden Seçiniz --</option>
+                      {customersList.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({c.phone})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                      Veya Müşteri Adı (Serbest Giriş)
+                    </label>
+                    <input
+                      type="text"
+                      value={editFormData.customerName || ''}
+                      onChange={(e) => setEditFormData({ ...editFormData, customerName: e.target.value })}
+                      placeholder="Örn: Ahmet Yılmaz"
+                      className="w-full px-3 py-2 text-xs border border-amber-300 dark:border-amber-700 rounded-xl focus:border-amber-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
+                    />
+                  </div>
+                </div>
+
+                {/* Sözleşme Belgesi / Upload */}
+                <div className="pt-2 border-t border-amber-200 dark:border-amber-800/80">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-amber-600" />
+                    Kiralama Sözleşmesi / Belgesi (PDF veya Görsel)
+                  </label>
+                  {editFormData.contractUrl ? (
+                    <div className="flex items-center justify-between bg-white dark:bg-slate-800 px-3 py-2 rounded-xl border border-amber-300 dark:border-amber-700">
+                      <a
+                        href={editFormData.contractUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-bold text-amber-800 dark:text-amber-400 hover:underline truncate max-w-[280px]"
+                      >
+                        📎 {editFormData.contractTitle || 'Yüklenen Sözleşme'}
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => setEditFormData({ ...editFormData, contractUrl: '', contractTitle: '' })}
+                        className="text-rose-500 hover:text-rose-700 text-xs font-bold ml-2 cursor-pointer"
+                      >
+                        Kaldır
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold text-amber-900 dark:text-amber-300 bg-white dark:bg-slate-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 border border-dashed border-amber-400 rounded-xl cursor-pointer transition-colors shadow-2xs">
+                      <Upload className="w-3.5 h-3.5 text-amber-600" />
+                      <span>{isUploadingContract ? 'Yükleniyor...' : 'Sözleşme Yükle (PDF / Fotoğraf)'}</span>
+                      <input
+                        type="file"
+                        accept=".pdf,image/*"
+                        disabled={isUploadingContract}
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleContractUpload(file, true);
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Araç İçi Aksesuarlar & Donanımlar */}
             <VehicleAccessoriesManager
