@@ -32,6 +32,7 @@ import {
 import { safeUploadFile } from '@/lib/file-utils';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Modal } from '@/components/ui/Modal';
+import { AiExcelImportModal } from '@/components/vehicles/AiExcelImportModal';
 import { formatDate, formatKm, formatCurrency, getVehicleStatusLabel } from '@/lib/formatters';
 import { AuthUser } from '@/lib/auth-client';
 import { useLanguage } from '@/lib/i18n';
@@ -63,6 +64,7 @@ function VehiclesContent() {
 
   // New Vehicle Modal state
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
+  const [isAiImportModalOpen, setIsAiImportModalOpen] = useState(false);
   const [isQuotaModalOpen, setIsQuotaModalOpen] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
@@ -516,6 +518,17 @@ function VehiclesContent() {
           >
             <Plus className="w-4 h-4" />
             {t.veh_add_new}
+          </button>
+
+          {/* AI Excel Import Button */}
+          <button
+            type="button"
+            onClick={() => setIsAiImportModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-xs sm:text-sm font-bold rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white shadow-md shadow-indigo-500/20 transition-all cursor-pointer"
+            title="Yapay zeka ile Excel dosyanızdaki sütunları otomatik tanıyıp araçları içe aktarın"
+          >
+            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+            <span>{language === 'sr' ? 'AI Excel Uvoz' : language === 'en' ? 'AI Excel Import' : '🤖 AI Excel Aktar'}</span>
           </button>
         </div>
       </div>
@@ -2033,6 +2046,13 @@ function VehiclesContent() {
           </div>
         </div>
       </Modal>
+
+      {/* AI Excel Import Modal */}
+      <AiExcelImportModal
+        isOpen={isAiImportModalOpen}
+        onClose={() => setIsAiImportModalOpen(false)}
+        onSuccess={() => loadVehicles()}
+      />
     </AppLayout>
   );
 }
