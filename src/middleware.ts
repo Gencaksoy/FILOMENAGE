@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { COOKIE_NAME, parseSessionCookie } from '@/lib/auth-client';
+import { COOKIE_NAME } from '@/lib/auth-client';
+import { parseSessionCookie } from '@/lib/auth-session';
 
 interface SessionData {
   id: string;
@@ -9,10 +10,10 @@ interface SessionData {
   features?: Record<string, boolean>;
 }
 
-function parseSession(cookieValue?: string): SessionData | null {
+async function parseSession(cookieValue?: string): Promise<SessionData | null> {
   if (!cookieValue) return null;
 
-  const user = parseSessionCookie(cookieValue);
+  const user = await parseSessionCookie(cookieValue);
   if (!user?.id) return null;
 
   return {
@@ -23,10 +24,10 @@ function parseSession(cookieValue?: string): SessionData | null {
   };
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get(COOKIE_NAME)?.value;
-  const user = parseSession(sessionCookie);
+  const user = await parseSession(sessionCookie);
 
   // Protected paths that require authentication
   const isProtectedPath =

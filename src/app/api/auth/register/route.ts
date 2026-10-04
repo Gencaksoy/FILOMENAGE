@@ -140,7 +140,7 @@ export async function POST(req: Request) {
       features: parsedFeatures,
     };
 
-    const cookieValue = createSessionCookie(authUser);
+    const cookieValue = await createSessionCookie(authUser);
 
     cookies().set('filo_auth_session', cookieValue, {
       httpOnly: true,

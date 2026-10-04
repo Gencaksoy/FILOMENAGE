@@ -4,17 +4,18 @@ import {
   AuthUser,
   DEFAULT_FEATURES,
   COOKIE_NAME,
-  parseSessionCookie,
 } from './auth-client';
+import { parseSessionCookie } from './auth-session';
 
 export * from './auth-client';
+export { createSessionCookie, parseSessionCookie } from './auth-session';
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
   try {
     const cookieStore = cookies();
     const sessionCookie = cookieStore.get(COOKIE_NAME);
     if (!sessionCookie?.value) return null;
-    const user = parseSessionCookie(sessionCookie.value);
+    const user = await parseSessionCookie(sessionCookie.value);
     if (!user?.id) return null;
 
     // Askıya alınan veya silinen kullanıcıların anında erişimini denetle

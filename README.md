@@ -2,7 +2,7 @@
 
 Filo yönetimi, araç takibi, bakım, kiralama ve operasyonel raporlamayı tek bir Next.js uygulamasında sunan kurumsal sistemdir.
 
-Versiyon: 1.0.1
+Versiyon: 1.0.2
 
 ## Amaç
 
@@ -36,6 +36,8 @@ npm install
 cp .env.example .env
 ```
 
+Üretim ortamında (ör. Vercel) `NEXTAUTH_SECRET` için güçlü ve benzersiz bir değer tanımlayın. Örnek değer yalnızca şablondur; üretimde kullanmayın.
+
 3. Veritabanını eşitleyin:
 ```bash
 npx prisma db push
@@ -60,7 +62,8 @@ npm run db:seed
 
 - Yönetici yetkisi veritabanındaki `role` alanına göre belirlenir.
 - Email bazlı hardcoded super-admin bypass kaldırılmıştır.
-- Oturum cookie'leri imzalı biçimde işlenmektedir.
+- Oturum cookie'leri Web Crypto HMAC-SHA256 ile imzalanıp doğrulanır.
+- İmza doğrulaması için Edge Runtime uyumlu Web Crypto kullanılır.
 
 ## Versiyon Yönetimi
 
