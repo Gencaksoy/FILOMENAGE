@@ -141,6 +141,11 @@ export interface Translations {
   dash_col_owner: string;
   dash_col_status: string;
   dash_col_investment: string;
+  dash_col_initial_expense: string;
+  dash_col_operating_cost: string;
+  dash_col_total_cost: string;
+  dash_col_amortization_left: string;
+  dash_col_amortization_progress: string;
   dash_col_revenue: string;
   dash_col_maint: string;
   dash_col_oil: string;
@@ -255,6 +260,29 @@ export interface Translations {
   veh_modal_edit_title: string;
   veh_accessories_title: string;
   veh_accessories_subtitle: string;
+  veh_tab_finance: string;
+  veh_finance_title: string;
+  veh_finance_subtitle: string;
+  veh_finance_purchase_price: string;
+  veh_finance_initial_expense: string;
+  veh_finance_total_investment: string;
+  veh_finance_operating_expenses: string;
+  veh_finance_total_cost: string;
+  veh_finance_total_revenue: string;
+  veh_finance_net_profit: string;
+  veh_finance_amortization_left: string;
+  veh_finance_amortized_badge: string;
+  veh_finance_amortizing_badge: string;
+  veh_finance_quick_edit: string;
+  veh_finance_edit_title: string;
+  veh_finance_edit_desc: string;
+  veh_finance_breakdown_title: string;
+  veh_finance_cost_item: string;
+  veh_finance_cost_type: string;
+  veh_finance_cost_amount: string;
+  veh_finance_cost_share: string;
+  veh_finance_capex: string;
+  veh_finance_opex: string;
 
   // Maintenances Module
   maint_title: string;
@@ -469,12 +497,17 @@ const translations: Record<Language, Translations> = {
     dash_col_owner: 'Sahip / Ortak',
     dash_col_status: 'Durum',
     dash_col_investment: 'Satın Alma',
+    dash_col_initial_expense: 'İlk Tescil & Noter',
+    dash_col_operating_cost: 'İşletme Gideri',
+    dash_col_total_cost: 'Genel Toplam Maliyet',
+    dash_col_amortization_left: 'Kalan Amortisman',
+    dash_col_amortization_progress: 'Amortisman Durumu',
     dash_col_revenue: 'Kira Geliri',
     dash_col_maint: 'Bakım',
     dash_col_oil: 'Motor Yağı',
     dash_col_regi: 'Registracija',
-    dash_col_total_expense: 'Toplam Masraf',
-    dash_col_net_profit: 'Net Kâr',
+    dash_col_total_expense: 'Toplam Gider',
+    dash_col_net_profit: 'Net Kâr / Bakiye',
     dash_col_margin: 'Masraf Oranı',
     dash_col_services: 'Servis & Arıza',
     dash_col_actions: 'İşlemler',
@@ -583,6 +616,29 @@ const translations: Record<Language, Translations> = {
     veh_modal_edit_title: 'Araç Bilgilerini Düzenle',
     veh_accessories_title: 'Araç İçi Aksesuarlar & Donanımlar',
     veh_accessories_subtitle: 'Kira teslimatında ve iadelerinde kontrol edilecek araç donanımları',
+    veh_tab_finance: 'Finans & Amortisman',
+    veh_finance_title: 'Araç Maliyet, Gelir & Amortisman Analizi',
+    veh_finance_subtitle: 'Satın alma bedeli, ilk tescil masrafları, tüm bakım giderleri ve kira cirosuna göre araç bazlı net kârlılık',
+    veh_finance_purchase_price: 'Alış Fiyatı',
+    veh_finance_initial_expense: 'İlk Tescil & Noter Masrafı',
+    veh_finance_total_investment: 'Toplam İlk Yatırım (Alış + Tescil)',
+    veh_finance_operating_expenses: 'İşletme Giderleri (Bakım + Yağ + Tescil + Arıza)',
+    veh_finance_total_cost: 'Genel Toplam Araç Maliyeti',
+    veh_finance_total_revenue: 'Toplam Kira Geliri (Ciro)',
+    veh_finance_net_profit: 'Net Finansal Bakiye',
+    veh_finance_amortization_left: 'Kalan Amortisman Tutarı',
+    veh_finance_amortized_badge: 'Amorti Edildi (Kâra Geçti)',
+    veh_finance_amortizing_badge: 'Amorti Aşamasında',
+    veh_finance_quick_edit: 'Alış & Tescil Masrafını Güncelle',
+    veh_finance_edit_title: 'Alış ve Tescil Masraflarını Düzenle',
+    veh_finance_edit_desc: 'Aracın satın alma fiyatını ve ilk noter/tescil harçlarını güncelleyerek toplam maliyet ve amortisman hesaplamasını yenileyin.',
+    veh_finance_breakdown_title: 'Detaylı Masraf ve Yatırım Kırılımı',
+    veh_finance_cost_item: 'Gider Kalemi',
+    veh_finance_cost_type: 'Gider Türü',
+    veh_finance_cost_amount: 'Tutar (€)',
+    veh_finance_cost_share: 'Toplam Maliyete Oranı',
+    veh_finance_capex: 'Satın Alma & Yatırım',
+    veh_finance_opex: 'İşletme & Servis Masrafı',
 
     // Maintenances Module
     maint_title: 'Bakım & Motor Yağı Takibi',
@@ -796,12 +852,17 @@ const translations: Record<Language, Translations> = {
     dash_col_owner: 'Partner / Owner',
     dash_col_status: 'Status',
     dash_col_investment: 'Purchase Cost',
+    dash_col_initial_expense: 'Initial Reg. & Notary',
+    dash_col_operating_cost: 'Operating Expense',
+    dash_col_total_cost: 'Total Lifetime Cost',
+    dash_col_amortization_left: 'Amortization Left',
+    dash_col_amortization_progress: 'Amortization Progress',
     dash_col_revenue: 'Rental Revenue',
     dash_col_maint: 'Maintenance',
     dash_col_oil: 'Engine Oil',
     dash_col_regi: 'Registracija',
-    dash_col_total_expense: 'Total Expense',
-    dash_col_net_profit: 'Net Profit',
+    dash_col_total_expense: 'Total Cost / Outlay',
+    dash_col_net_profit: 'Net Profit / Balance',
     dash_col_margin: 'Expense Ratio',
     dash_col_services: 'Services & Faults',
     dash_col_actions: 'Actions',
@@ -910,6 +971,29 @@ const translations: Record<Language, Translations> = {
     veh_modal_edit_title: 'Edit Vehicle Details',
     veh_accessories_title: 'Vehicle Interior Accessories & Features',
     veh_accessories_subtitle: 'Interior accessories and equipment checked during rentals',
+    veh_tab_finance: 'Finance & Amortization',
+    veh_finance_title: 'Vehicle Cost, Revenue & Amortization Analysis',
+    veh_finance_subtitle: 'Vehicle-based net profitability based on purchase price, registration fees, maintenance and rental income',
+    veh_finance_purchase_price: 'Purchase Price',
+    veh_finance_initial_expense: 'Initial Reg. & Notary Fees',
+    veh_finance_total_investment: 'Total Initial Investment (Purchase + Reg)',
+    veh_finance_operating_expenses: 'Operating Expenses (Maint + Oil + Reg + Fault)',
+    veh_finance_total_cost: 'Total Vehicle Cost',
+    veh_finance_total_revenue: 'Total Rental Revenue',
+    veh_finance_net_profit: 'Net Financial Balance',
+    veh_finance_amortization_left: 'Remaining Amortization',
+    veh_finance_amortized_badge: 'Fully Amortized (Profitable)',
+    veh_finance_amortizing_badge: 'Amortizing in Progress',
+    veh_finance_quick_edit: 'Update Purchase & Reg. Cost',
+    veh_finance_edit_title: 'Edit Purchase & Registration Expenses',
+    veh_finance_edit_desc: 'Update the vehicle purchase price and registration/notary fees to recalculate total cost and amortization.',
+    veh_finance_breakdown_title: 'Detailed Cost and Investment Breakdown',
+    veh_finance_cost_item: 'Cost Item',
+    veh_finance_cost_type: 'Cost Category',
+    veh_finance_cost_amount: 'Amount (€)',
+    veh_finance_cost_share: 'Share in Total Cost',
+    veh_finance_capex: 'Capital Investment',
+    veh_finance_opex: 'Operational Expense',
 
     // Maintenances Module
     maint_title: 'Maintenance & Engine Oil Tracking',
@@ -1123,12 +1207,17 @@ const translations: Record<Language, Translations> = {
     dash_col_owner: 'Vlasnik / Partner',
     dash_col_status: 'Status',
     dash_col_investment: 'Kupovna Cena',
+    dash_col_initial_expense: 'Prva Registracija i Notar',
+    dash_col_operating_cost: 'Operativni Trošak',
+    dash_col_total_cost: 'Ukupan Trošak Vozila',
+    dash_col_amortization_left: 'Preostala Amortizacija',
+    dash_col_amortization_progress: 'Status Amortizacije',
     dash_col_revenue: 'Prihod od Zakupa',
     dash_col_maint: 'Održavanje',
     dash_col_oil: 'Motorno Ulje',
     dash_col_regi: 'Registracija',
-    dash_col_total_expense: 'Ukupan Trošak',
-    dash_col_net_profit: 'Čist Profit',
+    dash_col_total_expense: 'Ukupni Izdaci / Trošak',
+    dash_col_net_profit: 'Čist Profit / Saldo',
     dash_col_margin: 'Udeo Troškova',
     dash_col_services: 'Servisi i Kvarovi',
     dash_col_actions: 'Radnje',
@@ -1237,6 +1326,29 @@ const translations: Record<Language, Translations> = {
     veh_modal_edit_title: 'Izmena Podataka o Vozilu',
     veh_accessories_title: 'Oprema i Dodaci u Vozilu',
     veh_accessories_subtitle: 'Oprema u vozilu koja se proverava pri preuzimanju i povratku',
+    veh_tab_finance: 'Finansije i Amortizacija',
+    veh_finance_title: 'Analiza Troškova, Prihoda i Amortizacije Vozila',
+    veh_finance_subtitle: 'Pojedinačna profitabilnost vozila na osnovu nabavne cene, troškova registracije, servisa i prihoda od zakupa',
+    veh_finance_purchase_price: 'Nabavna Cena',
+    veh_finance_initial_expense: 'Troškovi Prve Registracije i Prenosa',
+    veh_finance_total_investment: 'Ukupna Početna Investicija (Kupovina + Prenos)',
+    veh_finance_operating_expenses: 'Operativni Troškovi (Servis + Ulje + Pregled + Kvarovi)',
+    veh_finance_total_cost: 'Ukupan Trošak / Investicija Vozila',
+    veh_finance_total_revenue: 'Ukupan Prihod od Zakupa',
+    veh_finance_net_profit: 'Čist Finansijski Saldo',
+    veh_finance_amortization_left: 'Preostalo do Otplate (Amortizacije)',
+    veh_finance_amortized_badge: 'Potpuno Otplaćeno (U Profitu)',
+    veh_finance_amortizing_badge: 'U Procesu Otplate',
+    veh_finance_quick_edit: 'Ažuriraj Nabavnu Cenu i Registraciju',
+    veh_finance_edit_title: 'Izmena Nabavne Cene i Troškova Registracije',
+    veh_finance_edit_desc: 'Ažurirajte nabavnu cenu vozila i početne troškove da biste preračunali ukupan trošak i amortizaciju.',
+    veh_finance_breakdown_title: 'Detaljan Pregled Troškova i Investicije',
+    veh_finance_cost_item: 'Stavka Troška',
+    veh_finance_cost_type: 'Vrsta Troška',
+    veh_finance_cost_amount: 'Iznos (€)',
+    veh_finance_cost_share: 'Udeo u Ukupnom Trošku',
+    veh_finance_capex: 'Nabavka i Investicija',
+    veh_finance_opex: 'Operativni Servisni Troškovi',
 
     // Maintenances Module
     maint_title: 'Održavanje i Motorno Ulje',

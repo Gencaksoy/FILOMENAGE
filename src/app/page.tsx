@@ -152,7 +152,7 @@ export default function DashboardPage() {
   // Analytics table filters & sorting
   const [analyticsSearch, setAnalyticsSearch] = useState('');
   const [analyticsPartnerFilter, setAnalyticsPartnerFilter] = useState('ALL');
-  const [analyticsSortBy, setAnalyticsSortBy] = useState<'totalExpense' | 'revenue' | 'netProfit' | 'serviceCount' | 'faultCount'>('totalExpense');
+  const [analyticsSortBy, setAnalyticsSortBy] = useState<'totalExpense' | 'totalCost' | 'remainingAmortization' | 'amortizationPercent' | 'purchasePrice' | 'revenue' | 'netProfit' | 'serviceCount' | 'faultCount'>('totalExpense');
 
   const fetchData = async (owner: string = selectedOwner, isBackground: boolean = false) => {
     try {
@@ -541,7 +541,10 @@ export default function DashboardPage() {
       );
     })
     .sort((a: any, b: any) => {
-      if (analyticsSortBy === 'totalExpense') return (b.totalExpense || 0) - (a.totalExpense || 0);
+      if (analyticsSortBy === 'totalCost' || analyticsSortBy === 'totalExpense') return (b.totalCost || b.totalExpense || 0) - (a.totalCost || a.totalExpense || 0);
+      if (analyticsSortBy === 'remainingAmortization') return (b.remainingAmortization || 0) - (a.remainingAmortization || 0);
+      if (analyticsSortBy === 'amortizationPercent') return (b.amortizationPercent || 0) - (a.amortizationPercent || 0);
+      if (analyticsSortBy === 'purchasePrice') return (b.purchasePrice || 0) - (a.purchasePrice || 0);
       if (analyticsSortBy === 'revenue') return (b.revenue || 0) - (a.revenue || 0);
       if (analyticsSortBy === 'netProfit') return (b.netProfit || 0) - (a.netProfit || 0);
       if (analyticsSortBy === 'serviceCount') return (b.serviceCount || 0) - (a.serviceCount || 0);
@@ -1106,23 +1109,28 @@ export default function DashboardPage() {
 
                         {/* Alt Kırılım Hapları */}
                         <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 mb-2">
-                          <span className="px-1.5 py-0.5 rounded-sm bg-slate-100 dark:bg-slate-700/70">
-                            {language === 'sr' ? '🔧 Održavanje: ' : language === 'en' ? '🔧 Maint: ' : '🔧 Bakım: '}
-                            <strong className="text-slate-800 dark:text-slate-200">{formatCurrency(v.maintCost, 'EUR')}</strong>
+                          <span className="px-1.5 py-0.5 rounded-sm bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/50 text-amber-900 dark:text-amber-300 font-bold">
+                            {language === 'sr' ? '🛒 Nabavka: ' : language === 'en' ? '🛒 Purchase: ' : '🛒 Alış & Tescil: '}
+                            <strong>{formatCurrency(v.investment || 0, 'EUR')}</strong>
                           </span>
                           <span className="px-1.5 py-0.5 rounded-sm bg-slate-100 dark:bg-slate-700/70">
-                            {language === 'sr' ? '🛢️ Ulje: ' : language === 'en' ? '🛢️ Oil: ' : '🛢️ Yağ: '}
-                            <strong className="text-slate-800 dark:text-slate-200">{formatCurrency(v.oilCost, 'EUR')}</strong>
+                            {language === 'sr' ? '🔧 Servisi: ' : language === 'en' ? '🔧 Op. Cost: ' : '🔧 İşletme: '}
+                            <strong className="text-slate-800 dark:text-slate-200">{formatCurrency(v.operatingExpense || 0, 'EUR')}</strong>
                           </span>
-                          <span className="px-1.5 py-0.5 rounded-sm bg-slate-100 dark:bg-slate-700/70">
-                            {language === 'sr' ? '📋 Regi: ' : language === 'en' ? '📋 Regi: ' : '📋 Tescil: '}
-                            <strong className="text-slate-800 dark:text-slate-200">{formatCurrency(v.inspCost, 'EUR')}</strong>
+                          <span className={`px-1.5 py-0.5 rounded-sm font-bold ${
+                            v.isAmortized 
+                              ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                              : 'bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800'
+                          }`}>
+                            {v.isAmortized 
+                              ? (language === 'sr' ? '✅ Otplaćeno' : language === 'en' ? '✅ Amortized' : '✅ Amorti Oldu') 
+                              : `${language === 'sr' ? '⏳ Još: ' : language === 'en' ? '⏳ Left: ' : '⏳ Kalan: '}${formatCurrency(v.remainingAmortization, 'EUR')}`}
                           </span>
                           <Link
-                            href={`/vehicles/${v.id}`}
+                            href={`/vehicles/${v.id}?tab=finance`}
                             className="ml-auto text-amber-600 dark:text-amber-400 hover:text-amber-700 font-bold hover:underline"
                           >
-                            {language === 'sr' ? 'Pregledaj →' : language === 'en' ? 'Inspect →' : 'İncele →'}
+                            {language === 'sr' ? 'Finansije →' : language === 'en' ? 'Finance →' : 'Finans →'}
                           </Link>
                         </div>
 
@@ -1274,7 +1282,10 @@ export default function DashboardPage() {
                   onChange={(e) => setAnalyticsSortBy(e.target.value as any)}
                   className="px-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-300 focus:outline-hidden focus:border-amber-500"
                 >
-                  <option value="totalExpense">{language === 'sr' ? 'Najveći Troškovi' : language === 'en' ? 'Highest Expense' : 'En Çok Masraf Çıkaran'}</option>
+                  <option value="totalExpense">{language === 'sr' ? 'Najveći Ukupan Trošak' : language === 'en' ? 'Highest Total Cost' : 'En Yüksek Toplam Maliyet'}</option>
+                  <option value="remainingAmortization">{language === 'sr' ? 'Najviše Preostale Amortizacije' : language === 'en' ? 'Most Amortization Left' : 'En Çok Kalan Amortisman'}</option>
+                  <option value="amortizationPercent">{language === 'sr' ? 'Procenat Amortizacije (%)' : language === 'en' ? 'Amortization Progress (%)' : 'Amortisman Yüzdesi (%)'}</option>
+                  <option value="purchasePrice">{language === 'sr' ? 'Najveća Nabavna Cena' : language === 'en' ? 'Highest Purchase Price' : 'En Yüksek Alış Fiyatı'}</option>
                   <option value="revenue">{language === 'sr' ? 'Najveći Prihod' : language === 'en' ? 'Highest Revenue' : 'En Yüksek Ciro'}</option>
                   <option value="netProfit">{language === 'sr' ? 'Najveći Čist Profit' : language === 'en' ? 'Highest Net Profit' : 'En Yüksek Net Kâr'}</option>
                   <option value="serviceCount">{language === 'sr' ? 'Najviše Servisa' : language === 'en' ? 'Most Services' : 'En Çok Servise Giren'}</option>
@@ -1291,13 +1302,12 @@ export default function DashboardPage() {
                     <th className="py-3 px-3.5">{t.dash_col_vehicle}</th>
                     <th className="py-3 px-3">{t.dash_col_owner}</th>
                     <th className="py-3 px-3">{t.dash_col_status}</th>
-                    <th className="py-3 px-3 text-right">{t.dash_col_revenue}</th>
-                    <th className="py-3 px-3 text-right">{t.dash_col_maint}</th>
-                    <th className="py-3 px-3 text-right">{t.dash_col_oil}</th>
-                    <th className="py-3 px-3 text-right">{t.dash_col_regi}</th>
-                    <th className="py-3 px-3 text-right font-black text-slate-900 dark:text-white">{t.dash_col_total_expense}</th>
+                    <th className="py-3 px-3 text-right">{t.dash_col_investment}</th>
+                    <th className="py-3 px-3 text-right">{t.dash_col_operating_cost}</th>
+                    <th className="py-3 px-3 text-right font-black text-rose-700 dark:text-rose-400">{t.dash_col_total_cost}</th>
+                    <th className="py-3 px-3 text-right text-emerald-700 dark:text-emerald-400 font-bold">{t.dash_col_revenue}</th>
+                    <th className="py-3 px-3 text-center">{t.dash_col_amortization_progress}</th>
                     <th className="py-3 px-3 text-right font-black text-slate-900 dark:text-white">{t.dash_col_net_profit}</th>
-                    <th className="py-3 px-3 text-center">{t.dash_col_margin}</th>
                     <th className="py-3 px-3 text-center">{t.dash_col_services}</th>
                     <th className="py-3 px-3 text-center">{t.dash_col_actions}</th>
                   </tr>
@@ -1305,7 +1315,7 @@ export default function DashboardPage() {
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800 bg-white dark:bg-slate-900 font-medium">
                   {filteredVehicleAnalytics.length === 0 ? (
                     <tr>
-                      <td colSpan={12} className="py-8 text-center text-xs text-slate-400 dark:text-slate-500">
+                      <td colSpan={11} className="py-8 text-center text-xs text-slate-400 dark:text-slate-500">
                         {language === 'sr' ? 'Nisu pronađena vozila po zadatim kriterijumima.' : language === 'en' ? 'No vehicles found matching criteria.' : 'Kriterlere uygun araç bulunamadı.'}
                       </td>
                     </tr>
@@ -1316,7 +1326,9 @@ export default function DashboardPage() {
                       return (
                         <tr key={v.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/50 transition-colors">
                           <td className="py-3 px-3.5">
-                            <div className="font-mono font-black text-slate-900 dark:text-white">{v.plate}</div>
+                            <Link href={`/vehicles/${v.id}?tab=finance`} className="font-mono font-black text-slate-900 dark:text-white hover:text-amber-600 transition-colors">
+                              {v.plate}
+                            </Link>
                             <div className="text-[11px] text-slate-500 dark:text-slate-400">
                               {v.brand} {v.model} ({v.modelYear})
                             </div>
@@ -1346,31 +1358,82 @@ export default function DashboardPage() {
                               {getVehicleStatusLabel(v.status, language)}
                             </span>
                           </td>
-                          <td className="py-3 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
+
+                          {/* Satın Alma & İlk Tescil Yatırımı */}
+                          <td className="py-3 px-3 text-right">
+                            <div className="font-bold text-slate-800 dark:text-slate-200">
+                              {formatCurrency(v.investment || 0, 'EUR')}
+                            </div>
+                            <div className="text-[10px] text-slate-400 dark:text-slate-500">
+                              Alış: {formatCurrency(v.purchasePrice || 0, 'EUR')}
+                              {(v.initialExpenses || 0) > 0 && ` + Reg: ${formatCurrency(v.initialExpenses, 'EUR')}`}
+                            </div>
+                          </td>
+
+                          {/* İşletme Giderleri (Bakım + Yağ + Muayene) */}
+                          <td className="py-3 px-3 text-right">
+                            <div className="font-semibold text-slate-700 dark:text-slate-300">
+                              {formatCurrency(v.operatingExpense || 0, 'EUR')}
+                            </div>
+                            <div className="text-[10px] text-slate-400 dark:text-slate-500" title={`Bakım: ${v.maintCost || 0} €, Yağ: ${v.oilCost || 0} €, Reg: ${v.inspCost || 0} €`}>
+                              B: {formatCurrency(v.maintCost || 0, 'EUR')} • Y: {formatCurrency(v.oilCost || 0, 'EUR')}
+                            </div>
+                          </td>
+
+                          {/* GENEL TOPLAM ARAÇ MALİYETİ (Alış + Tescil + Bakımlar) */}
+                          <td className="py-3 px-3 text-right">
+                            <div className="font-black text-rose-700 dark:text-rose-400 text-sm">
+                              {formatCurrency(v.totalCost || v.totalExpense || 0, 'EUR')}
+                            </div>
+                            <div className="text-[9px] text-slate-400 dark:text-slate-500 font-medium">
+                              {language === 'sr' ? 'Kupovina + Servis' : language === 'en' ? 'Purchase + Ops' : 'Alış + Tescil + Servis'}
+                            </div>
+                          </td>
+
+                          {/* Kira Geliri */}
+                          <td className="py-3 px-3 text-right font-black text-emerald-600 dark:text-emerald-400 text-sm">
                             {formatCurrency(v.revenue || 0, 'EUR')}
                           </td>
-                          <td className="py-3 px-3 text-right text-slate-600 dark:text-slate-300">
-                            {formatCurrency(v.maintCost || 0, 'EUR')}
+
+                          {/* Amortisman İlerlemesi & Kalan Tutar */}
+                          <td className="py-3 px-3">
+                            <div className="flex flex-col items-center justify-center min-w-[120px]">
+                              <div className="flex items-center justify-between w-full text-[10px] font-bold mb-1">
+                                <span className={v.isAmortized ? 'text-emerald-700 dark:text-emerald-400 font-black' : 'text-slate-600 dark:text-slate-400'}>
+                                  %{v.amortizationPercent || 0}
+                                </span>
+                                <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
+                                  v.isAmortized 
+                                    ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
+                                    : 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300'
+                                }`}>
+                                  {v.isAmortized 
+                                    ? (language === 'sr' ? 'Otplaćeno' : language === 'en' ? 'Amortized' : 'Amorti Oldu') 
+                                    : `${language === 'sr' ? 'Još: ' : language === 'en' ? 'Left: ' : 'Kalan: '}${formatCurrency(v.remainingAmortization || 0, 'EUR')}`}
+                                </span>
+                              </div>
+                              <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-500 ${
+                                    v.isAmortized ? 'bg-emerald-500' : 'bg-gradient-to-r from-amber-500 to-purple-500'
+                                  }`}
+                                  style={{ width: `${Math.min(100, v.amortizationPercent || 0)}%` }}
+                                />
+                              </div>
+                            </div>
                           </td>
-                          <td className="py-3 px-3 text-right text-slate-600 dark:text-slate-300">
-                            {formatCurrency(v.oilCost || 0, 'EUR')}
-                          </td>
-                          <td className="py-3 px-3 text-right text-slate-600 dark:text-slate-300">
-                            {formatCurrency(v.inspCost || 0, 'EUR')}
-                          </td>
-                          <td className="py-3 px-3 text-right font-black text-rose-600 dark:text-rose-400">
-                            {formatCurrency(v.totalExpense || 0, 'EUR')}
-                          </td>
+
+                          {/* Net Kâr / Finansal Bakiye */}
                           <td className={`py-3 px-3 text-right font-black ${isProfitPositive ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`}>
-                            {formatCurrency(v.netProfit || 0, 'EUR')}
+                            <div>{formatCurrency(v.netProfit || 0, 'EUR')}</div>
+                            <div className="text-[9px] font-medium text-slate-400 dark:text-slate-500">
+                              {isProfitPositive 
+                                ? (language === 'sr' ? 'U profitu' : language === 'en' ? 'Profit' : 'Kârda') 
+                                : (language === 'sr' ? 'Otplaćuje se' : language === 'en' ? 'Amortizing' : 'Amorti Bekliyor')}
+                            </div>
                           </td>
-                          <td className="py-3 px-3 text-center">
-                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold ${
-                              (v.expenseRatio || 0) > 50 ? 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
-                            }`}>
-                              %{v.expenseRatio || 0}
-                            </span>
-                          </td>
+
+                          {/* Servis & Arıza */}
                           <td className="py-3 px-3 text-center">
                             <div className="flex items-center justify-center gap-1">
                               {v.activeFaultCount > 0 ? (
@@ -1383,12 +1446,15 @@ export default function DashboardPage() {
                               </span>
                             </div>
                           </td>
+
+                          {/* İşlemler */}
                           <td className="py-3 px-3 text-center">
                             <Link
-                              href={`/vehicles/${v.id}`}
-                              className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 text-white rounded-lg text-[10px] font-bold transition-colors inline-block"
+                              href={`/vehicles/${v.id}?tab=finance`}
+                              className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 dark:bg-amber-600 dark:hover:bg-amber-500 text-slate-950 dark:text-white rounded-lg text-[10px] font-black transition-colors inline-flex items-center gap-1 shadow-2xs"
+                              title="Aracın finans ve amortisman detayını incele"
                             >
-                              {language === 'sr' ? 'Detalji →' : language === 'en' ? 'Details →' : 'Detay →'}
+                              <span>{language === 'sr' ? 'Finansije →' : language === 'en' ? 'Finance →' : 'Finans →'}</span>
                             </Link>
                           </td>
                         </tr>

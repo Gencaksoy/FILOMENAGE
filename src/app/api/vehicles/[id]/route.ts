@@ -109,19 +109,26 @@ export async function GET(
     const latestOilChange = vehicle.oilChanges[0] || null;
     const latestInspection = vehicle.inspections[0] || null;
 
-    // Financials & Amortization
+    // Financials & Amortization (Tüm Maliyetler: Alış + İlk Tescil + Bakım + Yağ + Muayene + Arıza)
+    const purchasePrice = vehicle.purchasePrice || 0;
+    const initialExpenses = vehicle.initialExpenses || 0;
+    const totalInvestment = purchasePrice + initialExpenses;
+
     const totalRentalRevenue = vehicle.rentals.reduce((sum, r) => sum + (r.totalAmount || 0), 0);
     const totalMaintenanceCost = vehicle.maintenances.reduce((acc, m) => acc + (m.totalCost || 0), 0);
     const totalOilCost = vehicle.oilChanges.reduce((acc, o) => acc + (o.cost || 0), 0);
     const totalInspectionCost = vehicle.inspections.reduce((acc, i) => acc + (i.cost || 0), 0);
-    const totalExpenses = totalMaintenanceCost + totalOilCost + totalInspectionCost;
+    const totalFaultCost = vehicle.faults.reduce((acc, f) => acc + (f.cost || 0), 0);
+    const totalOperatingCost = totalMaintenanceCost + totalOilCost + totalInspectionCost + totalFaultCost;
 
-    const netProfit = totalRentalRevenue - totalExpenses;
-    const totalInvestment = (vehicle.purchasePrice || 0) + (vehicle.initialExpenses || 0);
-    const remainingAmortization = Math.max(0, totalInvestment - netProfit);
-    const isAmortized = totalInvestment > 0 && netProfit >= totalInvestment;
-    const amortizationPercent = totalInvestment > 0
-      ? Math.min(100, Math.round((netProfit / totalInvestment) * 100))
+    // Toplam Araç Maliyeti / Gideri = Yatırım + İşletme Masrafları
+    const totalCost = totalInvestment + totalOperatingCost;
+    const totalExpenses = totalCost;
+    const netProfit = totalRentalRevenue - totalCost;
+    const remainingAmortization = Math.max(0, totalCost - totalRentalRevenue);
+    const isAmortized = totalCost > 0 && totalRentalRevenue >= totalCost;
+    const amortizationPercent = totalCost > 0
+      ? Math.min(100, Math.round((totalRentalRevenue / totalCost) * 100))
       : 100;
 
     return NextResponse.json({
@@ -143,13 +150,18 @@ export async function GET(
           }
         : null,
       financials: {
-        totalRentalRevenue,
-        totalExpenses,
+        purchasePrice,
+        initialExpenses,
+        totalInvestment,
         totalMaintenanceCost,
         totalOilCost,
         totalInspectionCost,
+        totalFaultCost,
+        totalOperatingCost,
+        totalExpenses: totalCost, // Genel Toplam Araç Gideri
+        totalCost,
+        totalRentalRevenue,
         netProfit,
-        totalInvestment,
         remainingAmortization,
         isAmortized,
         amortizationPercent,

@@ -669,6 +669,7 @@ function VehiclesContent() {
                   <th className="py-3 px-4">{language === 'sr' ? 'Klijent / Vozač' : language === 'en' ? 'Client / Driver' : 'Müşteri / Sürücü'}</th>
                   <th className="py-3 px-4">{language === 'sr' ? 'Preostalo Vreme' : language === 'en' ? 'Remaining Time' : 'Kalan Süre'}</th>
                   <th className="py-3 px-4">{language === 'sr' ? 'Poslednji Servis' : language === 'en' ? 'Last Service' : 'Son Bakım & Masraf'}</th>
+                  <th className="py-3 px-4 min-w-[140px]">{language === 'sr' ? 'Troškovi i Amortizacija' : language === 'en' ? 'Total Cost & ROI' : 'Maliyet & Amortisman'}</th>
                   <th className="py-3 px-4 text-right">{t.common_actions}</th>
                 </tr>
               </thead>
@@ -934,6 +935,44 @@ function VehiclesContent() {
                         ) : (
                           <span className="text-slate-400 italic">{t.common_no_data}</span>
                         )}
+                      </td>
+
+                      {/* Toplam Maliyet & Amortisman */}
+                      <td className="py-3.5 px-4 min-w-[140px]">
+                        <Link
+                          href={`/vehicles/${v.id}?tab=finance`}
+                          className="block hover:opacity-80 transition-opacity"
+                          title="Aracın finans ve amortisman detayını incele"
+                        >
+                          <div className="flex items-center justify-between gap-1 mb-0.5">
+                            <span className="text-xs font-black text-rose-700 dark:text-rose-400">
+                              {formatCurrency(v.financials?.totalCost || v.financials?.totalExpenses || ((v.purchasePrice || 0) + (v.initialExpenses || 0)), 'EUR')}
+                            </span>
+                            <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded ${
+                              v.financials?.isAmortized
+                                ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
+                                : 'bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300'
+                            }`}>
+                              %{v.financials?.amortizationPercent ?? 0}
+                            </span>
+                          </div>
+                          <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden mb-1">
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ${
+                                v.financials?.isAmortized ? 'bg-emerald-500' : 'bg-gradient-to-r from-amber-500 to-purple-500'
+                              }`}
+                              style={{ width: `${Math.min(100, v.financials?.amortizationPercent ?? 0)}%` }}
+                            />
+                          </div>
+                          <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center justify-between gap-1">
+                            <span>{language === 'sr' ? 'Kup:' : language === 'en' ? 'Buy:' : 'Alış:'} {formatCurrency(v.purchasePrice || 0, 'EUR')}</span>
+                            <span className={v.financials?.isAmortized ? 'text-emerald-600 font-bold' : 'text-slate-700 dark:text-slate-300 font-semibold'}>
+                              {v.financials?.isAmortized 
+                                ? (language === 'sr' ? 'Otplaćeno' : language === 'en' ? 'Amortized' : 'Amorti Oldu')
+                                : `${language === 'sr' ? 'Još:' : language === 'en' ? 'Left:' : 'Kalan:'} ${formatCurrency(v.financials?.remainingAmortization ?? 0, 'EUR')}`}
+                            </span>
+                          </div>
+                        </Link>
                       </td>
 
                       {/* İşlem Butonları */}

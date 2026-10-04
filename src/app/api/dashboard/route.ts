@@ -223,34 +223,54 @@ export async function GET(req: Request) {
     registrationAlerts.sort((a, b) => a.diffDays - b.diffDays);
 
     // 3. Ortak Bazlı İstatistikler & Finansal Amortisman & Araç Başı Analizler
+    let totalFleetPurchasePrice = 0;
+    let totalFleetInitialExpenses = 0;
     let totalFleetInvestment = 0;
     let totalFleetRevenue = 0;
     let totalFleetMaintCost = 0;
     let totalFleetOilCost = 0;
     let totalFleetInspCost = 0;
+    let totalFleetFaultCost = 0;
+    let totalFleetOperatingCost = 0;
 
     const partnerStats: Record<string, any> = {};
     const vehicleAnalyticsList: any[] = [];
 
     vehicles.forEach((v) => {
-      const vInvestment = (v.purchasePrice || 0) + (v.initialExpenses || 0);
+      const purchasePrice = v.purchasePrice || 0;
+      const initialExpenses = v.initialExpenses || 0;
+      const vInvestment = purchasePrice + initialExpenses;
       const vRevenue = v.rentals.reduce((sum, r) => sum + (r.totalAmount || 0), 0);
       const vMaintCost = v.maintenances.reduce((acc, m) => acc + (m.totalCost || 0), 0);
       const vOilCost = v.oilChanges.reduce((acc, o) => acc + (o.cost || 0), 0);
       const vInspCost = v.inspections.reduce((acc, i) => acc + (i.cost || 0), 0);
-      const vTotalExpense = vMaintCost + vOilCost + vInspCost;
+      const vFaultCost = v.faults?.reduce((acc, f) => acc + (f.cost || 0), 0) || 0;
+      const vOperatingExpense = vMaintCost + vOilCost + vInspCost + vFaultCost;
+
+      // Toplam Araç Maliyeti / Gideri = Satın Alma + İlk Tescil/Kayıt + Bakım + Yağ + Muayene + Arıza
+      const vTotalExpense = vInvestment + vOperatingExpense;
       const vNetProfit = vRevenue - vTotalExpense;
       const vExpenseRatio = vRevenue > 0 ? Math.round((vTotalExpense / vRevenue) * 100) : (vTotalExpense > 0 ? 100 : 0);
+      const vRemainingAmortization = Math.max(0, vTotalExpense - vRevenue);
+      const vIsAmortized = vTotalExpense > 0 && vRevenue >= vTotalExpense;
+      const vAmortizationPercent = vTotalExpense > 0
+        ? Math.min(100, Math.round((vRevenue / vTotalExpense) * 100))
+        : 100;
+
       const vFaultCount = v.faults?.length || 0;
       const vActiveFaultCount = v.faults?.filter((f) => f.status === 'OPEN' || f.status === 'IN_PROGRESS').length || 0;
       const vServiceCount = v.maintenances.length + v.oilChanges.length + v.inspections.length;
       const hasChronic = Boolean(v.chronicIssues && v.chronicIssues.trim().length > 0);
 
+      totalFleetPurchasePrice += purchasePrice;
+      totalFleetInitialExpenses += initialExpenses;
       totalFleetInvestment += vInvestment;
       totalFleetRevenue += vRevenue;
       totalFleetMaintCost += vMaintCost;
       totalFleetOilCost += vOilCost;
       totalFleetInspCost += vInspCost;
+      totalFleetFaultCost += vFaultCost;
+      totalFleetOperatingCost += vOperatingExpense;
 
       vehicleAnalyticsList.push({
         id: v.id,
@@ -260,13 +280,21 @@ export async function GET(req: Request) {
         modelYear: v.modelYear,
         owner: v.owner || null,
         status: v.status,
+        purchasePrice: isStaff ? null : purchasePrice,
+        initialExpenses: isStaff ? null : initialExpenses,
         investment: isStaff ? null : vInvestment,
+        operatingExpense: isStaff ? null : vOperatingExpense,
         revenue: isStaff ? null : vRevenue,
         maintCost: isStaff ? null : vMaintCost,
         oilCost: isStaff ? null : vOilCost,
         inspCost: isStaff ? null : vInspCost,
+        faultCost: isStaff ? null : vFaultCost,
         totalExpense: isStaff ? null : vTotalExpense,
+        totalCost: isStaff ? null : vTotalExpense,
         netProfit: isStaff ? null : vNetProfit,
+        remainingAmortization: isStaff ? null : vRemainingAmortization,
+        amortizationPercent: isStaff ? null : vAmortizationPercent,
+        isAmortized: isStaff ? null : vIsAmortized,
         expenseRatio: isStaff ? null : vExpenseRatio,
         serviceCount: vServiceCount,
         maintCount: v.maintenances.length,
@@ -280,12 +308,12 @@ export async function GET(req: Request) {
       });
     });
 
-    const totalFleetExpenses = totalFleetMaintCost + totalFleetOilCost + totalFleetInspCost;
+    const totalFleetExpenses = totalFleetInvestment + totalFleetOperatingCost;
     const fleetNetProfit = totalFleetRevenue - totalFleetExpenses;
-    const fleetRemainingAmortization = Math.max(0, totalFleetInvestment - fleetNetProfit);
-    const fleetAmortizationPercent = totalFleetInvestment > 0
-      ? Math.min(100, Math.round((fleetNetProfit / totalFleetInvestment) * 100))
-      : 0;
+    const fleetRemainingAmortization = Math.max(0, totalFleetExpenses - totalFleetRevenue);
+    const fleetAmortizationPercent = totalFleetExpenses > 0
+      ? Math.min(100, Math.round((totalFleetRevenue / totalFleetExpenses) * 100))
+      : 100;
 
     const avgExpensePerVehicle = totalVehicles > 0 ? Math.round(totalFleetExpenses / totalVehicles) : 0;
     const avgRevenuePerVehicle = totalVehicles > 0 ? Math.round(totalFleetRevenue / totalVehicles) : 0;
@@ -300,21 +328,28 @@ export async function GET(req: Request) {
 
       let pInvestment = 0;
       let pRevenue = 0;
-      let pExpense = 0;
+      let pOperatingExpense = 0;
+      let pTotalExpense = 0;
 
       partnerVehicles.forEach((v) => {
-        pInvestment += (v.purchasePrice || 0) + (v.initialExpenses || 0);
-        pRevenue += v.rentals.reduce((sum, r) => sum + (r.totalAmount || 0), 0);
+        const inv = (v.purchasePrice || 0) + (v.initialExpenses || 0);
+        const rev = v.rentals.reduce((sum, r) => sum + (r.totalAmount || 0), 0);
         const maintCost = v.maintenances.reduce((acc, m) => acc + (m.totalCost || 0), 0);
         const oilCost = v.oilChanges.reduce((acc, o) => acc + (o.cost || 0), 0);
         const inspCost = v.inspections.reduce((acc, i) => acc + (i.cost || 0), 0);
-        pExpense += maintCost + oilCost + inspCost;
+        const faultCost = v.faults?.reduce((acc, f) => acc + (f.cost || 0), 0) || 0;
+        const opExp = maintCost + oilCost + inspCost + faultCost;
+
+        pInvestment += inv;
+        pRevenue += rev;
+        pOperatingExpense += opExp;
+        pTotalExpense += (inv + opExp);
       });
 
-      const pNetProfit = pRevenue - pExpense;
-      const pRemainingAmortization = Math.max(0, pInvestment - pNetProfit);
-      const pAmortizationPercent = pInvestment > 0
-        ? Math.min(100, Math.round((pNetProfit / pInvestment) * 100))
+      const pNetProfit = pRevenue - pTotalExpense;
+      const pRemainingAmortization = Math.max(0, pTotalExpense - pRevenue);
+      const pAmortizationPercent = pTotalExpense > 0
+        ? Math.min(100, Math.round((pRevenue / pTotalExpense) * 100))
         : 100;
 
       partnerStats[partner] = {
@@ -325,7 +360,8 @@ export async function GET(req: Request) {
         postRentalCheckVehicles: pPostCheck,
         totalInvestment: isStaff ? null : pInvestment,
         totalRevenue: isStaff ? null : pRevenue,
-        totalExpenses: isStaff ? null : pExpense,
+        operatingExpenses: isStaff ? null : pOperatingExpense,
+        totalExpenses: isStaff ? null : pTotalExpense,
         netProfit: isStaff ? null : pNetProfit,
         remainingAmortization: isStaff ? null : pRemainingAmortization,
         amortizationPercent: isStaff ? null : pAmortizationPercent,
@@ -447,9 +483,12 @@ export async function GET(req: Request) {
         returnsLaterCount,
       },
       fleetFinancials: isStaff ? null : {
+        totalFleetPurchasePrice,
+        totalFleetInitialExpenses,
         totalFleetInvestment,
         totalFleetRevenue,
-        totalFleetExpenses,
+        totalFleetOperatingExpenses: totalFleetOperatingCost,
+        totalFleetExpenses, // Total lifetime cost of vehicles = Investment (Purchase + Initial Reg) + Operating Expenses
         fleetNetProfit,
         fleetRemainingAmortization,
         fleetAmortizationPercent,
@@ -457,9 +496,12 @@ export async function GET(req: Request) {
         avgRevenuePerVehicle,
         occupancyRate,
         breakdown: {
+          purchase: totalFleetPurchasePrice,
+          initialExpenses: totalFleetInitialExpenses,
           maintenance: totalFleetMaintCost,
           oil: totalFleetOilCost,
           inspection: totalFleetInspCost,
+          fault: totalFleetFaultCost,
         },
       },
       topExpenseVehicles,

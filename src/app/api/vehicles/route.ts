@@ -81,7 +81,6 @@ export async function GET(req: Request) {
           orderBy: { inspectionDate: 'desc' },
         },
         faults: {
-          where: { status: { in: ['OPEN', 'IN_PROGRESS'] } },
           orderBy: { createdAt: 'desc' },
         },
       },
@@ -121,18 +120,25 @@ export async function GET(req: Request) {
         regDaysLeft = Math.ceil(regDiff / (1000 * 60 * 60 * 24));
       }
 
-      // ROI & Amortization Calculations
+      // ROI & Amortization Calculations (Tüm Maliyetler: Alış + İlk Tescil + Bakım + Yağ + Muayene + Arıza)
+      const purchasePrice = v.purchasePrice || 0;
+      const initialExpenses = v.initialExpenses || 0;
+      const totalInvestment = purchasePrice + initialExpenses;
+
       const totalRentalRevenue = v.rentals.reduce((sum, r) => sum + (r.totalAmount || 0), 0);
       const totalMaintCost = v.maintenances.reduce((sum, m) => sum + (m.totalCost || 0), 0);
       const totalOilCost = v.oilChanges.reduce((sum, o) => sum + (o.cost || 0), 0);
       const totalInspCost = v.inspections.reduce((sum, i) => sum + (i.cost || 0), 0);
-      const totalExpenses = totalMaintCost + totalOilCost + totalInspCost;
-      const netProfit = totalRentalRevenue - totalExpenses;
-      const totalInvestment = (v.purchasePrice || 0) + (v.initialExpenses || 0);
-      const remainingAmortization = Math.max(0, totalInvestment - netProfit);
-      const isAmortized = totalInvestment > 0 && netProfit >= totalInvestment;
-      const amortizationPercent = totalInvestment > 0
-        ? Math.min(100, Math.round((netProfit / totalInvestment) * 100))
+      const totalFaultCost = v.faults?.reduce((sum, f) => sum + (f.cost || 0), 0) || 0;
+      const totalOperatingCost = totalMaintCost + totalOilCost + totalInspCost + totalFaultCost;
+
+      // Toplam Araç Gideri / Maliyeti
+      const totalCost = totalInvestment + totalOperatingCost;
+      const netProfit = totalRentalRevenue - totalCost;
+      const remainingAmortization = Math.max(0, totalCost - totalRentalRevenue);
+      const isAmortized = totalCost > 0 && totalRentalRevenue >= totalCost;
+      const amortizationPercent = totalCost > 0
+        ? Math.min(100, Math.round((totalRentalRevenue / totalCost) * 100))
         : 100;
 
       return {
@@ -151,20 +157,29 @@ export async function GET(req: Request) {
         fuelConsumptionRsd: v.fuelConsumptionRsd || 0,
         registrationExpiry: v.registrationExpiry,
         regDaysLeft,
-        purchasePrice: v.purchasePrice || 0,
-        initialExpenses: v.initialExpenses || 0,
+        purchasePrice,
+        initialExpenses,
         accessories: v.accessories,
         vin: v.vin,
         engineNo: v.engineNo,
         chronicIssues: v.chronicIssues,
         notes: v.notes,
+        activeFaultsCount: v.faults?.filter((f) => f.status === 'OPEN' || f.status === 'IN_PROGRESS').length || 0,
 
         // Financial & Amortization
         financials: {
-          totalRentalRevenue,
-          totalExpenses,
-          netProfit,
+          purchasePrice,
+          initialExpenses,
           totalInvestment,
+          totalMaintCost,
+          totalOilCost,
+          totalInspCost,
+          totalFaultCost,
+          totalOperatingCost,
+          totalRentalRevenue,
+          totalExpenses: totalCost, // Genel Toplam Gider
+          totalCost,
+          netProfit,
           remainingAmortization,
           isAmortized,
           amortizationPercent,
@@ -221,7 +236,6 @@ export async function GET(req: Request) {
               cost: latestInsp.cost,
             }
           : null,
-        activeFaultsCount: v.faults?.length || 0,
         hasActiveFault: (v.faults?.length || 0) > 0,
         latestFault: v.faults?.[0]?.title || null,
       };

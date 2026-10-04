@@ -85,7 +85,7 @@ export default function VehicleDetailPage() {
   const [loading, setLoading] = useState(true);
 
   // Active Detail Tab
-  const [activeTab, setActiveTab] = useState<'maintenances' | 'oil' | 'rentals' | 'inspections' | 'faults' | 'parking'>('maintenances');
+  const [activeTab, setActiveTab] = useState<'finance' | 'maintenances' | 'oil' | 'rentals' | 'inspections' | 'faults' | 'parking'>('maintenances');
   const [isScanningParking, setIsScanningParking] = useState(false);
 
   // Service Shops
@@ -243,7 +243,7 @@ export default function VehicleDetailPage() {
     if (typeof window !== 'undefined') {
       const searchParams = new URLSearchParams(window.location.search);
       const tabParam = searchParams.get('tab');
-      if (tabParam === 'faults' || tabParam === 'oil' || tabParam === 'rentals' || tabParam === 'inspections' || tabParam === 'maintenances') {
+      if (tabParam && ['finance', 'faults', 'oil', 'rentals', 'inspections', 'maintenances', 'parking'].includes(tabParam)) {
         setActiveTab(tabParam as any);
       }
     }
@@ -954,13 +954,16 @@ export default function VehicleDetailPage() {
     totalMaintenanceCost,
     totalOilCost,
     totalInspectionCost,
-    roi,
+    financials: rawFinancials,
     registrationDaysLeft,
     maintenances,
     oilChanges,
     inspections,
     rentalHistory,
   } = data;
+
+  const financials = rawFinancials || data?.roi || {};
+  const roi = financials;
 
   const isRented = vehicle.status === 'RENTED';
   const isAvail = vehicle.status === 'AVAILABLE';
@@ -997,27 +1000,50 @@ export default function VehicleDetailPage() {
         <div className="flex flex-wrap items-center gap-2">
           {isRented ? (
             <>
-              <button
-                onClick={() => {
-                  setExtendDays(30);
-                  setExtendAmount(activeRental?.monthlyRate || vehicle.monthlyPrice || 350);
-                  setExtendIsPaid(true);
-                  setExtendNotes('');
-                  setShowExtendModal(true);
-                }}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-md cursor-pointer transition-colors"
-                title={language === 'sr' ? 'Produži ugovor o zakupu' : language === 'en' ? 'Extend rental period' : 'Kiralama süresini uzat'}
-              >
-                <Clock className="w-4 h-4" />
-                {language === 'sr' ? 'Produži Rok' : language === 'en' ? 'Extend Rental' : 'Süre Uzat'}
-              </button>
-              <button
-                onClick={openReturnModal}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow-md cursor-pointer transition-colors"
-              >
-                <CheckCircle2 className="w-4 h-4" />
-                {language === 'sr' ? 'Preuzmi Vozilo' : language === 'en' ? 'Return Vehicle' : 'Aracı Müşteriden İade Al'}
-              </button>
+              {activeRental ? (
+                <>
+                  <button
+                    onClick={() => {
+                      setExtendDays(30);
+                      setExtendAmount(activeRental?.monthlyRate || vehicle.monthlyPrice || 350);
+                      setExtendIsPaid(true);
+                      setExtendNotes('');
+                      setShowExtendModal(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-md cursor-pointer transition-colors"
+                    title={language === 'sr' ? 'Produži ugovor o zakupu' : language === 'en' ? 'Extend rental period' : 'Kiralama süresini uzat'}
+                  >
+                    <Clock className="w-4 h-4" />
+                    {language === 'sr' ? 'Produži Rok' : language === 'en' ? 'Extend Rental' : 'Süre Uzat'}
+                  </button>
+                  <button
+                    onClick={openReturnModal}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow-md cursor-pointer transition-colors"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    {language === 'sr' ? 'Preuzmi Vozilo' : language === 'en' ? 'Return Vehicle' : 'Aracı Müşteriden İade Al'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={openRentModal}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow-md cursor-pointer transition-colors"
+                    title="Bu araca kiralama sözleşmesi veya müşteri bağla"
+                  >
+                    <KeyRound className="w-4 h-4" />
+                    {language === 'sr' ? 'Dodaj Ugovor o Zakupu' : language === 'en' ? 'Add Rental Contract' : 'Kiralama Sözleşmesi Ekle'}
+                  </button>
+                  <button
+                    onClick={handleMarkAsAvailable}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-md cursor-pointer transition-colors"
+                    title="Aracı tekrar boşta yap"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    {language === 'sr' ? 'Označi kao Slobodno' : language === 'en' ? 'Mark Available' : 'Boşta Olarak İşaretle'}
+                  </button>
+                </>
+              )}
             </>
           ) : (
             <button
@@ -1306,90 +1332,122 @@ export default function VehicleDetailPage() {
             <Lock className="w-4 h-4 text-slate-400" />
             <span>Araç Satın Alma, Amortisman ve Finansal Kazanç İstatistikleri çalışan (STAFF) rolüne gizlenmiştir.</span>
           </div>
-        ) : roi ? (
-          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 text-white rounded-3xl p-6 shadow-lg border border-slate-700/60 relative overflow-hidden">
+        ) : (financials && (financials.totalCost > 0 || financials.totalInvestment > 0 || financials.totalRentalRevenue > 0)) ? (
+          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 text-white rounded-3xl p-5 sm:p-6 shadow-lg border border-slate-700/60 relative overflow-hidden">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
               <div>
                 <span className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
                   <TrendingUp className="w-4 h-4" />
-                  Araç Yatırım Geri Dönüşü (Amortisman & Kârlılık Takibi)
+                  {language === 'sr' ? 'Troškovi Vozila i Otplata Investicije (Amortizacija)' : language === 'en' ? 'Vehicle Cost, ROI & Amortization' : 'Araç Maliyeti & Amortisman Takibi'}
                 </span>
                 <h3 className="text-lg font-black text-white mt-1">
-                  {roi.isAmortized ? (
+                  {financials.isAmortized ? (
                     <span className="text-emerald-400 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-5 h-5 inline" />
-                      Araç Kendini Amorti Etti! Net Kâr Dönemi.
+                      <CheckCircle2 className="w-5 h-5 inline text-emerald-400" />
+                      {language === 'sr' ? 'Vozilo je otplatilo sve troškove! Period čistog profita.' : language === 'en' ? 'Vehicle fully amortized! Generating net profit.' : 'Araç tüm maliyetini amorti etti! Net kâr dönemi.'}
                     </span>
                   ) : (
                     <span>
-                      Amortisman İçin Gerekli Kalan Tutar: <b className="text-amber-400">{formatCurrency(roi.remainingAmortization, 'EUR')}</b>
+                      {language === 'sr' ? 'Preostalo za otplatu celokupnog troška: ' : language === 'en' ? 'Remaining to full amortization: ' : 'Amortisman İçin Gerekli Kalan Tutar: '}
+                      <b className="text-amber-400 font-mono">{formatCurrency(financials.remainingAmortization, 'EUR')}</b>
                     </span>
                   )}
                 </h3>
               </div>
 
-              <div className="text-right">
-                <span className="text-xs font-mono px-3 py-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold">
-                  İlerleme: %{roi.amortizationPercent}
+              <div className="flex items-center gap-2">
+                <span className={`text-xs font-mono px-3 py-1 rounded-xl font-black border ${
+                  financials.isAmortized
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                    : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                }`}>
+                  %{financials.amortizationPercent} {language === 'sr' ? 'Otplaćeno' : language === 'en' ? 'Amortized' : 'Amorti Edildi'}
                 </span>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('finance')}
+                  className="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black rounded-xl transition-colors cursor-pointer"
+                >
+                  {language === 'sr' ? 'Detaljne Finansije →' : language === 'en' ? 'Detailed Finance →' : 'Finans Detayı →'}
+                </button>
               </div>
             </div>
 
             {/* Progress Bar */}
-            <div className="w-full bg-slate-700/60 rounded-full h-3 mb-6 overflow-hidden border border-slate-600/50">
+            <div className="w-full bg-slate-800 rounded-full h-3 mb-6 overflow-hidden border border-slate-700">
               <div
                 className={`h-full transition-all duration-500 ${
-                  roi.isAmortized
+                  financials.isAmortized
                     ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
-                    : 'bg-gradient-to-r from-amber-500 to-amber-300'
+                    : 'bg-gradient-to-r from-amber-500 via-purple-500 to-emerald-400'
                 }`}
-                style={{ width: `${Math.min(100, roi.amortizationPercent)}%` }}
+                style={{ width: `${Math.min(100, financials.amortizationPercent || 0)}%` }}
               />
             </div>
 
-            {/* ROI Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-slate-700/60">
+            {/* ROI Metrics: 5 Kolon */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-4 border-t border-slate-700/60">
               <div>
-                <div className="text-xs uppercase font-bold text-slate-400">Satın Alınma Fiyatı</div>
+                <div className="text-[11px] uppercase font-bold text-slate-400">
+                  {language === 'sr' ? 'Nabavka + Registracija' : language === 'en' ? 'Purchase + Setup' : 'Satın Alma & Tescil'}
+                </div>
                 <div className="text-base font-black text-slate-100 font-mono mt-0.5">
-                  {formatCurrency(roi.purchasePrice, 'EUR')}
+                  {formatCurrency(financials.totalInvestment || 0, 'EUR')}
                 </div>
-                <div className="text-xs text-slate-400">
-                  Devir/Masraf: {formatCurrency(roi.initialExpenses, 'EUR')}
+                <div className="text-[10px] text-slate-400">
+                  Alış: {formatCurrency(financials.purchasePrice || 0, 'EUR')} + Tescil: {formatCurrency(financials.initialExpenses || 0, 'EUR')}
                 </div>
               </div>
 
               <div>
-                <div className="text-xs uppercase font-bold text-slate-400">Toplam Yatırım Tutarı</div>
+                <div className="text-[11px] uppercase font-bold text-slate-400">
+                  {language === 'sr' ? 'Servisni Troškovi' : language === 'en' ? 'Operating Expenses' : 'İşletme Masrafları'}
+                </div>
                 <div className="text-base font-black text-amber-300 font-mono mt-0.5">
-                  {formatCurrency(roi.totalInvestment, 'EUR')}
+                  {formatCurrency(financials.totalOperatingCost || 0, 'EUR')}
                 </div>
-                <div className="text-xs text-slate-400">
-                  Alış + Tescil Maliyeti
+                <div className="text-[10px] text-slate-400">
+                  Bakım, Yağ, Muayene
                 </div>
               </div>
 
               <div>
-                <div className="text-xs uppercase font-bold text-slate-400">Kazanılan Kira Geliri</div>
+                <div className="text-[11px] uppercase font-bold text-rose-400">
+                  {language === 'sr' ? 'Ukupan Trošak Vozila' : language === 'en' ? 'Total Lifetime Cost' : 'Genel Toplam Maliyet'}
+                </div>
+                <div className="text-base font-black text-rose-400 font-mono mt-0.5">
+                  {formatCurrency(financials.totalCost || 0, 'EUR')}
+                </div>
+                <div className="text-[10px] text-slate-400">
+                  Alış + Tescil + Bakım
+                </div>
+              </div>
+
+              <div>
+                <div className="text-[11px] uppercase font-bold text-emerald-400">
+                  {language === 'sr' ? 'Prihod od Zakupa' : language === 'en' ? 'Rental Revenue' : 'Kazanılan Ciro'}
+                </div>
                 <div className="text-base font-black text-emerald-400 font-mono mt-0.5">
-                  {formatCurrency(roi.rentalRevenue, 'EUR')}
+                  {formatCurrency(financials.totalRentalRevenue || 0, 'EUR')}
                 </div>
-                <div className="text-xs text-slate-400">
-                  Toplam Kiralamalardan
+                <div className="text-[10px] text-slate-400">
+                  {rentalHistory?.length || 0} Sözleşme Tahsilatı
                 </div>
               </div>
 
               <div>
-                <div className="text-xs uppercase font-bold text-slate-400">Net Kâr / Durum</div>
+                <div className="text-[11px] uppercase font-bold text-slate-400">
+                  {language === 'sr' ? 'Net Saldo / Profit' : language === 'en' ? 'Net Balance' : 'Net Kâr / Durum'}
+                </div>
                 <div
                   className={`text-base font-black font-mono mt-0.5 ${
-                    roi.netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                    (financials.netProfit || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'
                   }`}
                 >
-                  {formatCurrency(roi.netProfit, 'EUR')}
+                  {formatCurrency(financials.netProfit || 0, 'EUR')}
                 </div>
-                <div className="text-xs text-slate-400">
-                  {roi.isAmortized ? 'Net Şirket Kazancı' : 'Amorti Edilmek Üzere'}
+                <div className="text-[10px] text-slate-400">
+                  {financials.isAmortized ? 'Net Şirket Kazancı' : 'Amorti Edilmek Üzere'}
                 </div>
               </div>
             </div>
@@ -1648,16 +1706,20 @@ export default function VehicleDetailPage() {
                 className={`px-2.5 py-0.5 text-xs font-bold rounded-md ${
                   activeRental
                     ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                    : isRented
+                    ? 'bg-amber-100 text-amber-900 border border-amber-200'
                     : isPostCheck
                     ? 'bg-sky-100 text-sky-900 border border-sky-200'
                     : 'bg-emerald-100 text-emerald-800'
                 }`}
               >
                 {activeRental
-                  ? 'Müşteride Kirada'
+                  ? (language === 'sr' ? 'U Najmu (Kod Klijenta)' : language === 'en' ? 'Rented (With Client)' : 'Müşteride Kirada')
+                  : isRented
+                  ? (language === 'sr' ? 'U Najmu (Čeka ugovor)' : language === 'en' ? 'Rented (Pending contract)' : 'Kirada (Sözleşme Bekleniyor)')
                   : isPostCheck
-                  ? 'Kira Sonrası Bakımda'
-                  : 'Şirkette Boşta'}
+                  ? (language === 'sr' ? 'Pregled nakon Zakupa' : language === 'en' ? 'Post-Rental Check' : 'Kira Sonrası Bakımda')
+                  : (language === 'sr' ? 'Slobodno u Floti' : language === 'en' ? 'Available in Fleet' : 'Şirkette Boşta')}
               </span>
             </div>
 
@@ -1734,6 +1796,38 @@ export default function VehicleDetailPage() {
                       Süreyi Uzat
                     </button>
                   </div>
+                </div>
+              </div>
+            ) : isRented ? (
+              <div className="py-3">
+                <div className="flex items-center gap-2 text-amber-800 font-bold text-xs sm:text-sm">
+                  <KeyRound className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>{language === 'sr' ? 'Vozilo je registrovano kao "U Najmu" (Kirada).' : language === 'en' ? 'Vehicle is recorded as "Rented".' : 'Araç sistemde "Kirada" olarak kayıtlıdır.'}</span>
+                </div>
+                <p className="text-xs text-slate-600 mt-1">
+                  {language === 'sr'
+                    ? 'Ovo vozilo je označeno kao u najmu (iz Excela ili manuelno), ali još uvek nema unet aktivan ugovor. Možete dodati detalje o klijentu i datume klikom na dugme "Dodaj Ugovor o Zakupu" iznad.'
+                    : language === 'en'
+                    ? 'This vehicle is marked as rented (from Excel or manual entry), but has no active contract record yet. You can attach client and rental dates using the button above.'
+                    : 'Bu araç sistemde (Excel aktarımı veya manuel düzenleme ile) "Kirada" durumuna getirilmiştir ancak henüz bir müşteri/sözleşme kaydı bağlanmamıştır. Müşteri ve teslimat tarihlerini girmek için yukarıdaki "Kiralama Sözleşmesi Ekle" butonunu kullanabilirsiniz.'}
+                </p>
+                <div className="mt-3 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={openRentModal}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl shadow-xs cursor-pointer transition-colors"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    <span>{language === 'sr' ? 'Dodaj Ugovor o Zakupu' : language === 'en' ? 'Add Rental Contract' : 'Kiralama Sözleşmesi Ekle'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleMarkAsAvailable}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-xs cursor-pointer transition-colors"
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>{language === 'sr' ? 'Označi kao Slobodno' : language === 'en' ? 'Mark Available' : 'Boşta Yap'}</span>
+                  </button>
                 </div>
               </div>
             ) : isPostCheck ? (
@@ -1825,6 +1919,28 @@ export default function VehicleDetailPage() {
       {/* TABS FOR HISTORICAL LOGS */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden mb-8">
         <div className="flex border-b border-slate-200 bg-slate-50/50">
+          {!isStaff && (
+            <button
+              onClick={() => setActiveTab('finance')}
+              className={`flex-1 py-3 px-4 text-xs font-bold transition-colors border-b-2 flex items-center justify-center gap-1.5 cursor-pointer ${
+                activeTab === 'finance'
+                  ? 'border-emerald-600 text-emerald-700 bg-white'
+                  : 'border-transparent text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+              <span>{t.veh_tab_finance}</span>
+              {financials && (
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-black ${
+                  financials.isAmortized
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    : 'bg-amber-100 text-amber-800 border border-amber-300'
+                }`}>
+                  %{financials.amortizationPercent || 0}
+                </span>
+              )}
+            </button>
+          )}
           <button
             onClick={() => setActiveTab('maintenances')}
             className={`flex-1 py-3 px-4 text-xs font-bold transition-colors border-b-2 ${
@@ -1900,6 +2016,393 @@ export default function VehicleDetailPage() {
         </div>
 
         <div className="p-4 sm:p-6">
+          {/* TAB 0: FINANCE & AMORTIZATION */}
+          {activeTab === 'finance' && (
+            isStaff ? (
+              <div className="p-8 text-center text-xs text-slate-500 bg-slate-50 rounded-2xl border border-slate-200">
+                <Lock className="w-6 h-6 mx-auto mb-2 text-slate-400" />
+                <p className="font-bold text-slate-700 mb-1">Erişim Yetkisi Yok</p>
+                <p>Araç maliyeti, alış fiyatı ve amortisman verileri çalışan rolüne gizlenmiştir.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Header & Quick Edit Button */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 sm:p-5 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-2xl text-white shadow-xs">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-5 h-5 text-amber-400" />
+                      <h3 className="text-base font-black text-white">
+                        {t.veh_finance_title}
+                      </h3>
+                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-mono font-black ${
+                        financials.isAmortized
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-amber-500 text-slate-950'
+                      }`}>
+                        {financials.isAmortized ? t.veh_finance_amortized_badge : `%${financials.amortizationPercent || 0} ${t.veh_finance_amortizing_badge}`}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300 mt-1">
+                      {t.veh_finance_subtitle}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(true)}
+                    className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black rounded-xl shadow-xs cursor-pointer transition-colors shrink-0"
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                    <span>{t.veh_finance_quick_edit}</span>
+                  </button>
+                </div>
+
+                {/* 6 Key Financial KPI Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                  {/* 1. Purchase Price */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-xs flex flex-col justify-between">
+                    <div>
+                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                        <Car className="w-3.5 h-3.5 text-blue-600" />
+                        {t.veh_finance_purchase_price}
+                      </div>
+                      <div className="text-lg font-black text-slate-900 font-mono mt-1">
+                        {formatCurrency(financials.purchasePrice || 0, 'EUR')}
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-blue-600 font-semibold mt-2">
+                      {t.veh_finance_capex}
+                    </div>
+                  </div>
+
+                  {/* 2. Initial Setup / Reg */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-xs flex flex-col justify-between">
+                    <div>
+                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                        <Receipt className="w-3.5 h-3.5 text-indigo-600" />
+                        {t.veh_finance_initial_expense}
+                      </div>
+                      <div className="text-lg font-black text-slate-900 font-mono mt-1">
+                        {formatCurrency(financials.initialExpenses || 0, 'EUR')}
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-indigo-600 font-semibold mt-2">
+                      Tescil & Noter
+                    </div>
+                  </div>
+
+                  {/* 3. Operating Expenses */}
+                  <div className="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-xs flex flex-col justify-between">
+                    <div>
+                      <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                        <Wrench className="w-3.5 h-3.5 text-amber-600" />
+                        {language === 'sr' ? 'Servisni Troškovi' : language === 'en' ? 'Operating Expenses' : 'İşletme Gideri'}
+                      </div>
+                      <div className="text-lg font-black text-amber-700 font-mono mt-1">
+                        {formatCurrency(financials.totalOperatingCost || 0, 'EUR')}
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-amber-600 font-semibold mt-2">
+                      {t.veh_finance_opex}
+                    </div>
+                  </div>
+
+                  {/* 4. Total Lifetime Cost */}
+                  <div className="bg-white rounded-2xl border border-rose-200 p-3.5 shadow-xs bg-rose-50/20 flex flex-col justify-between">
+                    <div>
+                      <div className="text-[11px] font-bold text-rose-600 uppercase tracking-wider flex items-center gap-1">
+                        <TrendingUp className="w-3.5 h-3.5 text-rose-600" />
+                        {language === 'sr' ? 'Ukupan Trošak' : language === 'en' ? 'Total Cost' : 'Toplam Maliyet'}
+                      </div>
+                      <div className="text-lg font-black text-rose-600 font-mono mt-1">
+                        {formatCurrency(financials.totalCost || 0, 'EUR')}
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-rose-600 font-semibold mt-2">
+                      Yatırım + Servisler
+                    </div>
+                  </div>
+
+                  {/* 5. Total Rental Revenue */}
+                  <div className="bg-white rounded-2xl border border-emerald-200 p-3.5 shadow-xs bg-emerald-50/20 flex flex-col justify-between">
+                    <div>
+                      <div className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1">
+                        <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
+                        {language === 'sr' ? 'Kira Prihoda' : language === 'en' ? 'Rental Revenue' : 'Kira Geliri'}
+                      </div>
+                      <div className="text-lg font-black text-emerald-600 font-mono mt-1">
+                        {formatCurrency(financials.totalRentalRevenue || 0, 'EUR')}
+                      </div>
+                    </div>
+                    <div className="text-[10px] text-emerald-600 font-semibold mt-2">
+                      {rentalHistory?.length || 0} Sözleşme
+                    </div>
+                  </div>
+
+                  {/* 6. Net Profit / Remaining Amortization */}
+                  <div className={`rounded-2xl border p-3.5 shadow-xs flex flex-col justify-between ${
+                    financials.isAmortized
+                      ? 'bg-emerald-50 border-emerald-300'
+                      : 'bg-amber-50 border-amber-300'
+                  }`}>
+                    <div>
+                      <div className={`text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 ${
+                        financials.isAmortized ? 'text-emerald-800' : 'text-amber-800'
+                      }`}>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        {financials.isAmortized ? (language === 'sr' ? 'Neto Dobit' : language === 'en' ? 'Net Profit' : 'Net Kâr') : (language === 'sr' ? 'Preostalo' : language === 'en' ? 'Remaining' : 'Kalan Tutar')}
+                      </div>
+                      <div className={`text-lg font-black font-mono mt-1 ${
+                        financials.isAmortized ? 'text-emerald-700' : 'text-amber-800'
+                      }`}>
+                        {financials.isAmortized
+                          ? `+${formatCurrency(financials.netProfit || 0, 'EUR')}`
+                          : formatCurrency(financials.remainingAmortization || 0, 'EUR')}
+                      </div>
+                    </div>
+                    <div className={`text-[10px] font-black mt-2 ${
+                      financials.isAmortized ? 'text-emerald-700' : 'text-amber-800'
+                    }`}>
+                      {financials.isAmortized ? 'Amorti Edildi' : `%${financials.amortizationPercent || 0} Karşılandı`}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Visual Amortization Progress & Break-Even Banner */}
+                <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 sm:p-5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-slate-700" />
+                      <span className="text-xs font-black uppercase tracking-wider text-slate-800">
+                        {language === 'sr' ? 'Status Otplate i Baša-Baš Analiza (Break-Even)' : language === 'en' ? 'Amortization Progress & Break-Even Analysis' : 'Amortisman İlerleme Durumu & Başa-Baş Noktası'}
+                      </span>
+                    </div>
+                    <div className="text-xs font-mono font-black text-slate-700">
+                      {formatCurrency(financials.totalRentalRevenue || 0, 'EUR')} / {formatCurrency(financials.totalCost || 0, 'EUR')} (%{financials.amortizationPercent || 0})
+                    </div>
+                  </div>
+
+                  {/* Progress bar container */}
+                  <div className="w-full bg-slate-200 rounded-full h-4 overflow-hidden p-0.5">
+                    <div
+                      className={`h-full rounded-full transition-all duration-700 ${
+                        financials.isAmortized
+                          ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
+                          : 'bg-gradient-to-r from-amber-500 via-yellow-400 to-emerald-400'
+                      }`}
+                      style={{ width: `${Math.min(100, financials.amortizationPercent || 0)}%` }}
+                    />
+                  </div>
+
+                  <div className="mt-3 text-xs">
+                    {financials.isAmortized ? (
+                      <div className="flex items-center gap-2 text-emerald-800 font-bold bg-emerald-50 border border-emerald-200 p-2.5 rounded-xl">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span>
+                          {language === 'sr'
+                            ? `Čestitamo! Ovo vozilo je u potpunosti pokrilo svoju kupovnu cenu, troškove registracije i sve servise. Ostvaren čist neto profit: ${formatCurrency(financials.netProfit || 0, 'EUR')}.`
+                            : language === 'en'
+                            ? `Congratulations! This vehicle has completely amortized its purchase price, initial expenses, and all maintenance costs. Net profit generated: ${formatCurrency(financials.netProfit || 0, 'EUR')}.`
+                            : `Tebrikler! Bu araç satın alma bedelini, tescil masraflarını ve tüm servis işletme giderlerini (toplam ${formatCurrency(financials.totalCost || 0, 'EUR')}) kira cirosuyla tamamen amorti etmiş ve ${formatCurrency(financials.netProfit || 0, 'EUR')} net şirket kârı üretmiştir.`}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-amber-900 font-semibold bg-amber-50 border border-amber-200 p-2.5 rounded-xl">
+                        <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>
+                          {language === 'sr'
+                            ? `Za potpunu amortizaciju i prelazak u čistu dobit preostalo je još ${formatCurrency(financials.remainingAmortization || 0, 'EUR')} prihoda od zakupa.`
+                            : language === 'en'
+                            ? `Remaining revenue to reach complete amortization and net profit: ${formatCurrency(financials.remainingAmortization || 0, 'EUR')}.`
+                            : `Bu aracın toplam maliyetini (${formatCurrency(financials.totalCost || 0, 'EUR')}) tamamen amorti etmesi ve kâra geçmesi için ${formatCurrency(financials.remainingAmortization || 0, 'EUR')} daha kira tahsilatı gerekmektedir.`}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Itemized Cost Breakdown Table */}
+                <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs">
+                  <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                      <Receipt className="w-4 h-4 text-slate-600" />
+                      {t.veh_finance_breakdown_title}
+                    </h4>
+                    <span className="text-[11px] text-slate-500">
+                      Tüm Kalemler (€ bazında)
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-100/70 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px]">
+                        <tr>
+                          <th className="py-2.5 px-4">{t.veh_finance_cost_item}</th>
+                          <th className="py-2.5 px-4">{t.veh_finance_cost_type}</th>
+                          <th className="py-2.5 px-4 text-right">{t.veh_finance_cost_amount}</th>
+                          <th className="py-2.5 px-4 text-right">{t.veh_finance_cost_share}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-medium">
+                        {/* 1. Satın Alma */}
+                        <tr className="hover:bg-slate-50/50">
+                          <td className="py-2.5 px-4 font-bold text-slate-800 flex items-center gap-2">
+                            <Car className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                            <span>{t.veh_finance_purchase_price}</span>
+                          </td>
+                          <td className="py-2.5 px-4">
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                              {t.veh_finance_capex}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-mono font-bold text-slate-900">
+                            {formatCurrency(financials.purchasePrice || 0, 'EUR')}
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-mono text-slate-500">
+                            %{financials.totalCost > 0 ? Math.round(((financials.purchasePrice || 0) / financials.totalCost) * 100) : 0}
+                          </td>
+                        </tr>
+
+                        {/* 2. Tescil / Noter */}
+                        <tr className="hover:bg-slate-50/50">
+                          <td className="py-2.5 px-4 font-bold text-slate-800 flex items-center gap-2">
+                            <Receipt className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                            <span>{t.veh_finance_initial_expense}</span>
+                          </td>
+                          <td className="py-2.5 px-4">
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                              {t.veh_finance_capex}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-mono font-bold text-slate-900">
+                            {formatCurrency(financials.initialExpenses || 0, 'EUR')}
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-mono text-slate-500">
+                            %{financials.totalCost > 0 ? Math.round(((financials.initialExpenses || 0) / financials.totalCost) * 100) : 0}
+                          </td>
+                        </tr>
+
+                        {/* 3. Bakım & Parçalar */}
+                        <tr className="hover:bg-slate-50/50">
+                          <td className="py-2.5 px-4 font-bold text-slate-800 flex items-center gap-2">
+                            <Wrench className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                            <span>{language === 'sr' ? 'Redovan Servis i Rezervni Delovi' : language === 'en' ? 'Maintenance & Replacement Parts' : 'Bakım, İşçilik & Yedek Parçalar'} ({maintenances?.length || 0})</span>
+                          </td>
+                          <td className="py-2.5 px-4">
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                              {t.veh_finance_opex}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-mono font-bold text-slate-900">
+                            {formatCurrency(financials.totalMaintenanceCost || 0, 'EUR')}
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-mono text-slate-500">
+                            %{financials.totalCost > 0 ? Math.round(((financials.totalMaintenanceCost || 0) / financials.totalCost) * 100) : 0}
+                          </td>
+                        </tr>
+
+                        {/* 4. Motor Yağı */}
+                        <tr className="hover:bg-slate-50/50">
+                          <td className="py-2.5 px-4 font-bold text-slate-800 flex items-center gap-2">
+                            <Droplet className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>{language === 'sr' ? 'Zamene Motornog Ulja' : language === 'en' ? 'Engine Oil Changes' : 'Motor Yağı Değişimleri'} ({oilChanges?.length || 0})</span>
+                          </td>
+                          <td className="py-2.5 px-4">
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                              {t.veh_finance_opex}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-mono font-bold text-slate-900">
+                            {formatCurrency(financials.totalOilCost || 0, 'EUR')}
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-mono text-slate-500">
+                            %{financials.totalCost > 0 ? Math.round(((financials.totalOilCost || 0) / financials.totalCost) * 100) : 0}
+                          </td>
+                        </tr>
+
+                        {/* 5. Muayene */}
+                        <tr className="hover:bg-slate-50/50">
+                          <td className="py-2.5 px-4 font-bold text-slate-800 flex items-center gap-2">
+                            <FileCheck2 className="w-3.5 h-3.5 text-purple-600 shrink-0" />
+                            <span>{language === 'sr' ? 'Tehnički Pregled i Registracija' : language === 'en' ? 'Inspections & Annual Registration' : 'Muayene & Yıllık Registracija'} ({inspections?.length || 0})</span>
+                          </td>
+                          <td className="py-2.5 px-4">
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                              {t.veh_finance_opex}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-mono font-bold text-slate-900">
+                            {formatCurrency(financials.totalInspectionCost || 0, 'EUR')}
+                          </td>
+                          <td className="py-2.5 px-4 text-right font-mono text-slate-500">
+                            %{financials.totalCost > 0 ? Math.round(((financials.totalInspectionCost || 0) / financials.totalCost) * 100) : 0}
+                          </td>
+                        </tr>
+
+                        {/* 6. Arıza & Hasar */}
+                        {(financials.totalFaultCost || 0) > 0 && (
+                          <tr className="hover:bg-slate-50/50">
+                            <td className="py-2.5 px-4 font-bold text-slate-800 flex items-center gap-2">
+                              <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                              <span>{language === 'sr' ? 'Popravke Kvarova i Šteta' : language === 'en' ? 'Fault & Damage Repairs' : 'Arıza & Hasar Onarımları'}</span>
+                            </td>
+                            <td className="py-2.5 px-4">
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                                {t.veh_finance_opex}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-4 text-right font-mono font-bold text-slate-900">
+                              {formatCurrency(financials.totalFaultCost || 0, 'EUR')}
+                            </td>
+                            <td className="py-2.5 px-4 text-right font-mono text-slate-500">
+                              %{financials.totalCost > 0 ? Math.round(((financials.totalFaultCost || 0) / financials.totalCost) * 100) : 0}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+
+                      {/* Footer Totals */}
+                      <tfoot className="bg-slate-50 border-t-2 border-slate-200 text-xs font-black">
+                        <tr>
+                          <td className="py-3 px-4 uppercase text-slate-900" colSpan={2}>
+                            {t.veh_finance_total_cost} (Alış + Tescil + Tüm Servisler)
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono text-rose-600 text-sm">
+                            {formatCurrency(financials.totalCost || 0, 'EUR')}
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono text-slate-900">
+                            %100
+                          </td>
+                        </tr>
+                        <tr className="bg-emerald-50/50 text-emerald-900">
+                          <td className="py-3 px-4 uppercase" colSpan={2}>
+                            {t.veh_finance_total_revenue} ({rentalHistory?.length || 0} Kira Sözleşmesi)
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono text-emerald-700 text-sm">
+                            {formatCurrency(financials.totalRentalRevenue || 0, 'EUR')}
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono text-emerald-700">
+                            %{financials.amortizationPercent || 0}
+                          </td>
+                        </tr>
+                        <tr className={financials.isAmortized ? 'bg-emerald-100 text-emerald-950' : 'bg-amber-100 text-amber-950'}>
+                          <td className="py-3 px-4 uppercase" colSpan={2}>
+                            {financials.isAmortized ? 'NET ŞİRKET KÂRI' : 'KALAN AMORTİSMAN AÇIĞI (BAŞA-BAŞ NOKTASI)'}
+                          </td>
+                          <td className="py-3 px-4 text-right font-mono text-sm" colSpan={2}>
+                            {financials.isAmortized
+                              ? `+${formatCurrency(financials.netProfit || 0, 'EUR')}`
+                              : formatCurrency(financials.remainingAmortization || 0, 'EUR')}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )
+          )}
+
           {/* TAB 1: MAINTENANCES */}
           {activeTab === 'maintenances' && (
             <div>
