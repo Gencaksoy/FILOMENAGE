@@ -10,8 +10,8 @@ export async function GET(req: Request) {
     const isSuper =
       currentUser &&
       (currentUser.role === 'SUPER_ADMIN' ||
-        currentUser.email === 'akif@filoyonetim.com' ||
-        currentUser.email === 'gencaksoy@outlook.com');
+        currentUser.email === 'super-admin@company.local' ||
+        currentUser.email === 'super-admin@company.local');
 
     if (!isSuper) {
       return NextResponse.json(
@@ -56,8 +56,8 @@ export async function DELETE(req: Request) {
     const isSuper =
       currentUser &&
       (currentUser.role === 'SUPER_ADMIN' ||
-        currentUser.email === 'akif@filoyonetim.com' ||
-        currentUser.email === 'gencaksoy@outlook.com');
+        currentUser.email === 'super-admin@company.local' ||
+        currentUser.email === 'super-admin@company.local');
 
     if (!isSuper) {
       return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 403 });

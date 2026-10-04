@@ -6,7 +6,7 @@ Bu dosya, projenin mimarisini, dosya yapısını, kritik iş kurallarını, veri
 ---
 
 ## 🏢 1. Proje Genel Bakışı
-- **Adı / Repo:** FILOMENAGE (`https://github.com/Gencaksoy/FILOMENAGE.git` - branch: `main`)
+- **Adı / Repo:** FILOMENAGE (`https://github.com/System/FILOMENAGE.git` - branch: `main`)
 - **Amaç:** Çok kiracılı (Multi-tenant), bulut tabanlı modern Rent a Car ve Filo Yönetim SaaS Platformu.
 - **Birincil Hedef Pazar:** Sırbistan (Belgrad) operasyonları ağırlıklı olup küresel kullanıma uygundur.
 - **Para Birimleri:** EUR (€) ve RSD (Sırp Dinarı). Sabit / Operasyonel Kur: **1 EUR = 117 RSD**.
@@ -30,7 +30,7 @@ Bu dosya, projenin mimarisini, dosya yapısını, kritik iş kurallarını, veri
 
 | Rol | Kapsam | İzin Verilen İşlemler | Kısıtlanan İşlemler |
 | :--- | :--- | :--- | :--- |
-| **`SUPER_ADMIN`** | SaaS Sahibi (Akif Aksoy) | Sistemdeki tüm filoları görüntüleme, yeni filo açma, filo silme, araç kotası (`maxVehicles`) belirleme, modül erişimi açma/kapama, abonelik uzatma, arşiv yönetimi, kullanıcı şifresi sıfırlama. | Yok |
+| **`SUPER_ADMIN`** | SaaS Sahibi (System Owner) | Sistemdeki tüm filoları görüntüleme, yeni filo açma, filo silme, araç kotası (`maxVehicles`) belirleme, modül erişimi açma/kapama, abonelik uzatma, arşiv yönetimi, kullanıcı şifresi sıfırlama. | Yok |
 | **`ADMIN`** | Filo Yöneticisi | Kendi filosuna araç ekleme/düzenleme/silme, kiralama başlatma/bitirme, fiyatlandırma, ciro ve amortisman raporları, kullanıcı tanımlama/askıya alma, sistem parametreleri. | Başka filoları veya SaaS süper admin verilerini göremez. |
 | **`STAFF`** | Filo Personeli | Kiralama başlatma, iade alma, teslimat/iade fotoğrafları yükleme, arıza/hasar kaydı açma, masraf fişi girme. | Araç silme, arıza silme, müşteri silme ve filo silme yetkisi **yoktur**; kritik finansal raporlar kısıtlıdır. |
 

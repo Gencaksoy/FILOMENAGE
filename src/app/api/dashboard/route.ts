@@ -14,9 +14,7 @@ export async function GET(req: Request) {
 
     const isStaff = currentUser.role === 'STAFF';
     const isSuper =
-      currentUser.role === 'SUPER_ADMIN' ||
-      currentUser.email === 'akif@filoyonetim.com' ||
-      currentUser.email === 'gencaksoy@outlook.com';
+      currentUser.role === 'SUPER_ADMIN';
 
     const { searchParams } = new URL(req.url);
     const ownerFilter = searchParams.get('owner') || 'ALL';

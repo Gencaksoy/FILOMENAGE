@@ -32,9 +32,7 @@ export async function POST(req: Request) {
     }
 
     const isSuper =
-      currentUser.role === 'SUPER_ADMIN' ||
-      currentUser.email === 'akif@filoyonetim.com' ||
-      currentUser.email === 'gencaksoy@outlook.com';
+      currentUser.role === 'SUPER_ADMIN';
 
     // Normal kullanıcılar mevcut şifresini doğrulamalıdır. Süper yöneticiler için opsiyoneldir.
     if (!isSuper || currentPassword) {

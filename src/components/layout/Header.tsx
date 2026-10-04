@@ -190,10 +190,7 @@ export function Header({ onToggleSidebar, currentUser, unreadCount = 0 }: Header
                 onMouseLeave={() => setShowSearchDropdown(false)}
               >
                 {(() => {
-                  const isSuper =
-                    currentUser?.role === 'SUPER_ADMIN' ||
-                    currentUser?.email === 'akif@filoyonetim.com' ||
-                    currentUser?.email === 'gencaksoy@outlook.com';
+                  const isSuper = currentUser?.role === 'SUPER_ADMIN';
                   const canViewVehicles = isSuper || currentUser?.features?.vehicles !== false;
                   const canViewCustomers = isSuper || currentUser?.features?.customers !== false;
                   const visibleVehicles = canViewVehicles ? searchResults.vehicles : [];
@@ -285,7 +282,7 @@ export function Header({ onToggleSidebar, currentUser, unreadCount = 0 }: Header
           <LanguageSelector />
 
           {/* Super Admin Direct Link */}
-          {(currentUser?.role === 'SUPER_ADMIN' || currentUser?.email === 'akif@filoyonetim.com') && (
+          {currentUser?.role === 'SUPER_ADMIN' && (
             <Link
               href="/super-admin"
               className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 rounded-xl text-xs font-bold transition-colors"
@@ -321,7 +318,7 @@ export function Header({ onToggleSidebar, currentUser, unreadCount = 0 }: Header
                   {currentUser?.name || 'Yönetici'}
                 </div>
                 <div className="text-xs font-semibold text-amber-700 dark:text-amber-400">
-                  {currentUser?.role === 'SUPER_ADMIN' || currentUser?.email === 'akif@filoyonetim.com'
+                  {currentUser?.role === 'SUPER_ADMIN'
                     ? 'SaaS Sahibi & Yapımcısı'
                     : currentUser?.role === 'STAFF'
                     ? 'Filo Çalışanı'
@@ -345,7 +342,7 @@ export function Header({ onToggleSidebar, currentUser, unreadCount = 0 }: Header
                   )}
                 </div>
 
-                {(currentUser?.role === 'SUPER_ADMIN' || currentUser?.email === 'akif@filoyonetim.com') && (
+                {currentUser?.role === 'SUPER_ADMIN' && (
                   <Link
                     href="/super-admin"
                     onClick={() => setShowUserMenu(false)}

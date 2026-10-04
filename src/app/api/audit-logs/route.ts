@@ -12,9 +12,7 @@ export async function GET(req: Request) {
     }
 
     const isSuper =
-      currentUser.role === 'SUPER_ADMIN' ||
-      currentUser.email === 'akif@filoyonetim.com' ||
-      currentUser.email === 'gencaksoy@outlook.com';
+      currentUser.role === 'SUPER_ADMIN';
 
     if (currentUser.role === 'STAFF') {
       return NextResponse.json({ error: 'Personel (STAFF) hesaplarının işlem geçmişi kayıtlarına erişim yetkisi yoktur.' }, { status: 403 });
@@ -40,7 +38,7 @@ export async function GET(req: Request) {
       }
       // Süper Admin'in gizli sistem hareketlerini filo kullanıcıları göremez
       conditions.push({
-        userName: { not: 'Akif Aksoy' },
+        userName: { not: 'System Owner' },
         userRole: { not: 'SUPER_ADMIN' },
       });
     } else if (fleetIdFilter && fleetIdFilter !== 'ALL') {

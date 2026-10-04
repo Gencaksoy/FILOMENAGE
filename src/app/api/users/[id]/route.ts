@@ -16,9 +16,7 @@ export async function PATCH(
     }
 
     const isSuper =
-      currentUser.role === 'SUPER_ADMIN' ||
-      currentUser.email === 'akif@filoyonetim.com' ||
-      currentUser.email === 'gencaksoy@outlook.com';
+      currentUser.role === 'SUPER_ADMIN';
     const { id } = params;
 
     const targetUser = await prisma.user.findUnique({ where: { id } });
@@ -30,8 +28,8 @@ export async function PATCH(
     if (
       !isSuper &&
       (targetUser.role === 'SUPER_ADMIN' ||
-        targetUser.email === 'akif@filoyonetim.com' ||
-        targetUser.email === 'gencaksoy@outlook.com')
+        targetUser.email === 'super-admin@company.local' ||
+        targetUser.email === 'super-admin@company.local')
     ) {
       return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 403 });
     }
@@ -134,9 +132,7 @@ export async function DELETE(
     }
 
     const isSuper =
-      currentUser.role === 'SUPER_ADMIN' ||
-      currentUser.email === 'akif@filoyonetim.com' ||
-      currentUser.email === 'gencaksoy@outlook.com';
+      currentUser.role === 'SUPER_ADMIN';
     const { id } = params;
 
     const userToDelete = await prisma.user.findUnique({ where: { id } });
@@ -148,8 +144,8 @@ export async function DELETE(
     if (
       !isSuper &&
       (userToDelete.role === 'SUPER_ADMIN' ||
-        userToDelete.email === 'akif@filoyonetim.com' ||
-        userToDelete.email === 'gencaksoy@outlook.com')
+        userToDelete.email === 'super-admin@company.local' ||
+        userToDelete.email === 'super-admin@company.local')
     ) {
       return NextResponse.json({ error: 'Kullanıcı bulunamadı.' }, { status: 404 });
     }

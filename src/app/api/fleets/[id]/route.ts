@@ -5,9 +5,7 @@ import { getCurrentUser } from '@/lib/auth';
 function checkIsSuper(user: any) {
   return (
     user &&
-    (user.role === 'SUPER_ADMIN' ||
-      user.email === 'akif@filoyonetim.com' ||
-      user.email === 'gencaksoy@outlook.com')
+    (user.role === 'SUPER_ADMIN')
   );
 }
 

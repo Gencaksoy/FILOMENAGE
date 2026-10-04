@@ -41,11 +41,7 @@ export function Sidebar({ isOpen, onClose, unreadCount = 0, userRole, currentUse
   // Prefer propUser, fallback to cached authUser so there is NEVER a null flash on navigation
   const currentUser = propUser || authUser;
 
-  const isSuperAdmin =
-    currentUser?.role === 'SUPER_ADMIN' ||
-    currentUser?.email === 'akif@filoyonetim.com' ||
-    currentUser?.email === 'gencaksoy@outlook.com' ||
-    userRole === 'SUPER_ADMIN';
+  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN' || userRole === 'SUPER_ADMIN';
 
   const isStaff = currentUser?.role === 'STAFF' || userRole === 'STAFF';
 

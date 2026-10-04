@@ -14,9 +14,7 @@ export async function GET(req: Request) {
     }
 
     const isSuper =
-      currentUser.role === 'SUPER_ADMIN' ||
-      currentUser.email === 'akif@filoyonetim.com' ||
-      currentUser.email === 'gencaksoy@outlook.com';
+      currentUser.role === 'SUPER_ADMIN';
 
     if (!isSuper && currentUser.features?.maintenance === false && currentUser.features?.oilChange === false) {
       return NextResponse.json({ error: 'Bakım ve onarım modülü filonuz için devre dışıdır.' }, { status: 403 });
@@ -66,9 +64,7 @@ export async function POST(req: Request) {
     }
 
     const isSuper =
-      currentUser.role === 'SUPER_ADMIN' ||
-      currentUser.email === 'akif@filoyonetim.com' ||
-      currentUser.email === 'gencaksoy@outlook.com';
+      currentUser.role === 'SUPER_ADMIN';
 
     if (!isSuper && currentUser.features?.maintenance === false) {
       return NextResponse.json({ error: 'Bakım ekleme özelliği filonuz için devre dışıdır.' }, { status: 403 });

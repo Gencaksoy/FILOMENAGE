@@ -13,8 +13,8 @@ export async function GET() {
 
   const isSuper =
     user.role === 'SUPER_ADMIN' ||
-    user.email === 'akif@filoyonetim.com' ||
-    user.email === 'gencaksoy@outlook.com';
+    user.email === 'super-admin@company.local' ||
+    user.email === 'super-admin@company.local';
 
   const dbUser = await prisma.user.findUnique({
     where: { id: user.id },

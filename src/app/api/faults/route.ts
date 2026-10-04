@@ -14,8 +14,8 @@ export async function GET(req: Request) {
     const isSuper =
       currentUser &&
       (currentUser.role === 'SUPER_ADMIN' ||
-        currentUser.email === 'akif@filoyonetim.com' ||
-        currentUser.email === 'gencaksoy@outlook.com');
+        currentUser.email === 'super-admin@company.local' ||
+        currentUser.email === 'super-admin@company.local');
 
     const { searchParams } = new URL(req.url);
     const vehicleId = searchParams.get('vehicleId');

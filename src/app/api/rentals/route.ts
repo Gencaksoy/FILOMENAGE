@@ -13,9 +13,7 @@ export async function GET(req: Request) {
     }
 
     const isSuper =
-      currentUser.role === 'SUPER_ADMIN' ||
-      currentUser.email === 'akif@filoyonetim.com' ||
-      currentUser.email === 'gencaksoy@outlook.com';
+      currentUser.role === 'SUPER_ADMIN';
 
     if (!isSuper && currentUser.features?.rentals === false) {
       return NextResponse.json({ error: 'Kiralama takip özelliği filonuz için devre dışıdır.' }, { status: 403 });
@@ -56,9 +54,7 @@ export async function POST(req: Request) {
     }
 
     const isSuper =
-      currentUser.role === 'SUPER_ADMIN' ||
-      currentUser.email === 'akif@filoyonetim.com' ||
-      currentUser.email === 'gencaksoy@outlook.com';
+      currentUser.role === 'SUPER_ADMIN';
 
     if (!isSuper && currentUser.features?.rentals === false) {
       return NextResponse.json({ error: 'Kiralama başlatma özelliği filonuz için devre dışıdır.' }, { status: 403 });

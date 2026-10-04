@@ -13,9 +13,7 @@ export async function GET() {
     }
 
     const isSuper =
-      currentUser.role === 'SUPER_ADMIN' ||
-      currentUser.email === 'akif@filoyonetim.com' ||
-      currentUser.email === 'gencaksoy@outlook.com';
+      currentUser.role === 'SUPER_ADMIN';
 
     if (currentUser.role === 'STAFF') {
       return NextResponse.json({ error: 'Personel (STAFF) hesaplarının kullanıcı listesine erişim yetkisi yoktur.' }, { status: 403 });
@@ -23,10 +21,10 @@ export async function GET() {
 
     const where: any = {};
     if (!isSuper) {
-      // Filo sahipleri ve normal çalışanlar SaaS yöneticisini (Akif Aksoy) ASLA göremez!
+      // Filo sahipleri ve normal çalışanlar SaaS yöneticisini (System Owner) ASLA göremez!
       where.role = { not: 'SUPER_ADMIN' };
-      where.email = { not: 'akif@filoyonetim.com' };
-      where.name = { not: 'Akif Aksoy' };
+      where.email = { not: 'super-admin@company.local' };
+      where.name = { not: 'System Owner' };
 
       // Filo yöneticisi ise sadece kendi filosuna ait personelleri görsün
       if (currentUser.fleetId) {
@@ -63,9 +61,7 @@ export async function POST(req: Request) {
     }
 
     const isSuper =
-      currentUser.role === 'SUPER_ADMIN' ||
-      currentUser.email === 'akif@filoyonetim.com' ||
-      currentUser.email === 'gencaksoy@outlook.com';
+      currentUser.role === 'SUPER_ADMIN';
 
     const body = await req.json();
     const { name, email, password, role, fleetId } = body;

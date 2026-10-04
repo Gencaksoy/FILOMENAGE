@@ -36,10 +36,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const isSuper =
-      user.role === 'SUPER_ADMIN' ||
-      user.email === 'akif@filoyonetim.com' ||
-      user.email === 'gencaksoy@outlook.com';
+    const isSuper = user.role === 'SUPER_ADMIN';
 
     // Filosu silinmiş kullanıcıların girişini engelle (Askıya alınmış filolar giriş yapabilir ve uyarı ekranı görür)
     if (!isSuper) {

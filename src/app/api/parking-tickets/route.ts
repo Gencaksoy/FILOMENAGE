@@ -14,9 +14,7 @@ export async function GET(req: Request) {
     }
 
     const isSuper =
-      currentUser.role === 'SUPER_ADMIN' ||
-      currentUser.email === 'akif@filoyonetim.com' ||
-      currentUser.email === 'gencaksoy@outlook.com';
+      currentUser.role === 'SUPER_ADMIN';
 
     if (!isSuper && currentUser.features?.parkingTickets === false) {
       return NextResponse.json({ error: 'Park cezaları (eDPK) modülü filonuz için devre dışıdır.' }, { status: 403 });

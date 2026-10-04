@@ -285,8 +285,8 @@ export default function SuperAdminPage() {
         const isSuper =
           u.user &&
           (u.user.role === 'SUPER_ADMIN' ||
-            u.user.email === 'akif@filoyonetim.com' ||
-            u.user.email === 'gencaksoy@outlook.com');
+            u.user.email === 'super-admin@company.local' ||
+            u.user.email === 'super-admin@company.local');
 
         if (!isSuper) {
           router.push('/');
@@ -553,7 +553,7 @@ export default function SuperAdminPage() {
                 </span>
               </div>
               <div className="text-[10px] sm:text-xs text-slate-500 font-medium truncate">
-                Sahibi: <b className="text-slate-800">Akif Aksoy</b>
+                Sahibi: <b className="text-slate-800">System Owner</b>
               </div>
             </div>
           </div>
@@ -588,7 +588,7 @@ export default function SuperAdminPage() {
               Çoklu Filo (Multi-Tenant) Yönetim Merkezi
             </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight mt-2.5">
-              Hoş Geldiniz, Akif Aksoy
+              Hoş Geldiniz, System Owner
             </h2>
             <p className="text-sm text-slate-300 mt-1.5 max-w-2xl leading-relaxed">
               Anlaştığınız yeni filolara buradan filo alanı tanımlayabilir, <b>Filo Kodu</b> üreterek sisteme dahil edebilir ve lisans sürelerini denetleyebilirsiniz.
@@ -973,7 +973,7 @@ export default function SuperAdminPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {/* Akif Aksoy (Süper Yönetici) */}
+                  {/* System Owner (Süper Yönetici) */}
                   <tr className="bg-amber-50/40">
                     <td className="py-3.5 px-4 font-bold text-slate-900 flex items-center gap-2">
                       <div className="w-7 h-7 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xs">

@@ -283,8 +283,8 @@ function VehiclesContent() {
 
   const isSuper =
     currentUser?.role === 'SUPER_ADMIN' ||
-    currentUser?.email === 'akif@filoyonetim.com' ||
-    currentUser?.email === 'gencaksoy@outlook.com';
+    currentUser?.email === 'super-admin@company.local' ||
+    currentUser?.email === 'super-admin@company.local';
 
   const maxVehiclesLimit = currentUser?.maxVehicles ?? 20;
   const isQuotaFull = !isSuper && totalCount >= maxVehiclesLimit;

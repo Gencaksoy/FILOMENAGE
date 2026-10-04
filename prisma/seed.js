@@ -20,13 +20,13 @@ async function main() {
   await prisma.serviceShop.deleteMany();
   await prisma.user.deleteMany();
 
-  console.log('--- Tek Yönetici Hesabı Oluşturuluyor: Akif Aksoy ---');
+  console.log('--- Tek Yönetici Hesabı Oluşturuluyor: System Owner ---');
   const adminHash = await bcrypt.hash('admin123', 10);
 
   await prisma.user.create({
     data: {
-      name: 'Akif Aksoy',
-      email: 'akif@filoyonetim.com',
+      name: 'System Owner',
+      email: 'super-admin@company.local',
       passwordHash: adminHash,
       role: 'SUPER_ADMIN',
     },
@@ -35,7 +35,7 @@ async function main() {
   console.log('--- Sistem Temiz ve Boş Olarak Hazırlandı ---');
   console.log('Toplam Araç: 0');
   console.log('Toplam Müşteri: 0');
-  console.log('Yönetici: Akif Aksoy (akif@filoyonetim.com / admin123)');
+  console.log('Yönetici: System Owner (super-admin@company.local / admin123)');
 }
 
 main()

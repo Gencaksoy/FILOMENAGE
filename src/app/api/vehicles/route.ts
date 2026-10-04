@@ -13,9 +13,7 @@ export async function GET(req: Request) {
     }
 
     const isSuper =
-      currentUser.role === 'SUPER_ADMIN' ||
-      currentUser.email === 'akif@filoyonetim.com' ||
-      currentUser.email === 'gencaksoy@outlook.com';
+      currentUser.role === 'SUPER_ADMIN';
 
     if (!isSuper && currentUser.features?.vehicles === false) {
       return NextResponse.json({ error: 'Araç yönetimi özelliği filonuz için devre dışıdır.' }, { status: 403 });
@@ -252,9 +250,7 @@ export async function POST(req: Request) {
     }
 
     const isSuper =
-      currentUser.role === 'SUPER_ADMIN' ||
-      currentUser.email === 'akif@filoyonetim.com' ||
-      currentUser.email === 'gencaksoy@outlook.com';
+      currentUser.role === 'SUPER_ADMIN';
 
     if (!isSuper && currentUser.features?.vehicles === false) {
       return NextResponse.json({ error: 'Araç ekleme özelliği filonuz için devre dışıdır.' }, { status: 403 });

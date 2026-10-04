@@ -9,8 +9,8 @@ export async function GET() {
     const isSuper =
       currentUser &&
       (currentUser.role === 'SUPER_ADMIN' ||
-        currentUser.email === 'akif@filoyonetim.com' ||
-        currentUser.email === 'gencaksoy@outlook.com');
+        currentUser.email === 'super-admin@company.local' ||
+        currentUser.email === 'super-admin@company.local');
     if (!isSuper) {
       return NextResponse.json({ error: 'Yetkisiz erişim. Bu panel sadece Süper Yöneticiye aittir.' }, { status: 403 });
     }
@@ -51,8 +51,8 @@ export async function POST(req: Request) {
     const isSuper =
       currentUser &&
       (currentUser.role === 'SUPER_ADMIN' ||
-        currentUser.email === 'akif@filoyonetim.com' ||
-        currentUser.email === 'gencaksoy@outlook.com');
+        currentUser.email === 'super-admin@company.local' ||
+        currentUser.email === 'super-admin@company.local');
     if (!isSuper) {
       return NextResponse.json({ error: 'Yetkisiz erişim.' }, { status: 403 });
     }

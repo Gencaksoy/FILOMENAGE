@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { COOKIE_NAME, parseSessionCookie } from '@/lib/auth-client';
 
 interface SessionData {
   id: string;
@@ -10,17 +11,21 @@ interface SessionData {
 
 function parseSession(cookieValue?: string): SessionData | null {
   if (!cookieValue) return null;
-  try {
-    const json = Buffer.from(cookieValue, 'base64').toString('utf-8');
-    return JSON.parse(json) as SessionData;
-  } catch {
-    return null;
-  }
+
+  const user = parseSessionCookie(cookieValue);
+  if (!user?.id) return null;
+
+  return {
+    id: user.id,
+    role: user.role,
+    email: user.email,
+    features: user.features,
+  };
 }
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const sessionCookie = request.cookies.get('filo_auth_session')?.value;
+  const sessionCookie = request.cookies.get(COOKIE_NAME)?.value;
   const user = parseSession(sessionCookie);
 
   // Protected paths that require authentication
@@ -43,10 +48,7 @@ export function middleware(request: NextRequest) {
   }
 
   if (user) {
-    const isSuper =
-      user.role === 'SUPER_ADMIN' ||
-      user.email === 'akif@filoyonetim.com' ||
-      user.email === 'gencaksoy@outlook.com';
+    const isSuper = user.role === 'SUPER_ADMIN';
 
     // Super Admin route protection
     if (pathname.startsWith('/super-admin') && !isSuper) {

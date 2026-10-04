@@ -21,7 +21,7 @@ async function main() {
   // 2. Ensure all existing users belong to proper fleet or super admin
   const users = await prisma.user.findMany();
   for (const u of users) {
-    if (u.role === 'SUPER_ADMIN' || u.email === 'gencaksoy@outlook.com') {
+    if (u.role === 'SUPER_ADMIN') {
       console.log(`User ${u.name} (${u.email}) is Super Admin.`);
     } else {
       if (u.fleetId !== fleetId) {
@@ -778,7 +778,7 @@ async function main() {
       description: 'BG 1709-OT aracı için Belgrad park cezası (eDPK #9823412) sisteme işlendi.',
     },
     {
-      userName: 'Akif Aksoy',
+      userName: 'System Owner',
       action: 'CREATE_VEHICLE',
       target: 'BG 608-EF',
       description: 'BG 608-EF Toyota Corolla filoya yeni araç olarak eklendi.',

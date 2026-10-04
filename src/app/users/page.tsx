@@ -51,10 +51,7 @@ export default function UsersPage() {
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
-  const isSuper =
-    currentUser?.role === 'SUPER_ADMIN' ||
-    currentUser?.email === 'akif@filoyonetim.com' ||
-    currentUser?.email === 'gencaksoy@outlook.com';
+  const isSuper = currentUser?.role === 'SUPER_ADMIN';
 
   const openEditModal = (u: any) => {
     setEditingUser(u);
@@ -337,12 +334,12 @@ export default function UsersPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {users
             .filter((u) => {
-              const isSuper = currentUser?.role === 'SUPER_ADMIN' || currentUser?.email === 'akif@filoyonetim.com';
+              const isSuper = currentUser?.role === 'SUPER_ADMIN';
               if (isSuper) return true;
-              return u.role !== 'SUPER_ADMIN' && u.email !== 'akif@filoyonetim.com' && u.name !== 'Akif Aksoy';
+              return u.role !== 'SUPER_ADMIN' && u.name !== 'System Owner';
             })
             .map((u) => {
-            const isSuperAdmin = u.email === 'akif@filoyonetim.com' || u.role === 'SUPER_ADMIN';
+            const isSuperAdmin = u.role === 'SUPER_ADMIN';
             const isSelf = u.id === currentUser?.id;
             const info = roleDescriptions[u.role] || {
               title: u.role,
@@ -364,7 +361,7 @@ export default function UsersPage() {
                       <div>
                         <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                           {u.name}
-                          {isSuperAdmin && (currentUser?.role === 'SUPER_ADMIN' || currentUser?.email === 'akif@filoyonetim.com') && (
+                          {isSuperAdmin && currentUser?.role === 'SUPER_ADMIN' && (
                             <span className="text-xs font-black text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.5 rounded">
                               {language === 'sr' ? 'Vlasnik Panela' : language === 'en' ? 'Panel Owner' : 'Panel Sahibi'}
                             </span>

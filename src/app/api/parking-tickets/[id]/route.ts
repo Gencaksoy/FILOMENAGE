@@ -20,9 +20,7 @@ export async function PATCH(
     const { status, isCustomerNotified } = body;
 
     const isSuper =
-      currentUser.role === 'SUPER_ADMIN' ||
-      currentUser.email === 'akif@filoyonetim.com' ||
-      currentUser.email === 'gencaksoy@outlook.com';
+      currentUser.role === 'SUPER_ADMIN';
 
     // Find ticket first
     const ticket = await prisma.parkingTicket.findUnique({
